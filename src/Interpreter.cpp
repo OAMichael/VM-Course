@@ -2,34 +2,21 @@
 #include <cstring>
 #include <exception>
 
+#include <cmath>
+
 #include "VirtualMachine.h"
 #include "Interpreter.h"
 
 
 namespace VM {
 
-static inline uint8_t getOpcode(const EncodedInstruction& instr) {
-    return instr & 0xFF;    // Last 8 bits
-}
-
-static inline uint8_t getIntrinsicType(const EncodedInstruction& instr) {
-    uint32_t tmp = (instr & 0xFF00) >> 8;
-    return tmp;
-}
-
-static inline uint32_t getPartialBits(const uint32_t val,
-                                      const uint32_t first,
-                                      const uint32_t second) {
-    const uint32_t mask = ((1 << (first - second + 1)) - 1) << second;
-    return (val & mask);
-}
-
-
 bool Interpreter::interpret(const uint64_t entry) {
     auto& pc = m_vm->m_pc;
     uint8_t* memory = m_vm->m_memory;
+    auto& regfile = m_vm->m_regfile;
 
     EncodedInstruction* currInstr;
+    DecodedInstruction decInstr;
 
     static void* dispatchTable[InstructionType::INSTRUCTION_COUNT] = {
         &&INSTRUCTION_INVALID,
@@ -55,359 +42,377 @@ bool Interpreter::interpret(const uint64_t entry) {
     {                                                                       \
         currInstr = (EncodedInstruction*)(memory + pc);                     \
         pc += 4;                                                            \
-        goto *dispatchTable[getOpcode(*currInstr)];                         \
+        goto *dispatchTable[m_decoder.getOpcode(*currInstr)];               \
     }
 
-    // Actual main interpretation
-    DISPATCH()
+    try {
 
+        // Actual main interpretation
+        DISPATCH()
 
-INSTRUCTION_INVALID:
-    return false;
 
+    INSTRUCTION_INVALID:
+        return false;
 
 
-ADD:
 
+    ADD:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        regfile[decInstr.rd] = regfile[decInstr.rs1] + regfile[decInstr.rs2];
 
-    DISPATCH()
+        DISPATCH()
 
-SUB:
+    SUB:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        regfile[decInstr.rd] = regfile[decInstr.rs1] - regfile[decInstr.rs2];
 
+        DISPATCH()
 
-    DISPATCH()
+    AND:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        regfile[decInstr.rd] = regfile[decInstr.rs1] & regfile[decInstr.rs2];
 
-AND:
+        DISPATCH()
 
+    OR:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        regfile[decInstr.rd] = regfile[decInstr.rs1] | regfile[decInstr.rs2];
 
-    DISPATCH()
+        DISPATCH()
 
-OR:
+    XOR:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        regfile[decInstr.rd] = regfile[decInstr.rs1] ^ regfile[decInstr.rs2];
 
+        DISPATCH()
 
-    DISPATCH()
+    SL:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        regfile[decInstr.rd] = regfile[decInstr.rs1] << regfile[decInstr.rs2];
 
-XOR:
+        DISPATCH()
 
+    SR:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        regfile[decInstr.rd] = regfile[decInstr.rs1] >> regfile[decInstr.rs2];
 
-    DISPATCH()
+        DISPATCH()
 
-SL:
+    SQRT:
+        /*
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        float tmp = std::bit_cast<float>(regfile[decInstr.rs1]);
+        regfile[decInstr.rd] = std::bit_cast<RegValue>(std::sqrt(tmp));
+        */
 
+        DISPATCH()
 
-    DISPATCH()
+    SIN:
 
-SR:
 
+        DISPATCH()
 
-    DISPATCH()
+    COS:
 
-SQRT:
 
+        DISPATCH()
 
-    DISPATCH()
+    TAN:
 
-SIN:
 
+        DISPATCH()
 
-    DISPATCH()
+    COT:
 
-COS:
 
+        DISPATCH()
 
-    DISPATCH()
+    NEG:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        regfile[decInstr.rd] = static_cast<RegValue>(-static_cast<SignedRegValue>(regfile[decInstr.rs1]));
 
-TAN:
+        DISPATCH()
 
+    MV:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        regfile[decInstr.rd] = regfile[decInstr.rs1];
 
-    DISPATCH()
+        DISPATCH()
 
-COT:
+    ADDI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-NEG:
+    SUBI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-MV:
+    ANDI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-ADDI:
+    ORI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-SUBI:
+    XORI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-ANDI:
+    SLI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-ORI:
+    SRI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-XORI:
+    SQRTI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-SLI:
+    SINI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-SRI:
+    COSI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-SQRTI:
+    TANI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-SINI:
+    COTI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-COSI:
+    NEGI:
 
 
-    DISPATCH()
+        DISPATCH()
 
-TANI:
+    MVI:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        regfile[decInstr.rd] = decInstr.imm;
 
+        DISPATCH()
 
-    DISPATCH()
+    BEQ:
 
-COTI:
 
+        DISPATCH()
 
-    DISPATCH()
+    BNE:
 
-NEGI:
 
+        DISPATCH()
 
-    DISPATCH()
+    BLT:
 
-MVI:
-    RegisterType rd = static_cast<RegisterType>(getPartialBits(*currInstr, 12, 8) >> 8);
-    uint32_t imm = getPartialBits(*currInstr, 31, 13) >> 13;
 
-    m_vm->m_regfile[rd] = imm;
+        DISPATCH()
 
-    DISPATCH()
+    BGE:
 
-BEQ:
 
+        DISPATCH()
 
-    DISPATCH()
+    LB:
 
-BNE:
 
+        DISPATCH()
 
-    DISPATCH()
+    LH:
 
-BLT:
 
+        DISPATCH()
 
-    DISPATCH()
+    LW:
 
-BGE:
 
+        DISPATCH()
 
-    DISPATCH()
+    LD:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        if (regfile[decInstr.rs1] + decInstr.imm >= sizeof(m_vm->m_memory) - sizeof(DWord))
+            throw std::runtime_error("invalid address");
 
-LB:
+        memcpy(&regfile[decInstr.rd], memory + regfile[decInstr.rs1] + decInstr.imm, sizeof(DWord));
 
+        DISPATCH()
 
-    DISPATCH()
+    SB:
 
-LH:
 
+        DISPATCH()
 
-    DISPATCH()
+    SH:
 
-LW:
 
+        DISPATCH()
 
-    DISPATCH()
+    SW:
 
-LD:
 
+        DISPATCH()
 
-    DISPATCH()
+    SD:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        if (regfile[decInstr.rs1] + decInstr.imm >= sizeof(m_vm->m_memory) - sizeof(DWord))
+            throw std::runtime_error("invalid address");
 
-SB:
+        memcpy(memory + regfile[decInstr.rs1] + decInstr.imm, &regfile[decInstr.rs2], sizeof(DWord));
 
+        DISPATCH()
 
-    DISPATCH()
+    I2F:
 
-SH:
+        
+        DISPATCH()
 
+    I2D:
 
-    DISPATCH()
+        
+        DISPATCH()
 
-SW:
+    I2L:
 
+        
+        DISPATCH()
 
-    DISPATCH()
+    F2I:
 
-SD:
+        
+        DISPATCH()
 
+    F2D:
 
-    DISPATCH()
+        
+        DISPATCH()
 
-I2F:
+    F2L:
 
-    
-    DISPATCH()
+        
+        DISPATCH()
 
-I2D:
+    D2I:
 
-    
-    DISPATCH()
+        
+        DISPATCH()
 
-I2L:
+    D2F:
 
-    
-    DISPATCH()
+        
+        DISPATCH()
 
-F2I:
+    D2L:
 
-    
-    DISPATCH()
+        
+        DISPATCH()
 
-F2D:
+    L2I:
 
-    
-    DISPATCH()
+        
+        DISPATCH()
 
-F2L:
+    L2F:
 
-    
-    DISPATCH()
+        
+        DISPATCH()
 
-D2I:
+    L2D:
 
-    
-    DISPATCH()
+        
+        DISPATCH()
 
-D2F:
+    RET:
 
-    
-    DISPATCH()
+        return true;
+        DISPATCH()
 
-D2L:
+    INITRINSIC:
 
-    
-    DISPATCH()
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        switch(decInstr.intrinType) {
 
-L2I:
+            case IntrinsicType::INTRINSIC_ISCAN: {
 
-    
-    DISPATCH()
+                RegValue storeAddress = regfile[decInstr.rs1];
+                if (storeAddress >= sizeof(m_vm->m_memory) - sizeof(int))
+                    throw std::runtime_error("invalid address");
 
-L2F:
+                int tmp;
+                std::cin >> tmp;
+                if (std::cin.fail())
+                    throw std::runtime_error("invalid input");
 
-    
-    DISPATCH()
+                memcpy(m_vm->m_memory + storeAddress, &tmp, sizeof(int));
 
-L2D:
+                break;
+            }
+            case IntrinsicType::INTRINSIC_IPRINT: {
 
-    
-    DISPATCH()
+                RegValue loadAddress = regfile[decInstr.rs1];
+                if (loadAddress >= sizeof(m_vm->m_memory) - sizeof(int))
+                    throw std::runtime_error("invalid address");
 
-RET:
+                int tmp;
+                memcpy(&tmp, m_vm->m_memory + loadAddress, sizeof(int));
+                std::cout << tmp << std::endl;
 
-    return true;
-    DISPATCH()
+                break;
+            }
+            case IntrinsicType::INTRINSIC_FSCAN: {
 
-INITRINSIC:
-    
-    IntrinsicType intrType = static_cast<IntrinsicType>(getIntrinsicType(*currInstr));
+                RegValue storeAddress = regfile[decInstr.rs1];
+                if (storeAddress >= sizeof(m_vm->m_memory) - sizeof(float))
+                    throw std::runtime_error("invalid address");
 
-    switch(intrType) {
+                float tmp;
+                std::cin >> tmp;
+                if (std::cin.fail())
+                    throw std::runtime_error("invalid input");
 
-        case IntrinsicType::INTRINSIC_ISCAN: {
+                memcpy(m_vm->m_memory + storeAddress, &tmp, sizeof(float));
 
-            int tmp;
-            std::cin >> tmp;
+                break;
+            }
+            case IntrinsicType::INTRINSIC_FPRINT: {
 
-            RegisterType rs1 = static_cast<RegisterType>(getPartialBits(*currInstr, 20, 16) >> 16);
+                RegValue loadAddress = regfile[decInstr.rs1];
+                if (loadAddress >= sizeof(m_vm->m_memory) - sizeof(float))
+                    throw std::runtime_error("invalid address");
 
-            uint64_t storeAddress = m_vm->m_regfile[rs1];
-            if (storeAddress < 0 || storeAddress >= sizeof(m_vm->m_memory) - sizeof(int))
-                throw std::runtime_error("invalid address");
+                float tmp;
+                memcpy(&tmp, m_vm->m_memory + loadAddress, sizeof(float));
+                std::cout << tmp << std::endl;
 
-            memcpy(m_vm->m_memory + storeAddress, &tmp, sizeof(int));
+                break;
+            }
+            default:
+                break;
 
-            break;
         }
-        case IntrinsicType::INTRINSIC_IPRINT: {
 
-            int tmp;
-            RegisterType rs1 = static_cast<RegisterType>(getPartialBits(*currInstr, 20, 16) >> 16);
-
-            uint64_t loadAddress = m_vm->m_regfile[rs1];
-            if (loadAddress < 0 || loadAddress >= sizeof(m_vm->m_memory) - sizeof(int))
-                throw std::runtime_error("invalid address");
-
-            memcpy(&tmp, m_vm->m_memory + loadAddress, sizeof(int));
-
-            std::cout << tmp << std::endl;
-
-            break;
-        }
-        case IntrinsicType::INTRINSIC_FSCAN: {
-
-            float tmp;
-            std::cin >> tmp;
-
-            RegisterType rs1 = static_cast<RegisterType>(getPartialBits(*currInstr, 20, 16) >> 16);
-
-            uint64_t storeAddress = m_vm->m_regfile[rs1];
-            if (storeAddress < 0 || storeAddress >= sizeof(m_vm->m_memory) - sizeof(float))
-                throw std::runtime_error("invalid address");
-
-            memcpy(m_vm->m_memory + storeAddress, &tmp, sizeof(float));
-
-            break;
-        }
-        case IntrinsicType::INTRINSIC_FPRINT: {
-
-            float tmp;
-            RegisterType rs1 = static_cast<RegisterType>(getPartialBits(*currInstr, 20, 16) >> 16);
-
-            uint64_t loadAddress = m_vm->m_regfile[rs1];
-            if (loadAddress < 0 || loadAddress >= sizeof(m_vm->m_memory) - sizeof(float))
-                throw std::runtime_error("invalid address");
-
-            memcpy(&tmp, m_vm->m_memory + loadAddress, sizeof(float));
-
-            std::cout << tmp << std::endl;
-
-            break;
-        }
-        default:
-            break;
-
+        DISPATCH()
     }
-
-    DISPATCH()
-
+    catch (const std::runtime_error& error) {
+        std::cerr << "Error occured during interpreting: " << error.what() << std::endl;
+        return false;
+    }
 }
 
 }   // VM

@@ -7,135 +7,141 @@
 namespace VM {
 
 enum RegisterType : uint8_t {
-	X0 = 0,
-	X1,
-	X2,
-	X3,
-	X4,
-	X5,
-	X6,
-	X7,
-	X8,
-	X9,
-	X10,
-	X11,
-	X12,
-	X13,
-	X14,
-	X15,
-	X16,
-	X17,
-	X18,
-	X19,
-	X20,
-	X21,
-	X22,
-	X23,
-	X24,
-	X25,
-	X26,
-	X27,
-	X28,
-	X29,
-	X30,
-	X31,
+    X0 = 0,
+    X1,
+    X2,
+    X3,
+    X4,
+    X5,
+    X6,
+    X7,
+    X8,
+    X9,
+    X10,
+    X11,
+    X12,
+    X13,
+    X14,
+    X15,
+    X16,
+    X17,
+    X18,
+    X19,
+    X20,
+    X21,
+    X22,
+    X23,
+    X24,
+    X25,
+    X26,
+    X27,
+    X28,
+    X29,
+    X30,
+    X31,
 
-	REGISTER_COUNT
+    REGISTER_COUNT
 };
 
 
 enum InstructionType : uint8_t {
 
-	INSTRUCTION_INVALID = 0,
+    INSTRUCTION_INVALID = 0,
 
 // Arithmetic
-	ADD,
-	SUB,
-	AND,
-	OR,
-	XOR,
-	SL,
-	SR,
-	SQRT,
-	SIN,
-	COS,
-	TAN,
-	COT,
-	NEG,
-	MV,
+    ADD,
+    SUB,
+    AND,
+    OR,
+    XOR,
+    SL,
+    SR,
+    SQRT,
+    SIN,
+    COS,
+    TAN,
+    COT,
+    NEG,
+    MV,
 
 // Arithmetic immediate
-	ADDI,
-	SUBI,
-	ANDI,
-	ORI,
-	XORI,
-	SLI,
-	SRI,
-	SQRTI,
-	SINI,
-	COSI,
-	TANI,
-	COTI,
-	NEGI,
-	MVI,
+    ADDI,
+    SUBI,
+    ANDI,
+    ORI,
+    XORI,
+    SLI,
+    SRI,
+    SQRTI,
+    SINI,
+    COSI,
+    TANI,
+    COTI,
+    NEGI,
+    MVI,
 
 // Branching
-	BEQ,
-	BNE,
-	BLT,
-	BGE,
+    BEQ,
+    BNE,
+    BLT,
+    BGE,
 
 // Load
-	LB,
-	LH,
-	LW,
-	LD,
+    LB,
+    LH,
+    LW,
+    LD,
 
 // Store
-	SB,
-	SH,
-	SW,
-	SD,
+    SB,
+    SH,
+    SW,
+    SD,
 
 // Casts
-	I2F,
-	I2D,
-	I2L,
-	F2I,
-	F2D,
-	F2L,
-	D2I,
-	D2F,
-	D2L,
-	L2I,
-	L2F,
-	L2D,
+    I2F,
+    I2D,
+    I2L,
+    F2I,
+    F2D,
+    F2L,
+    D2I,
+    D2F,
+    D2L,
+    L2I,
+    L2F,
+    L2D,
 
 // Return
-	RET,
+    RET,
 
 // Intrinsics
-	INTRINSIC,
+    INTRINSIC,
 
 // Miscellaneous
-	INSTRUCTION_COUNT,
+    INSTRUCTION_COUNT,
 };
 
 
 enum IntrinsicType : uint8_t {
-	INTRINSIC_ISCAN = 0,
-	INTRINSIC_IPRINT,
-	INTRINSIC_FSCAN,
-	INTRINSIC_FPRINT,
-	INTRINSIC_DSCAN,
-	INTRINSIC_DPRINT,
-	INTRINSIC_LSCAN,
-	INTRINSIC_LPRINT,
+    INTRINSIC_INVALID = 0,
 
-	INTRINSIC_COUNT
+    INTRINSIC_ISCAN,
+    INTRINSIC_IPRINT,
+    INTRINSIC_FSCAN,
+    INTRINSIC_FPRINT,
+    INTRINSIC_DSCAN,
+    INTRINSIC_DPRINT,
+    INTRINSIC_LSCAN,
+    INTRINSIC_LPRINT,
+
+    INTRINSIC_COUNT
 };
 
+using Byte  = uint8_t;
+using Half  = uint16_t;
+using Word  = uint32_t;
+using DWord = uint64_t;
 
 using RegValue = uint64_t;
 using SignedRegValue = int64_t;
@@ -143,17 +149,18 @@ using SignedRegValue = int64_t;
 using EncodedInstruction = uint32_t;
 
 struct DecodedInstruction {
-	RegisterType rd, rs1, rs2;
+    RegisterType rd, rs1, rs2;
 
-	InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
+    InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
 
-	union {
-		uint32_t imm = 0;
-		uint32_t shamt;
-	};
+    union {
+        uint32_t imm = 0;
+        uint32_t shamt;
+        IntrinsicType intrinType;
+    };
 };
 
 
-}	// VM
+}   // VM
 
-#endif 	// INSTRUCTIONS_H
+#endif  // INSTRUCTIONS_H

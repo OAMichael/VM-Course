@@ -4,60 +4,110 @@
 
 
 static bool makeTestProgram_Quadratic(Common::Program& outProg) {
-	outProg.entryPoint = 0;
+    /* Test program
 
-	// mvi x1, 4000
-	{
-		uint32_t opcode = VM::InstructionType::MVI;
-		uint32_t rd = 1 << 8;
+        int x;
+        scan(&x);
+        x = -x;
+        print(&x)
 
-		uint32_t imm = 4000 << 13;
+    */
 
-		outProg.instructions.push_back(imm | rd | opcode);
-	}
+    outProg.entryPoint = 0;
 
-	// intrinsic iscan x1
-	{
-		uint32_t opcode = VM::InstructionType::INTRINSIC;
-		uint32_t intrType = VM::IntrinsicType::INTRINSIC_ISCAN << 8;
-		uint32_t rs1 = 1 << 16;
+    VM::Decoder coder;
+    VM::EncodedInstruction encInstr;
+    VM::DecodedInstruction decInstr;
 
-		outProg.instructions.push_back(rs1 | intrType | opcode);
-	}
+    // mvi x1, 4000
+    {
+        decInstr.opcode = VM::InstructionType::MVI;
+        decInstr.rd = static_cast<VM::RegisterType>(1);
+        decInstr.imm = 4000;
 
-	// intrinsic iprint x1
-	{
-		uint32_t opcode = VM::InstructionType::INTRINSIC;
-		uint32_t intrType = VM::IntrinsicType::INTRINSIC_IPRINT << 8;
-		uint32_t rs1 = 1 << 16;
+        coder.encodeInstruction(decInstr, encInstr);
+        outProg.instructions.push_back(encInstr);
+    }
 
-		outProg.instructions.push_back(rs1 | intrType | opcode);
-	}
+    // intrinsic x1, iscan
+    {
+        decInstr.opcode = VM::InstructionType::INTRINSIC;
+        decInstr.intrinType = VM::IntrinsicType::INTRINSIC_ISCAN;
+        decInstr.rs1 = static_cast<VM::RegisterType>(1);
 
-	// return
-	{
-		outProg.instructions.push_back(VM::InstructionType::RET);
-	}
-	return true;
+        coder.encodeInstruction(decInstr, encInstr);
+        outProg.instructions.push_back(encInstr);
+    }
+
+    // ld x2, x1, 0
+    {
+        decInstr.opcode = VM::InstructionType::LD;
+        decInstr.rd = static_cast<VM::RegisterType>(2);
+        decInstr.rs1 = static_cast<VM::RegisterType>(1);
+        decInstr.imm = 0;
+
+        coder.encodeInstruction(decInstr, encInstr);
+        outProg.instructions.push_back(encInstr);
+    }
+
+    // neg x3, x2
+    {
+        decInstr.opcode = VM::InstructionType::NEG;
+        decInstr.rd = static_cast<VM::RegisterType>(3);
+        decInstr.rs1 = static_cast<VM::RegisterType>(2);
+
+        coder.encodeInstruction(decInstr, encInstr);
+        outProg.instructions.push_back(encInstr);
+    }
+
+    // sd x1, x3, 0
+    {
+        decInstr.opcode = VM::InstructionType::SD;
+        decInstr.rs1 = static_cast<VM::RegisterType>(1);
+        decInstr.rs2 = static_cast<VM::RegisterType>(3);
+
+        coder.encodeInstruction(decInstr, encInstr);
+        outProg.instructions.push_back(encInstr);
+    }
+
+    // intrinsic x1, iprint
+    {
+        decInstr.opcode = VM::InstructionType::INTRINSIC;
+        decInstr.intrinType = VM::IntrinsicType::INTRINSIC_IPRINT;
+        decInstr.rs1 = static_cast<VM::RegisterType>(1);
+
+        coder.encodeInstruction(decInstr, encInstr);
+        outProg.instructions.push_back(encInstr);
+    }
+
+    // return
+    {
+        decInstr.opcode = VM::InstructionType::RET;
+
+        coder.encodeInstruction(decInstr, encInstr);
+        outProg.instructions.push_back(encInstr);
+    }
+    return true;
 }
+
 
 
 int main(int argc, char* argv[]) {
 
-	Common::Program testQuadratic;
-	makeTestProgram_Quadratic(testQuadratic);
+    Common::Program testQuadratic;
+    makeTestProgram_Quadratic(testQuadratic);
 
-	VM::VirtualMachine vm;
-	vm.loadProgram(testQuadratic);
-	
-	bool runResult = vm.run();
+    VM::VirtualMachine vm;
+    vm.loadProgram(testQuadratic);
 
-	if (runResult) {
-		std::cout << "Program has been successfully interpreted" << std::endl;
-	}
-	else {
-		std::cerr << "Program execution has been finished with errors" << std::endl;
-	}
+    bool runResult = vm.run();
 
-	return 0;
+    if (runResult) {
+        std::cout << "Program has been successfully interpreted" << std::endl;
+    }
+    else {
+        std::cerr << "Program execution has been finished with errors" << std::endl;
+    }
+
+    return 0;
 }

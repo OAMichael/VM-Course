@@ -5,6 +5,7 @@
 
 #include "Common.h"
 #include "Instructions.h"
+#include "Decoder.h"
 
 
 namespace VM {
@@ -13,14 +14,15 @@ class VirtualMachine;
 
 class Interpreter {
 private:
-	VirtualMachine* m_vm;
+    VirtualMachine* m_vm;
+    Decoder m_decoder;
 
 public:
-	bool interpret(const uint64_t entry);
+    bool interpret(const uint64_t entry);
 
-	Interpreter(VirtualMachine* p_vm) : m_vm{p_vm} {};
+    Interpreter(VirtualMachine* p_vm) : m_vm{p_vm} {};
 };
 
-}	// VM
+}   // VM
 
-#endif	// INTERPRETER_H
+#endif  // INTERPRETER_H

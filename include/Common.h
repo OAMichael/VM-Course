@@ -9,10 +9,10 @@
 namespace Common {
 
 struct Program {
-	uint64_t entryPoint;
-	std::vector<VM::EncodedInstruction> instructions;
+    uint64_t entryPoint;
+    std::vector<VM::EncodedInstruction> instructions;
 };
 
-}	// Common
+}   // Common
 
-#endif	// COMMON_H
+#endif  // COMMON_H
