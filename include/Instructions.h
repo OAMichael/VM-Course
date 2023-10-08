@@ -62,6 +62,7 @@ enum InstructionType : uint8_t {
 	TAN,
 	COT,
 	NEG,
+	MV,
 
 // Arithmetic immediate
 	ADDI,
@@ -77,6 +78,7 @@ enum InstructionType : uint8_t {
 	TANI,
 	COTI,
 	NEGI,
+	MVI,
 
 // Branching
 	BEQ,
@@ -114,11 +116,24 @@ enum InstructionType : uint8_t {
 	RET,
 
 // Intrinsics
-	INTRIN_INPUT,
-	INTRIN_OUTPUT,
+	INTRINSIC,
 
 // Miscellaneous
 	INSTRUCTION_COUNT,
+};
+
+
+enum IntrinsicType : uint8_t {
+	INTRINSIC_ISCAN = 0,
+	INTRINSIC_IPRINT,
+	INTRINSIC_FSCAN,
+	INTRINSIC_FPRINT,
+	INTRINSIC_DSCAN,
+	INTRINSIC_DPRINT,
+	INTRINSIC_LSCAN,
+	INTRINSIC_LPRINT,
+
+	INTRINSIC_COUNT
 };
 
 

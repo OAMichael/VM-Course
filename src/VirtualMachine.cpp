@@ -1,19 +1,20 @@
 #include <algorithm>
+#include <cstring>
 
 #include "VirtualMachine.h"
 
 namespace VM {
 
 bool VirtualMachine::run() {
-    m_interpreter.interpret(m_program);
+    bool interpretResult = m_interpreter.interpret(m_pc);
 
-    return true;
+    return interpretResult;
 }
 
 bool VirtualMachine::loadProgram(const Common::Program& program) {
     // Perform copying of the program
-    m_program.entryPoint = program.entryPoint;
-    std::copy(program.instructions.begin(), program.instructions.end(), std::back_inserter(m_program.instructions));
+    m_pc = program.entryPoint;
+    memcpy(m_memory, program.instructions.data(), program.instructions.size() * sizeof(EncodedInstruction));
 
     return true;
 }
