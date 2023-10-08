@@ -1,24 +1,12 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
-project(VirtualMachine VERSION 1.0)
+project(VirtualMachine VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
-set(COMPILE_OPT -std=c++20 -O2)
-set(SRC_DIR ./src)
-set(INCLUDE_DIR ./include)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+add_subdirectory(thirdParty/googletest)
 
-add_executable(VirtualMachine
-    ${SRC_DIR}/main.cpp
-    ${SRC_DIR}/VirtualMachine.cpp
-    ${SRC_DIR}/Interpreter.cpp
-    ${SRC_DIR}/Decoder.cpp
-)
-
-target_include_directories(VirtualMachine
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-    PUBLIC ${INCLUDE_DIR}
-)
-
-target_link_libraries(VirtualMachine PUBLIC ${LINK_OPT})
-add_compile_options(VirtualMachine ${COMPILE_OPT})
+include_directories(include)
+add_subdirectory(src)
+add_subdirectory(tests)

@@ -1,12 +1,11 @@
-#include <iostream>
-
+#include <gtest/gtest.h>
 #include "VirtualMachine.h"
 
-static bool makeTestProgram_Quadratic(Common::Program& outProg) {
+static bool makeTestFirst(Common::Program& outProg) {
     /* Test program
 
         int x;
-        scan(&x);
+        mov x, 7;
         x = -x;
         print(&x)
 
@@ -18,21 +17,11 @@ static bool makeTestProgram_Quadratic(Common::Program& outProg) {
     VM::EncodedInstruction encInstr;
     VM::DecodedInstruction decInstr;
 
-    // mvi x1, 4000
+    // mvi x1, 4
     {
         decInstr.opcode = VM::InstructionType::MVI;
         decInstr.rd = static_cast<VM::RegisterType>(1);
-        decInstr.imm = 4000;
-
-        coder.encodeInstruction(decInstr, encInstr);
-        outProg.instructions.push_back(encInstr);
-    }
-
-    // intrinsic x1, iscan
-    {
-        decInstr.opcode = VM::InstructionType::INTRINSIC;
-        decInstr.intrinType = VM::IntrinsicType::INTRINSIC_ISCAN;
-        decInstr.rs1 = static_cast<VM::RegisterType>(1);
+        decInstr.imm = 4;
 
         coder.encodeInstruction(decInstr, encInstr);
         outProg.instructions.push_back(encInstr);
@@ -90,23 +79,19 @@ static bool makeTestProgram_Quadratic(Common::Program& outProg) {
 }
 
 
-
-int main(int argc, char* argv[]) {
-
-    Common::Program testQuadratic;
-    makeTestProgram_Quadratic(testQuadratic);
+TEST(InstructionTest, firstTest)
+{
+    Common::Program test;
+    makeTestFirst(test);
 
     VM::VirtualMachine vm;
-    vm.loadProgram(testQuadratic);
+    vm.loadProgram(test);
 
-    bool runResult = vm.run();
+    ASSERT_TRUE(vm.run());
+}
 
-    if (runResult) {
-        std::cout << "Program has been successfully interpreted" << std::endl;
-    }
-    else {
-        std::cerr << "Program execution has been finished with errors" << std::endl;
-    }
-
-    return 0;
+int main(int argc, char *argv[])
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

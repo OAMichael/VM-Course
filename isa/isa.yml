@@ -1,0 +1,10 @@
+---
+instructions:
+	ArithmeticI:
+		bytes:
+			-  
+		instr:
+			- ADD
+			- SUB
+			- AND
+			- OR
