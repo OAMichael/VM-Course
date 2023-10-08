@@ -211,22 +211,30 @@ bool Interpreter::interpret(const uint64_t entry) {
         DISPATCH()
 
     BEQ:
-
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        if (regfile[decInstr.rs1] == regfile[decInstr.rs2])
+            pc += decInstr.imm;
 
         DISPATCH()
 
     BNE:
-
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        if (regfile[decInstr.rs1] != regfile[decInstr.rs2])
+            pc += decInstr.imm;
 
         DISPATCH()
 
     BLT:
-
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        if (static_cast<SignedRegValue>(regfile[decInstr.rs1]) < regfile[decInstr.rs2])
+            pc += decInstr.imm;
 
         DISPATCH()
 
     BGE:
-
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        if (static_cast<SignedRegValue>(regfile[decInstr.rs1]) >= regfile[decInstr.rs2])
+            pc += decInstr.imm;
 
         DISPATCH()
 
