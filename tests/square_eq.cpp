@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "VirtualMachine.h"
+#include "test_common.h"
 
 static bool makeTestFirst(Common::Program& outProg) {
     /* Test program
@@ -243,7 +244,15 @@ TEST(InstructionTest, firstTest)
     VM::VirtualMachine vm;
     vm.loadProgram(test);
 
+    VM_Tests::CoutRedefiner c;
+    c.changeOnMy();
     ASSERT_TRUE(vm.run());
+    auto ss = c.returnBack();
+
+    float x1, x2;
+    ss >> x1 >> x2;
+    ASSERT_EQ(x1, 2.f);
+    ASSERT_EQ(x2, 0.5f);
 }
 
 int main(int argc, char *argv[])
