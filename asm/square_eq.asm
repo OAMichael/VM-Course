@@ -31,3 +31,5 @@ FADD x6, x5, x4         ; x_2
 IMVI x7, 4016
 STOREW x7, x6, 0
 INTRINSIC x7, FPRINT    ; print x_2
+
+RET
