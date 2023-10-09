@@ -20,29 +20,18 @@ static bool makeTestFirst(Common::Program& outProg) {
     // imvi x1, 7
     {
         decInstr.opcode = VM::InstructionType::IMVI;
-        decInstr.rd = static_cast<VM::RegisterType>(1);
+        decInstr.rd = VM::RegisterType::X1;
         decInstr.imm = 7;
 
         coder.encodeInstruction(decInstr, encInstr);
         outProg.instructions.push_back(encInstr);
     }
 
-    // loadd x2, x1, 0
-    {
-        decInstr.opcode = VM::InstructionType::LOADD;
-        decInstr.rd = static_cast<VM::RegisterType>(2);
-        decInstr.rs1 = static_cast<VM::RegisterType>(1);
-        decInstr.imm = 0;
-
-        coder.encodeInstruction(decInstr, encInstr);
-        outProg.instructions.push_back(encInstr);
-    }
-
-    // ineg x3, x2
+    // ineg x3, x1
     {
         decInstr.opcode = VM::InstructionType::INEG;
-        decInstr.rd = static_cast<VM::RegisterType>(3);
-        decInstr.rs1 = static_cast<VM::RegisterType>(2);
+        decInstr.rd = VM::RegisterType::X3;
+        decInstr.rs1 = VM::RegisterType::X1;
 
         coder.encodeInstruction(decInstr, encInstr);
         outProg.instructions.push_back(encInstr);
@@ -51,8 +40,8 @@ static bool makeTestFirst(Common::Program& outProg) {
     // stored x1, x3, 0
     {
         decInstr.opcode = VM::InstructionType::STORED;
-        decInstr.rs1 = static_cast<VM::RegisterType>(1);
-        decInstr.rs2 = static_cast<VM::RegisterType>(3);
+        decInstr.rs1 = VM::RegisterType::X1;
+        decInstr.rs2 = VM::RegisterType::X3;
         decInstr.imm = 0;
 
         coder.encodeInstruction(decInstr, encInstr);
@@ -63,13 +52,13 @@ static bool makeTestFirst(Common::Program& outProg) {
     {
         decInstr.opcode = VM::InstructionType::INTRINSIC;
         decInstr.intrinType = VM::IntrinsicType::INTRINSIC_IPRINT;
-        decInstr.rs1 = static_cast<VM::RegisterType>(1);
+        decInstr.rs1 = VM::RegisterType::X1;
 
         coder.encodeInstruction(decInstr, encInstr);
         outProg.instructions.push_back(encInstr);
     }
 
-    // return
+    // ret
     {
         decInstr.opcode = VM::InstructionType::RET;
 
