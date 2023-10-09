@@ -1,20 +1,33 @@
-INTRINSIC x1, SCAN_F    ; a
-INTRINSIC x2, SCAN_F    ; b
-INTRINSIC x3, SCAN_F    ; c
+IMVI x4, 4000
+INTRINSIC x4, FSCAN
+LOADW x1, x4, 0         ; a
 
-MULF x4, x1, x3         ; a*c
-MULIF x4, x4, 4         ; 4*a*c
-MULF x5, x2, x2         ; b*b
-SUBF x4, x5, x4         ; D = b*b - 4*a*c
-SQRTF x4, x4            ; sqrt(D)
-MULIF x6, x1, -2        ; -2 * a
-DIVF x4, x4, x6         ; sqrt(D) / (-2 * a)
+IMVI x4, 4004
+INTRINSIC x4, FSCAN
+LOADW x2, x4, 0         ; b
 
-DIVF x5, x2, x6         ; b / (-2 * a)
+IMVI x4, 4008
+INTRINSIC x4, FSCAN
+LOADW x3, x4, 0         ; c
 
-SUBF x6, x5, x4         ; x_1
-INTRINSIC x6, PRINT_F   ; print x_1
+FMUL x4, x1, x3         ; a*c
+FMULI x4, x4, 4         ; 4*a*c
+FMUL x5, x2, x2         ; b*b
+FSUB x4, x5, x4         ; D = b*b - 4*a*c
+FSQRT x4, x4            ; sqrt(D)
+FMULI x6, x1, -2        ; -2 * a
+FDIV x4, x4, x6         ; sqrt(D) / (-2 * a)
 
-ADDF x6, x5, x4         ; x_2
+FDIV x5, x2, x6         ; b / (-2 * a)
 
-INTRINSIC x6, PRINT_F   ; print x_2
+FSUB x6, x5, x4         ; x_1
+
+IMVI x7, 4012
+STOREW x7, x6, 0
+INTRINSIC x7, FPRINT    ; print x_1
+
+FADD x6, x5, x4         ; x_2
+
+IMVI x7, 4016
+STOREW x7, x6, 0
+INTRINSIC x7, FPRINT    ; print x_2
