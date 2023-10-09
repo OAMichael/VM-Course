@@ -6,7 +6,7 @@ set(SOURCES
     Decoder.cpp
 )
 
-add_library(${LIB_NAME} ${SOURCES})
+add_library(${LIB_NAME} STATIC ${SOURCES})
 
 set(EXEC VirtualMachine)
 
