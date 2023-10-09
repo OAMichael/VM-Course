@@ -19,4 +19,8 @@ bool VirtualMachine::loadProgram(const Common::Program& program) {
     return true;
 }
 
+const Register VirtualMachine::getRegisterValue(RegisterType reg) const {
+    return m_regfile[reg];
+}
+
 }   // VM

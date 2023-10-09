@@ -34,6 +34,7 @@ public:
     bool loadProgram(const Common::Program& program);
     bool loadProgram(const std::string& filename);
     bool run();
+    const Register getRegisterValue(RegisterType reg) const; // for check only not use
 
     VirtualMachine() : m_interpreter{this} {};
 
