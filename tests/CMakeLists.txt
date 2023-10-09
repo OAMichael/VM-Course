@@ -1,7 +1,7 @@
 add_custom_target(run_all_tests)
 
 set(TESTS
-    square
+    square_eq
     arithmetic
 )
 
