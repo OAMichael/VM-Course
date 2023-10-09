@@ -122,8 +122,12 @@ void Decoder::decodeInstruction(const EncodedInstruction encInstr, DecodedInstru
         // instr rs1, rs2, imm
         case InstructionType::BEQ:
         case InstructionType::BNE:
-        case InstructionType::BLT:
-        case InstructionType::BGE:
+        case InstructionType::IBLT:
+        case InstructionType::IBGE:
+        case InstructionType::FBLT:
+        case InstructionType::FBGE:
+        case InstructionType::DBLT:
+        case InstructionType::DBGE:
         {
             decInstr.imm = getPartialBitsShifted<63, 32>(encInstr);
             decInstr.rs2 = static_cast<RegisterType>(getPartialBitsShifted<17, 13>(encInstr));
@@ -179,7 +183,7 @@ void Decoder::decodeInstruction(const EncodedInstruction encInstr, DecodedInstru
         {
             decInstr.rs1 = static_cast<RegisterType>(getPartialBitsShifted<20, 16>(encInstr));
             decInstr.intrinType = getIntrinsicType(encInstr);
-            decInstr.opcode = InstructionType::INTRINSIC;
+            decInstr.opcode = opcode;
             break;
         }
 
@@ -190,6 +194,15 @@ void Decoder::decodeInstruction(const EncodedInstruction encInstr, DecodedInstru
         case InstructionType::FRET:
         case InstructionType::DRET:
         {
+            decInstr.opcode = opcode;
+            break;
+        }
+
+        // ==================== Jumps ================== //
+        // instr imm
+        case InstructionType::JMP:
+        {
+            decInstr.imm = getPartialBitsShifted<63, 32>(encInstr);
             decInstr.opcode = opcode;
             break;
         }
@@ -317,8 +330,12 @@ void Decoder::encodeInstruction(const DecodedInstruction& decInstr, EncodedInstr
         // instr rs1, rs2, imm
         case InstructionType::BEQ:
         case InstructionType::BNE:
-        case InstructionType::BLT:
-        case InstructionType::BGE:
+        case InstructionType::IBLT:
+        case InstructionType::IBGE:
+        case InstructionType::FBLT:
+        case InstructionType::FBGE:
+        case InstructionType::DBLT:
+        case InstructionType::DBGE:
         {
             encInstr =
                 makePartialBits<63, 32>(decInstr.imm)
@@ -395,6 +412,17 @@ void Decoder::encodeInstruction(const DecodedInstruction& decInstr, EncodedInstr
         {
             encInstr = makePartialBits<7, 0>(decInstr.opcode);
             break;
+        }
+
+        // ==================== Jumps ================== //
+        // instr imm
+        case InstructionType::JMP:
+        {
+            encInstr =
+                makePartialBits<63, 32>(decInstr.imm)
+                | makePartialBits<7, 0>(decInstr.opcode);
+
+                break;
         }
         default: {
             encInstr = makePartialBits<7, 0>(InstructionType::INSTRUCTION_INVALID);

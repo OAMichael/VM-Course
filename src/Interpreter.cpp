@@ -31,7 +31,7 @@ bool Interpreter::interpret(const uint64_t entry) {
         &&FSQRTI, &&FSINI, &&FCOSI, &&FTANI, &&DSQRTI, &&DSINI, &&DCOSI, &&DTANI,
         &&INEGI, &&IMVI, &&FNEGI, &&FMVI, &&DNEGI, &&DMVI,
 
-        &&BEQ, &&BNE, &&BLT, &&BGE,
+        &&BEQ, &&BNE, &&IBLT, &&IBGE, &&FBLT, &&FBGE, &&DBLT, &&DBGE,
 
         &&LOADB, &&LOADH, &&LOADW, &&LOADD,
 
@@ -40,6 +40,8 @@ bool Interpreter::interpret(const uint64_t entry) {
         &&I2F, &&I2D, &&F2I, &&F2D, &&D2I, &&D2F,
 
         &&RET, &&IRET, &&FRET, &&DRET,
+
+        &&JMP,
 
         &&INITRINSIC,
     };
@@ -58,8 +60,7 @@ bool Interpreter::interpret(const uint64_t entry) {
 
 
     INSTRUCTION_INVALID:
-        return false;
-
+        throw std::runtime_error("got invalid instruction");
 
 
     IADD:
@@ -443,30 +444,60 @@ bool Interpreter::interpret(const uint64_t entry) {
     BEQ:
         m_decoder.decodeInstruction(*currInstr, decInstr);
         if (regfile[decInstr.rs1].s_val == regfile[decInstr.rs2].s_val)
-            pc += decInstr.imm;
+            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
 
         DISPATCH()
 
     BNE:
         m_decoder.decodeInstruction(*currInstr, decInstr);
         if (regfile[decInstr.rs1].s_val != regfile[decInstr.rs2].s_val)
-            pc += decInstr.imm;
+            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
 
         DISPATCH()
 
-    BLT:
+    IBLT:
         m_decoder.decodeInstruction(*currInstr, decInstr);
         if (regfile[decInstr.rs1].s_val < regfile[decInstr.rs2].s_val)
-            pc += decInstr.imm;
+            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
 
         DISPATCH()
 
-    BGE:
+    IBGE:
         m_decoder.decodeInstruction(*currInstr, decInstr);
         if (regfile[decInstr.rs1].s_val >= regfile[decInstr.rs2].s_val)
-            pc += decInstr.imm;
+            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
 
         DISPATCH()
+
+    FBLT:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        if (regfile[decInstr.rs1].f_val < regfile[decInstr.rs2].f_val)
+            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
+
+        DISPATCH()
+
+    FBGE:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        if (regfile[decInstr.rs1].f_val >= regfile[decInstr.rs2].f_val)
+            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
+
+        DISPATCH()
+
+
+    DBLT:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        if (regfile[decInstr.rs1].d_val < regfile[decInstr.rs2].d_val)
+            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
+
+        DISPATCH()
+
+    DBGE:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        if (regfile[decInstr.rs1].d_val >= regfile[decInstr.rs2].d_val)
+            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
+
+        DISPATCH()
+
 
     LOADB:
         m_decoder.decodeInstruction(*currInstr, decInstr);
@@ -593,6 +624,11 @@ bool Interpreter::interpret(const uint64_t entry) {
         return true;
         DISPATCH()
 
+    JMP:
+        m_decoder.decodeInstruction(*currInstr, decInstr);
+        pc += decInstr.imm - INSTRUCTION_BYTESIZE;
+
+        DISPATCH()
 
     INITRINSIC:
 

@@ -137,8 +137,15 @@ enum InstructionType : uint8_t {
 // Branching
     BEQ,
     BNE,
-    BLT,
-    BGE,
+
+    IBLT,
+    IBGE,
+
+    FBLT,
+    FBGE,
+
+    DBLT,
+    DBGE,
 
 // Load
     LOADB,
@@ -165,6 +172,9 @@ enum InstructionType : uint8_t {
     IRET,
     FRET,
     DRET,
+
+// Jumps
+    JMP,
 
 // Intrinsics
     INTRINSIC,
