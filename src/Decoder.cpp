@@ -193,6 +193,10 @@ void Decoder::decodeInstruction(const EncodedInstruction encInstr, DecodedInstru
             decInstr.opcode = opcode;
             break;
         }
+        default: {
+            decInstr.opcode = InstructionType::INSTRUCTION_INVALID;
+            break;
+        }
     }
 }
 
@@ -390,6 +394,10 @@ void Decoder::encodeInstruction(const DecodedInstruction& decInstr, EncodedInstr
         case InstructionType::DRET:
         {
             encInstr = makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+        default: {
+            encInstr = makePartialBits<7, 0>(InstructionType::INSTRUCTION_INVALID);
             break;
         }
     }
