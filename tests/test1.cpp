@@ -17,19 +17,19 @@ static bool makeTestFirst(Common::Program& outProg) {
     VM::EncodedInstruction encInstr;
     VM::DecodedInstruction decInstr;
 
-    // mvi x1, 4
+    // imvi x1, 7
     {
-        decInstr.opcode = VM::InstructionType::MVI;
+        decInstr.opcode = VM::InstructionType::IMVI;
         decInstr.rd = static_cast<VM::RegisterType>(1);
-        decInstr.imm = 4;
+        decInstr.imm = 7;
 
         coder.encodeInstruction(decInstr, encInstr);
         outProg.instructions.push_back(encInstr);
     }
 
-    // ld x2, x1, 0
+    // loadd x2, x1, 0
     {
-        decInstr.opcode = VM::InstructionType::LD;
+        decInstr.opcode = VM::InstructionType::LOADD;
         decInstr.rd = static_cast<VM::RegisterType>(2);
         decInstr.rs1 = static_cast<VM::RegisterType>(1);
         decInstr.imm = 0;
@@ -38,9 +38,9 @@ static bool makeTestFirst(Common::Program& outProg) {
         outProg.instructions.push_back(encInstr);
     }
 
-    // neg x3, x2
+    // ineg x3, x2
     {
-        decInstr.opcode = VM::InstructionType::NEG;
+        decInstr.opcode = VM::InstructionType::INEG;
         decInstr.rd = static_cast<VM::RegisterType>(3);
         decInstr.rs1 = static_cast<VM::RegisterType>(2);
 
@@ -48,11 +48,12 @@ static bool makeTestFirst(Common::Program& outProg) {
         outProg.instructions.push_back(encInstr);
     }
 
-    // sd x1, x3, 0
+    // stored x1, x3, 0
     {
-        decInstr.opcode = VM::InstructionType::SD;
+        decInstr.opcode = VM::InstructionType::STORED;
         decInstr.rs1 = static_cast<VM::RegisterType>(1);
         decInstr.rs2 = static_cast<VM::RegisterType>(3);
+        decInstr.imm = 0;
 
         coder.encodeInstruction(decInstr, encInstr);
         outProg.instructions.push_back(encInstr);

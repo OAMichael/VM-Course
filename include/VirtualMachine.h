@@ -26,7 +26,7 @@ private:
 
     // Virtual machine state
     uint64_t m_pc = 0;
-    RegValue m_regfile[RegisterType::REGISTER_COUNT] = {};
+    Register m_regfile[RegisterType::REGISTER_COUNT] = {};
     uint8_t m_memory[VM_MEMORY_BYTESIZE] = {};
 
 public:

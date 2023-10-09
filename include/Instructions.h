@@ -6,6 +6,8 @@
 
 namespace VM {
 
+static constexpr const uint32_t INSTRUCTION_BYTESIZE = 8;
+
 enum RegisterType : uint8_t {
     X0 = 0,
     X1,
@@ -40,7 +42,9 @@ enum RegisterType : uint8_t {
     X30,
     X31,
 
-    REGISTER_COUNT
+    REGISTER_COUNT,
+
+    ACCU = X11
 };
 
 
@@ -49,36 +53,86 @@ enum InstructionType : uint8_t {
     INSTRUCTION_INVALID = 0,
 
 // Arithmetic
-    ADD,
-    SUB,
+    IADD,
+    ISUB,
+    IMUL,
+    IDIV,
+
+    FADD,
+    FSUB,
+    FMUL,
+    FDIV,
+
+    DADD,
+    DSUB,
+    DMUL,
+    DDIV,
+
     AND,
     OR,
     XOR,
     SL,
     SR,
-    SQRT,
-    SIN,
-    COS,
-    TAN,
-    COT,
-    NEG,
-    MV,
+    
+    FSQRT,
+    FSIN,
+    FCOS,
+    FTAN,
+
+    DSQRT,
+    DSIN,
+    DCOS,
+    DTAN,
+    
+    INEG,
+    IMV,
+
+    FNEG,
+    FMV,
+
+    DNEG,
+    DMV,
 
 // Arithmetic immediate
-    ADDI,
-    SUBI,
+    IADDI,
+    ISUBI,
+    IMULI,
+    IDIVI,
+
+    FADDI,
+    FSUBI,
+    FMULI,
+    FDIVI,
+
+    DADDI,
+    DSUBI,
+    DMULI,
+    DDIVI,
+
     ANDI,
     ORI,
     XORI,
     SLI,
     SRI,
-    SQRTI,
-    SINI,
-    COSI,
-    TANI,
-    COTI,
-    NEGI,
-    MVI,
+
+    FSQRTI,
+    FSINI,
+    FCOSI,
+    FTANI,
+
+    DSQRTI,
+    DSINI,
+    DCOSI,
+    DTANI,
+    
+    INEGI,
+    IMVI,
+
+    FNEGI,
+    FMVI,
+
+    DNEGI,
+    DMVI,
 
 // Branching
     BEQ,
@@ -87,33 +141,30 @@ enum InstructionType : uint8_t {
     BGE,
 
 // Load
-    LB,
-    LH,
-    LW,
-    LD,
+    LOADB,
+    LOADH,
+    LOADW,
+    LOADD,
 
 // Store
-    SB,
-    SH,
-    SW,
-    SD,
+    STOREB,
+    STOREH,
+    STOREW,
+    STORED,
 
 // Casts
     I2F,
     I2D,
-    I2L,
     F2I,
     F2D,
-    F2L,
     D2I,
     D2F,
-    D2L,
-    L2I,
-    L2F,
-    L2D,
 
 // Return
     RET,
+    IRET,
+    FRET,
+    DRET,
 
 // Intrinsics
     INTRINSIC,
@@ -143,10 +194,17 @@ using Half  = uint16_t;
 using Word  = uint32_t;
 using DWord = uint64_t;
 
-using RegValue = uint64_t;
-using SignedRegValue = int64_t;
+using UnsignedRegValue = uint64_t;
+using SignedRegValue   = int64_t;
 
-using EncodedInstruction = uint32_t;
+union Register {
+    uint64_t u_val;
+    int64_t  s_val;
+    double   d_val;
+    float    f_val;
+};
+
+using EncodedInstruction = uint64_t;
 
 struct DecodedInstruction {
     RegisterType rd, rs1, rs2;
@@ -156,6 +214,9 @@ struct DecodedInstruction {
     union {
         uint32_t imm = 0;
         uint32_t shamt;
+
+        float fpimm;
+
         IntrinsicType intrinType;
     };
 };
