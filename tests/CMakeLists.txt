@@ -2,6 +2,7 @@ add_custom_target(run_all_tests)
 
 set(TESTS
     square
+    arithmetic
 )
 
 foreach(EXEC IN LISTS TESTS)
