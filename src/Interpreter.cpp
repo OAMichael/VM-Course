@@ -267,28 +267,28 @@ bool Interpreter::interpret(const uint64_t entry) {
 
     IADDI:
         m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val + decInstr.imm;
+        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val + decInstr.s_imm;
 
         DISPATCH()
 
     ISUBI:
         m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val - decInstr.imm;
+        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val - decInstr.s_imm;
 
         DISPATCH()
 
     IMULI:
         m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val * decInstr.imm;
+        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val * decInstr.s_imm;
 
         DISPATCH()
 
     IDIVI:
         m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (decInstr.imm == 0) {
+        if (decInstr.s_imm == 0) {
             throw std::runtime_error("division by zero");
         }
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val / decInstr.imm;
+        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val / decInstr.s_imm;
 
         DISPATCH()
 
@@ -410,13 +410,13 @@ bool Interpreter::interpret(const uint64_t entry) {
 
     INEGI:
         m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].s_val = -decInstr.imm;
+        regfile[decInstr.rd].s_val = -decInstr.s_imm;
 
         DISPATCH()
 
     IMVI:
         m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].s_val = decInstr.imm;
+        regfile[decInstr.rd].s_val = decInstr.s_imm;
 
         DISPATCH()
 

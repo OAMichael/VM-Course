@@ -225,6 +225,7 @@ struct DecodedInstruction {
         uint32_t imm = 0;
         uint32_t shamt;
 
+        int32_t s_imm;
         float fpimm;
 
         IntrinsicType intrinType;

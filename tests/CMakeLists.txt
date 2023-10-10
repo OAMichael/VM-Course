@@ -3,6 +3,7 @@ add_custom_target(run_all_tests)
 set(TESTS
     square_eq
     arithmetic
+    branching
 )
 
 foreach(EXEC IN LISTS TESTS)
