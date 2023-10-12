@@ -19,6 +19,14 @@ bool VirtualMachine::loadProgram(const Common::Program& program) {
     return true;
 }
 
+bool VirtualMachine::loadProgram(const std::string& filename) {
+    Common::Program program;
+    if (!deserializeProgram(filename, program)) {
+        return false;
+    }
+    return loadProgram(program);
+}
+
 const Register VirtualMachine::getRegisterValue(RegisterType reg) const {
     return m_regfile[reg];
 }

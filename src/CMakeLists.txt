@@ -30,3 +30,7 @@ else()
         VERBATIM
     )
 endif()
+
+
+set(ASM_2_BIN Asm2Bin)
+add_executable(${ASM_2_BIN} Parser.cpp Asm2Bin.cpp Decoder.cpp)

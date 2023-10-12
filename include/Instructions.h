@@ -2,7 +2,7 @@
 #define INSTRUCTIONS_H
 
 #include <cstdint>
-
+#include <unordered_map>
 
 namespace VM {
 
@@ -184,6 +184,103 @@ enum InstructionType : uint8_t {
 };
 
 
+
+static const std::unordered_map<std::string, InstructionType> instructionsNameOpcode = {
+
+    { "INSTRUCTION_INVALID",    InstructionType::INSTRUCTION_INVALID },
+    { "IADD",                   InstructionType::IADD                },
+    { "ISUB",                   InstructionType::ISUB                },
+    { "IMUL",                   InstructionType::IMUL                },
+    { "IDIV",                   InstructionType::IDIV                },
+    { "FADD",                   InstructionType::FADD                },
+    { "FSUB",                   InstructionType::FSUB                },
+    { "FMUL",                   InstructionType::FMUL                },
+    { "FDIV",                   InstructionType::FDIV                },
+    { "DADD",                   InstructionType::DADD                },
+    { "DSUB",                   InstructionType::DSUB                },
+    { "DMUL",                   InstructionType::DMUL                },
+    { "DDIV",                   InstructionType::DDIV                },
+    { "AND",                    InstructionType::AND                 },
+    { "OR",                     InstructionType::OR                  },
+    { "XOR",                    InstructionType::XOR                 },
+    { "SL",                     InstructionType::SL                  },
+    { "SR",                     InstructionType::SR                  },
+    { "FSQRT",                  InstructionType::FSQRT               },
+    { "FSIN",                   InstructionType::FSIN                },
+    { "FCOS",                   InstructionType::FCOS                },
+    { "FTAN",                   InstructionType::FTAN                },
+    { "DSQRT",                  InstructionType::DSQRT               },
+    { "DSIN",                   InstructionType::DSIN                },
+    { "DCOS",                   InstructionType::DCOS                },
+    { "DTAN",                   InstructionType::DTAN                },
+    { "INEG",                   InstructionType::INEG                },
+    { "IMV",                    InstructionType::IMV                 },
+    { "FNEG",                   InstructionType::FNEG                },
+    { "FMV",                    InstructionType::FMV                 },
+    { "DNEG",                   InstructionType::DNEG                },
+    { "DMV",                    InstructionType::DMV                 },
+    { "IADDI",                  InstructionType::IADDI               },
+    { "ISUBI",                  InstructionType::ISUBI               },
+    { "IMULI",                  InstructionType::IMULI               },
+    { "IDIVI",                  InstructionType::IDIVI               },
+    { "FADDI",                  InstructionType::FADDI               },
+    { "FSUBI",                  InstructionType::FSUBI               },
+    { "FMULI",                  InstructionType::FMULI               },
+    { "FDIVI",                  InstructionType::FDIVI               },
+    { "DADDI",                  InstructionType::DADDI               },
+    { "DSUBI",                  InstructionType::DSUBI               },
+    { "DMULI",                  InstructionType::DMULI               },
+    { "DDIVI",                  InstructionType::DDIVI               },
+    { "ANDI",                   InstructionType::ANDI                },
+    { "ORI",                    InstructionType::ORI                 },
+    { "XORI",                   InstructionType::XORI                },
+    { "SLI",                    InstructionType::SLI                 },
+    { "SRI",                    InstructionType::SRI                 },
+    { "FSQRTI",                 InstructionType::FSQRTI              },
+    { "FSINI",                  InstructionType::FSINI               },
+    { "FCOSI",                  InstructionType::FCOSI               },
+    { "FTANI",                  InstructionType::FTANI               },
+    { "DSQRTI",                 InstructionType::DSQRTI              },
+    { "DSINI",                  InstructionType::DSINI               },
+    { "DCOSI",                  InstructionType::DCOSI               },
+    { "DTANI",                  InstructionType::DTANI               },
+    { "INEGI",                  InstructionType::INEGI               },
+    { "IMVI",                   InstructionType::IMVI                },
+    { "FNEGI",                  InstructionType::FNEGI               },
+    { "FMVI",                   InstructionType::FMVI                },
+    { "DNEGI",                  InstructionType::DNEGI               },
+    { "DMVI",                   InstructionType::DMVI                },
+    { "BEQ",                    InstructionType::BEQ                 },
+    { "BNE",                    InstructionType::BNE                 },
+    { "IBLT",                   InstructionType::IBLT                },
+    { "IBGE",                   InstructionType::IBGE                },
+    { "FBLT",                   InstructionType::FBLT                },
+    { "FBGE",                   InstructionType::FBGE                },
+    { "DBLT",                   InstructionType::DBLT                },
+    { "DBGE",                   InstructionType::DBGE                },
+    { "LOADB",                  InstructionType::LOADB               },
+    { "LOADH",                  InstructionType::LOADH               },
+    { "LOADW",                  InstructionType::LOADW               },
+    { "LOADD",                  InstructionType::LOADD               },
+    { "STOREB",                 InstructionType::STOREB              },
+    { "STOREH",                 InstructionType::STOREH              },
+    { "STOREW",                 InstructionType::STOREW              },
+    { "STORED",                 InstructionType::STORED              },
+    { "I2F",                    InstructionType::I2F                 },
+    { "I2D",                    InstructionType::I2D                 },
+    { "F2I",                    InstructionType::F2I                 },
+    { "F2D",                    InstructionType::F2D                 },
+    { "D2I",                    InstructionType::D2I                 },
+    { "D2F",                    InstructionType::D2F                 },
+    { "RET",                    InstructionType::RET                 },
+    { "IRET",                   InstructionType::IRET                },
+    { "FRET",                   InstructionType::FRET                },
+    { "DRET",                   InstructionType::DRET                },
+    { "JMP",                    InstructionType::JMP                 },
+    { "INTRINSIC",              InstructionType::INTRINSIC           }
+};
+
+
 enum IntrinsicType : uint8_t {
     INTRINSIC_INVALID = 0,
 
@@ -193,10 +290,19 @@ enum IntrinsicType : uint8_t {
     INTRINSIC_FPRINT,
     INTRINSIC_DSCAN,
     INTRINSIC_DPRINT,
-    INTRINSIC_LSCAN,
-    INTRINSIC_LPRINT,
 
     INTRINSIC_COUNT
+};
+
+static const std::unordered_map<std::string, IntrinsicType> intrinsicsNameType = {
+    { "INTRINSIC_INVALID",  INTRINSIC_INVALID },
+
+    { "INTRINSIC_ISCAN",    INTRINSIC_ISCAN   },
+    { "INTRINSIC_IPRINT",   INTRINSIC_IPRINT  },
+    { "INTRINSIC_FSCAN",    INTRINSIC_FSCAN   },
+    { "INTRINSIC_FPRINT",   INTRINSIC_FPRINT  },
+    { "INTRINSIC_DSCAN",    INTRINSIC_DSCAN   },
+    { "INTRINSIC_DPRINT",   INTRINSIC_DPRINT  }
 };
 
 using Byte  = uint8_t;
