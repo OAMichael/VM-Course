@@ -17,12 +17,13 @@ int main(int argc, char* argv[]) {
     Common::Program program;
     std::vector<VM::DecodedInstruction> decInstructions; 
 
-    try {
-        parser.parseAsmProgram(argv[1], decInstructions);
-    }
-    catch(const std::runtime_error& e) {
-        std::cerr << "Errors occured during parsing " << argv[1] << ": " << e.what() << std::endl;
+    if (!parser.parseAsmProgram(argv[1], decInstructions)) {
+        std::cerr << "Could not parse the file" << std::endl;
         return -1;
+    }
+
+    if (decInstructions.empty()) {
+        std::cout << "Warn: program is empty" << std::endl;
     }
 
     for (size_t i = 0; i < decInstructions.size(); ++i) {
@@ -44,5 +45,7 @@ int main(int argc, char* argv[]) {
         outFilename = argv[3];
 
     serializeProgram(outFilename, program);
+
+    std::cout << "Successfully translated the program: " << argv[1] << std::endl;
     return 0;
 }

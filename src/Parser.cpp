@@ -27,12 +27,16 @@ static inline VM::IntrinsicType getIntrinsicFromStr(const std::string& str) {
 }
 
 
-void Parser::parseAsmProgram(const std::string& filename, std::vector<VM::DecodedInstruction>& decInstructions) const {
+bool Parser::parseAsmProgram(const std::string& filename, std::vector<VM::DecodedInstruction>& decInstructions) const {
 
     std::ifstream file;
     file.open(filename);
 
-    if (file.is_open()) {
+    try {
+        if (!file.is_open()) {
+            throw std::runtime_error("could not open the file");
+        }
+
         std::string line;
         while (std::getline(file, line)) {
             std::string opcodeStr      = "";
@@ -267,8 +271,14 @@ void Parser::parseAsmProgram(const std::string& filename, std::vector<VM::Decode
 
             decInstructions.push_back(decInstr);
         }
-        file.close();
     }
+    catch(const std::runtime_error& e) {
+        std::cerr << "Errors occured during parsing " << filename << ": " << e.what() << std::endl;
+        file.close();
+        return false;
+    }
+    file.close();
+    return true;
 }
 
 }   // Common

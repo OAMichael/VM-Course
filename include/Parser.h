@@ -14,7 +14,7 @@ class Parser {
 private:
 
 public:
-    void parseAsmProgram(const std::string& filename, std::vector<VM::DecodedInstruction>& decInstructions) const;
+    bool parseAsmProgram(const std::string& filename, std::vector<VM::DecodedInstruction>& decInstructions) const;
 };
 
 }   // Common
