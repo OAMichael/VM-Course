@@ -1,12 +1,115 @@
 ---
-not done yet: full list instructions and codegen i hope
-will be updated: later...
+# both borders included
+plan:
+	- update for 32 and 64 support
+
+fields:
+	opcode: 
+		name: opcode
+		location: {bits: [{msb: 6, lsb: 0, from: 6, to: 0}], mask: 127, dbg_hex_mask: 7f}
+	r1:
+		name: r1
+		location: {bits: [{msb: 11, lsb: 7, from: 4, to: 0}], mask: 63488, dbg_hex_mask: f80}
+	r2:
+		name: r2
+		location: {bits: [{msb: 16, lsb: 12, from: 4, to: 0}], mask: 126976, dbg_hex_mask: 1f000}
+	immm16:
+		name: imm16
+		location: {bits: [{msb: 22, lsb: 7, from: 15, to: 0}], mask: 4194176, dbg_hex_mask: 3fff80}
+	offset:
+		name: offset
+		location: {bits: [{msb: 27, lsb: 12, from: 15, to: 0}], mask: 268431360, dbg_hex_mask: ffff000}
+
 instructions:
-	ArithmeticI:
-		bytes:
-			-  
-		instr:
-			- ADD
-			- SUB
-			- AND
-			- OR
+	$1:
+		name: loadAcc
+		fields: [opcode, r1]
+		implAcc: write
+	$2:
+		name: storeAcc
+		fields: [opcode, r1]
+		implAcc: read
+	$3:
+		name: loadAccImm
+		fields: [opcode, immm16]
+		implAcc: write
+	$4:
+		name: storeAccImm
+		fields: [opcode, imm16]
+		implAcc: write
+	$5:
+		name: toFloatReg
+		fields: [opcode, r1]
+		implAcc: none
+	$6:
+		name: toIntReg
+		fields: [opcode, r1]
+		implAcc: none
+	$7:
+		name: toFloat
+		fields: [opcode]
+		implAcc: readwrite
+	$8:
+		name: toInt
+		fields: [opcode]
+		implAcc: readwrite
+	$9:
+		name: mov
+		fields: [opcode, r1, r2]
+		implAcc: none
+	$10:
+		name: loadAccMem
+		fields: [opcode, r1, offset]
+		implAcc: write
+	$11:
+		name: storeAccMem
+		fields: [opcode, r1, offset]
+		implAcc: read
+	$12:
+		name: add
+		fields: [opcode, r1]
+		implAcc: readwrite
+	$13:
+		name: sub
+		fields: [opcode, r1]
+		implAcc: readwrite
+	$14:
+		name: mul
+		fields: [opcode, r1]
+		implAcc: readwrite
+	$15:
+		name: div
+		fields: [opcode, r1]
+		implAcc: readwrite
+	$16:
+		name: addf
+		fields: [opcode, r1]
+		implAcc: readwrite
+	$17:
+		name: subf
+		fields: [opcode, r1]
+		implAcc: readwrite
+	$18:
+		name: mulf
+		fields: [opcode, r1]
+		implAcc: readwrite
+	$19:
+		name: divf
+		fields: [opcode, r1]
+		implAcc: readwrite
+	$20:
+		name: sin
+		fields: [opcode]
+		implAcc: readwrite
+	$21:
+		name: cos
+		fields: [opcode]
+		implAcc: readwrite
+	$22:
+		name: sqrt
+		fields: [opcode]
+		implAcc: readwrite
+	$23:
+		name: callIntr
+		fields: [opcode, imm16]
+		implAcc: none
