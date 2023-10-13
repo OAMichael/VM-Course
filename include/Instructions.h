@@ -10,7 +10,8 @@ namespace VM {
 static constexpr const uint32_t INSTRUCTION_BYTESIZE = 8;
 
 enum RegisterType : uint8_t {
-    X0 = 0,
+    ACC = 0,
+    X0,
     X1,
     X2,
     X3,
@@ -43,9 +44,7 @@ enum RegisterType : uint8_t {
     X30,
     X31,
 
-    REGISTER_COUNT,
-
-    ACCU = X11
+    REGISTER_COUNT
 };
 
 

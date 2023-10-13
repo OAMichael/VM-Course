@@ -11,7 +11,7 @@
 
 namespace Common {
 
-static constexpr const char* programHeaderMessage = "bibaboba";
+static constexpr const char programHeaderMessage[] = "bibaboba";
 
 struct Program {
     uint64_t entryPoint;
@@ -20,7 +20,7 @@ struct Program {
 
 
 struct ProgramHeader {
-    uint8_t p_message[sizeof(programHeaderMessage)];
+    uint8_t p_message[sizeof(programHeaderMessage) - 1];    // because we don't want \0
     uint64_t p_entry;
 };
 

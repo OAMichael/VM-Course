@@ -8,29 +8,5 @@ set(SOURCES
 
 add_library(${LIB_NAME} STATIC ${SOURCES})
 
-set(EXEC VirtualMachine)
-
-add_executable(${EXEC} main.cpp)
-target_link_libraries(${EXEC} PUBLIC ${LIB_NAME})
-
-if (WIN32)
-    add_custom_target(run
-        DEPENDS ${EXEC}
-        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${EXEC}.exe
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "run main"
-        VERBATIM
-    )
-else()
-    add_custom_target(run
-        DEPENDS ${EXEC}
-        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${EXEC}
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "run main"
-        VERBATIM
-    )
-endif()
-
-
 set(ASM_2_BIN Asm2Bin)
 add_executable(${ASM_2_BIN} Parser.cpp Asm2Bin.cpp Decoder.cpp)

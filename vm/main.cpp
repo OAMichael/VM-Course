@@ -5,7 +5,7 @@
 
 int main(int argc, char* argv[]) {
 
-    std::string programFile = "../../asm/main.prog";
+    std::string programFile = "../asm/main.prog";
     Common::Program program;
 
     if (argc > 1) {
