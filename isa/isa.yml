@@ -1,24 +1,19 @@
 ---
 # both borders included
-plan:
-  - update for 32 and 64 support
 
 fields:
   opcode: 
     name: opcode
-    location: {bits: [{msb: 6, lsb: 0, from: 6, to: 0}], mask: 127, dbg_hex_mask: 7f}
+    location: {bits: [{msb: 7, lsb: 0, from: 7, to: 0}], mask: 255, dbg_hex_mask: ff}
   r1:
     name: r1
-    location: {bits: [{msb: 11, lsb: 7, from: 4, to: 0}], mask: 63488, dbg_hex_mask: f80}
+    location: {bits: [{msb: 15, lsb: 8, from: 7, to: 0}], mask: 65280, dbg_hex_mask: ff00}
   r2:
     name: r2
-    location: {bits: [{msb: 16, lsb: 12, from: 4, to: 0}], mask: 126976, dbg_hex_mask: 1f000}
-  immm16:
-    name: imm16
-    location: {bits: [{msb: 22, lsb: 7, from: 15, to: 0}], mask: 4194176, dbg_hex_mask: 3fff80}
-  offset:
-    name: offset
-    location: {bits: [{msb: 27, lsb: 12, from: 15, to: 0}], mask: 268431360, dbg_hex_mask: ffff000}
+    location: {bits: [{msb: 23, lsb: 16, from: 7, to: 0}], mask: 16711680, dbg_hex_mask: ff0000}
+  immm:
+    name: imm
+    location: {bits: [{msb: 31, lsb: 16, from: 15, to: 0}], mask: 4278190080, dbg_hex_mask: ffff0000}
 
 instructions:
   $1:
@@ -31,11 +26,11 @@ instructions:
     implAcc: read
   $3:
     name: loadAccImm
-    fields: [opcode, immm16]
+    fields: [opcode, imm]
     implAcc: write
   $4:
     name: storeAccImm
-    fields: [opcode, imm16]
+    fields: [opcode, imm]
     implAcc: write
   $5:
     name: toFloatReg
@@ -111,5 +106,30 @@ instructions:
     implAcc: readwrite
   $23:
     name: callIntr
-    fields: [opcode, imm16]
+    fields: [opcode, imm]
     implAcc: none
+  $24:
+    name: jump
+    fields: [opcode, imm]
+    implAcc: none         # what about acc??
+  $25:
+    name: beq
+    fields: [opcode, r1]
+    implAcc: readwrite    # what about acc??
+  $26:
+    name: bge
+    fields: [opcode, r1]
+    implAcc: readwrite    # what about acc??
+  $27:
+    name: bg
+    fields: [opcode, r1]
+    implAcc: readwrite    # what about acc??
+  $28:                    # need solution about calling convention
+    name: call
+    fields: [opcode, imm] # only immidiate or r1 too or single r1...
+    implAcc: none         # what about accumulator
+  $29:
+    name: ret
+    fields: [opcode]      # only immidiate or r1 too
+    implAcc: read         # what about accumulator
+  
