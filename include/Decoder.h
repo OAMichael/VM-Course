@@ -7,20 +7,20 @@
 namespace VM {
 
 template<int high, int low>
-static inline uint64_t getPartialBits(const EncodedInstruction val) {
-    constexpr const uint64_t mask = ((1ULL << (high - low + 1)) - 1) << low;
+static inline uint32_t getPartialBits(const EncodedInstruction val) {
+    constexpr const uint32_t mask = ((1ULL << (high - low + 1)) - 1) << low;
     return (val & mask);
 }
 
 template<int high, int low>
-static inline uint64_t getPartialBitsShifted(const EncodedInstruction val) {
-    constexpr const uint64_t mask = ((1ULL << (high - low + 1)) - 1) << low;
+static inline uint32_t getPartialBitsShifted(const EncodedInstruction val) {
+    constexpr const uint32_t mask = ((1ULL << (high - low + 1)) - 1) << low;
     return (val & mask) >> low;
 }
 
 template<int high, int low>
-static inline uint64_t makePartialBits(const uint64_t val) {
-    constexpr const uint64_t mask = ((1ULL << (high - low + 1)) - 1) << low;
+static inline uint32_t makePartialBits(const uint32_t val) {
+    constexpr const uint32_t mask = ((1ULL << (high - low + 1)) - 1) << low;
     return ((val << low) & mask);
 }
 

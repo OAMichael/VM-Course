@@ -1,13 +1,15 @@
-FMVI x1, 314.0f
-FMVI x2, 228.0f
+MVI x1, 314.0
+MVI x2, 228.0
 
-FSIN x4, x1             ; sin(x1)
-FCOSI x5, 1488.0f       ; cos(1488)
+LOAD_ACC x1
+SIN             		; sin(314) in acc
+MULF x2         		; 228 * sin(314) in acc
+STORE_ACC x1			; 228 * sin(314) in x1
 
-FMUL x4, x2, x4         ; 228 * sin(x1)
-FADD x4, x5, x4         ; cos(1488) + 228 * sin(x1)
+LOAD_ACCI 1488.0 		; 1488 in acc
+COS 					; cos(1488) in acc
+ADDF x1         		; cos(1488) + 228 * sin(x1) in acc
 
-IMVI x7, 4000
-STOREW x7, x4, 0
-INTRINSIC x7, FPRINT    ; print result
+CALL_INTRINSIC PRINTF   ; print result
+
 RET

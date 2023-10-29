@@ -10,47 +10,48 @@
 
 namespace VM {
 
+
+inline Immediate Interpreter::loadConstant(const ImmediateIndex idx) {
+    Immediate* constantPool = (Immediate*)(m_vm->m_memory + VM_CONSTANT_POOL_ADDRESS);
+    return constantPool[idx];
+}
+
+
 bool Interpreter::interpret(const uint64_t entry) {
+
     auto& pc = m_vm->m_pc;
     uint8_t* memory = m_vm->m_memory;
     auto& regfile = m_vm->m_regfile;
 
     EncodedInstruction* currInstr;
     DecodedInstruction decInstr;
+    Immediate imm;
 
     static void* dispatchTable[InstructionType::INSTRUCTION_COUNT] = {
         &&INSTRUCTION_INVALID,
 
-        &&IADD, &&ISUB, &&IMUL, &&IDIV, &&FADD, &&FSUB, &&FMUL, &&FDIV,
-        &&DADD, &&DSUB, &&DMUL, &&DDIV, &&AND, &&OR, &&XOR, &&SL, &&SR,
-        &&FSQRT, &&FSIN, &&FCOS, &&FTAN, &&DSQRT, &&DSIN, &&DCOS, &&DTAN,
-        &&INEG, &&IMV, &&FNEG, &&FMV, &&DNEG, &&DMV,
+        &&LOAD_ACC, &&STORE_ACC, &&LOAD_ACCI, &&LOAD_ACC_MEM, &&STORE_ACC_MEM,
 
-        &&IADDI, &&ISUBI, &&IMULI, &&IDIVI, &&FADDI, &&FSUBI, &&FMULI, &&FDIVI,
-        &&DADDI, &&DSUBI, &&DMULI, &&DDIVI, &&ANDI, &&ORI, &&XORI, &&SLI, &&SRI,
-        &&FSQRTI, &&FSINI, &&FCOSI, &&FTANI, &&DSQRTI, &&DSINI, &&DCOSI, &&DTANI,
-        &&INEGI, &&IMVI, &&FNEGI, &&FMVI, &&DNEGI, &&DMVI,
+        &&TO_FLOAT_REG, &&TO_INT_REG, &&TO_FLOAT, &&TO_INT,
 
-        &&BEQ, &&BNE, &&IBLT, &&IBGE, &&FBLT, &&FBGE, &&DBLT, &&DBGE,
+        &&ADD, &&SUB, &&MUL, &&DIV, &&AND, &&OR, &&XOR, &&SL, &&SR, &&NEG,
 
-        &&LOADB, &&LOADH, &&LOADW, &&LOADD,
+        &&ADDF, &&SUBF, &&MULF, &&DIVF, &&NEGF,
 
-        &&STOREB, &&STOREH, &&STOREW, &&STORED,
+        &&ADDI, &&SUBI, &&MULI, &&DIVI, &&ANDI, &&ORI, &&XORI, &&SLI, &&SRI,
 
-        &&I2F, &&I2D, &&F2I, &&F2D, &&D2I, &&D2F,
+        &&SIN, &&COS, &&SQRT, &&MV, &&MVI, &&CALL_INTINSIC,
 
-        &&RET, &&IRET, &&FRET, &&DRET,
-
-        &&JMP,
-
-        &&INITRINSIC,
+        &&JMP, &&BEQ, &&BNE, &&BGE, &&BLT, &&BGEF, &&BLTF, &&CALL, &&RET
     };
+
 
     #define DISPATCH()                                                      \
     {                                                                       \
         currInstr = (EncodedInstruction*)(memory + pc);                     \
         pc += INSTRUCTION_BYTESIZE;                                         \
-        goto *dispatchTable[m_decoder.getOpcode(*currInstr)];               \
+        m_decoder.decodeInstruction(*currInstr, decInstr);                  \
+        goto *dispatchTable[decInstr.opcode];                               \
     }
 
     try {
@@ -63,638 +64,353 @@ bool Interpreter::interpret(const uint64_t entry) {
         throw std::runtime_error("got invalid instruction");
 
 
-    IADD:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val + regfile[decInstr.rs2].u_val;
+    LOAD_ACC:
+
+        regfile[RegisterType::ACC] = regfile[decInstr.r1];
+        DISPATCH()
+
+    STORE_ACC:
+
+        regfile[decInstr.r1] = regfile[RegisterType::ACC];
+        DISPATCH()
+
+    LOAD_ACCI:
+
+        imm = loadConstant(decInstr.immIdx);
+        memcpy(&regfile[RegisterType::ACC], &imm.i_val, sizeof(regfile[RegisterType::ACC]));
 
         DISPATCH()
 
-    ISUB:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val - regfile[decInstr.rs2].u_val;
+    LOAD_ACC_MEM:
+
+        imm = loadConstant(decInstr.immIdx);
+        memcpy(&regfile[RegisterType::ACC], memory + decInstr.r1 + imm.i_val, sizeof(regfile[RegisterType::ACC]));
 
         DISPATCH()
 
-    IMUL:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val * regfile[decInstr.rs2].u_val;
+    STORE_ACC_MEM:
+
+        imm = loadConstant(decInstr.immIdx);
+        memcpy(memory + decInstr.r1 + imm.i_val, &regfile[RegisterType::ACC], sizeof(regfile[RegisterType::ACC]));
 
         DISPATCH()
 
-    IDIV:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs2].u_val == 0) {
+    TO_FLOAT_REG:
+
+        regfile[RegisterType::ACC].f_val = static_cast<double>(regfile[decInstr.r1].i_val);
+        DISPATCH()
+
+    TO_INT_REG:
+
+        regfile[RegisterType::ACC].i_val = static_cast<int64_t>(regfile[decInstr.r1].f_val);
+        DISPATCH()
+
+    TO_FLOAT:
+
+        regfile[RegisterType::ACC].f_val = static_cast<double>(regfile[RegisterType::ACC].i_val);
+        DISPATCH()
+
+    TO_INT:
+
+        regfile[RegisterType::ACC].i_val = static_cast<int64_t>(regfile[RegisterType::ACC].f_val);
+        DISPATCH()
+
+    ADD:
+
+        regfile[RegisterType::ACC].i_val += regfile[decInstr.r1].i_val;
+        DISPATCH()
+
+    SUB:
+
+        regfile[RegisterType::ACC].i_val -= regfile[decInstr.r1].i_val;
+        DISPATCH()
+
+    MUL:
+
+        regfile[RegisterType::ACC].i_val *= regfile[decInstr.r1].i_val;
+        DISPATCH()
+
+    DIV:
+        if (regfile[decInstr.r1].i_val == 0) {
             throw std::runtime_error("division by zero");
         }
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val / regfile[decInstr.rs2].u_val;
-
-        DISPATCH()
-
-    FADD:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = regfile[decInstr.rs1].f_val + regfile[decInstr.rs2].f_val;
-
-        DISPATCH()
-
-    FSUB:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = regfile[decInstr.rs1].f_val - regfile[decInstr.rs2].f_val;
-
-        DISPATCH()
-
-    FMUL:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = regfile[decInstr.rs1].f_val * regfile[decInstr.rs2].f_val;
-
-        DISPATCH()
-
-    FDIV:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs2].f_val == 0) {
-            throw std::runtime_error("division by zero");
-        }
-        regfile[decInstr.rd].f_val = regfile[decInstr.rs1].f_val / regfile[decInstr.rs2].f_val;
-
-        DISPATCH()
-
-    DADD:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].d_val = regfile[decInstr.rs1].d_val + regfile[decInstr.rs2].d_val;
-
-        DISPATCH()
-
-    DSUB:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].d_val = regfile[decInstr.rs1].d_val - regfile[decInstr.rs2].d_val;
-
-        DISPATCH()
-
-    DMUL:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].d_val = regfile[decInstr.rs1].d_val * regfile[decInstr.rs2].d_val;
-
-        DISPATCH()
-
-    DDIV:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs2].d_val == 0) {
-            throw std::runtime_error("division by zero");
-        }
-        regfile[decInstr.rd].d_val = regfile[decInstr.rs1].d_val / regfile[decInstr.rs2].d_val;
-
+        regfile[RegisterType::ACC].i_val /= regfile[decInstr.r1].i_val;
         DISPATCH()
 
     AND:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val & regfile[decInstr.rs2].u_val;
 
+        regfile[RegisterType::ACC].i_val &= regfile[decInstr.r1].i_val;
         DISPATCH()
 
     OR:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val | regfile[decInstr.rs2].u_val;
 
+        regfile[RegisterType::ACC].i_val |= regfile[decInstr.r1].i_val;
         DISPATCH()
 
     XOR:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val ^ regfile[decInstr.rs2].u_val;
 
+        regfile[RegisterType::ACC].i_val ^= regfile[decInstr.r1].i_val;
         DISPATCH()
 
     SL:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val << regfile[decInstr.rs2].u_val;
 
+        regfile[RegisterType::ACC].i_val << regfile[decInstr.r1].i_val;
         DISPATCH()
 
     SR:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val >> regfile[decInstr.rs2].u_val;
 
+        regfile[RegisterType::ACC].i_val >> regfile[decInstr.r1].i_val;
         DISPATCH()
 
-    FSQRT:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs2].f_val < 0) {
-            throw std::runtime_error("sqrt of negative number");
-        }
-        regfile[decInstr.rd].f_val = std::sqrt(regfile[decInstr.rs1].f_val);
+    NEG:
 
+        regfile[RegisterType::ACC].i_val = -regfile[RegisterType::ACC].i_val;
         DISPATCH()
 
-    FSIN:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = std::sin(regfile[decInstr.rs1].f_val);
+    ADDF:
 
+        regfile[RegisterType::ACC].f_val += regfile[decInstr.r1].f_val;
         DISPATCH()
 
-    FCOS:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = std::cos(regfile[decInstr.rs1].f_val);
+    SUBF:
 
+        regfile[RegisterType::ACC].f_val -= regfile[decInstr.r1].f_val;
         DISPATCH()
 
-    FTAN:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = std::tan(regfile[decInstr.rs1].f_val);
+    MULF:
 
+        regfile[RegisterType::ACC].f_val *= regfile[decInstr.r1].f_val;
         DISPATCH()
 
-    DSQRT:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs2].d_val < 0) {
-            throw std::runtime_error("sqrt of negative number");
-        }
-        regfile[decInstr.rd].d_val = std::sqrt(regfile[decInstr.rs1].d_val);
-
-        DISPATCH()
-
-    DSIN:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].d_val = std::sin(regfile[decInstr.rs1].d_val);
-
-        DISPATCH()
-
-    DCOS:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].d_val = std::cos(regfile[decInstr.rs1].d_val);
-
-        DISPATCH()
-
-    DTAN:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].d_val = std::tan(regfile[decInstr.rs1].d_val);
-
-        DISPATCH()
-
-    INEG:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].s_val = -regfile[decInstr.rs1].s_val;
-
-        DISPATCH()
-
-    IMV:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].s_val = regfile[decInstr.rs1].s_val;
-
-        DISPATCH()
-
-    FNEG:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = -regfile[decInstr.rs1].f_val;
-
-        DISPATCH()
-
-    FMV:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = regfile[decInstr.rs1].f_val;
-
-        DISPATCH()
-
-    DNEG:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].d_val = -regfile[decInstr.rs1].d_val;
-
-        DISPATCH()
-
-    DMV:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].d_val = regfile[decInstr.rs1].d_val;
-
-        DISPATCH()
-
-
-    IADDI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val + decInstr.s_imm;
-
-        DISPATCH()
-
-    ISUBI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val - decInstr.s_imm;
-
-        DISPATCH()
-
-    IMULI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val * decInstr.s_imm;
-
-        DISPATCH()
-
-    IDIVI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (decInstr.s_imm == 0) {
+    DIVF:
+        if (regfile[decInstr.r1].f_val == 0) {
             throw std::runtime_error("division by zero");
         }
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val / decInstr.s_imm;
-
+        regfile[RegisterType::ACC].f_val /= regfile[decInstr.r1].f_val;
         DISPATCH()
 
-    FADDI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = regfile[decInstr.rs1].f_val + decInstr.fpimm;
+    NEGF:
 
+        regfile[RegisterType::ACC].f_val = -regfile[RegisterType::ACC].f_val;
         DISPATCH()
 
-    FSUBI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = regfile[decInstr.rs1].f_val - decInstr.fpimm;
-
-        DISPATCH()
-
-    FMULI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = regfile[decInstr.rs1].f_val * decInstr.fpimm;
-
-        DISPATCH()
-
-    FDIVI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (decInstr.fpimm == 0) {
-            throw std::runtime_error("division by zero");
+    ADDI:
+        imm = loadConstant(decInstr.immIdx);
+        switch (imm.type) {
+            case ImmType::INTEGER: {
+                regfile[RegisterType::ACC].i_val += imm.i_val;
+            }
+            case ImmType::FLOATING: {
+                regfile[RegisterType::ACC].f_val += imm.f_val;
+            }
+            default:;
         }
-        regfile[decInstr.rd].f_val = regfile[decInstr.rs1].f_val / decInstr.fpimm;
 
         DISPATCH()
 
-    DADDI:
+    SUBI:
 
+        imm = loadConstant(decInstr.immIdx);
+        switch (imm.type) {
+            case ImmType::INTEGER: {
+                regfile[RegisterType::ACC].i_val -= imm.i_val;
+            }
+            case ImmType::FLOATING: {
+                regfile[RegisterType::ACC].f_val -= imm.f_val;
+            }
+            default:;
+        }
         DISPATCH()
 
-    DSUBI:
+    MULI:
 
+        imm = loadConstant(decInstr.immIdx);
+        switch (imm.type) {
+            case ImmType::INTEGER: {
+                regfile[RegisterType::ACC].i_val *= imm.i_val;
+            }
+            case ImmType::FLOATING: {
+                regfile[RegisterType::ACC].f_val *= imm.f_val;
+            }
+            default:;
+        }
         DISPATCH()
 
-    DMULI:
+    DIVI:
 
-        DISPATCH()
-
-    DDIVI:
-
+        imm = loadConstant(decInstr.immIdx);
+        switch (imm.type) {
+            case ImmType::INTEGER: {
+                if (regfile[decInstr.r1].i_val == 0) {
+                    throw std::runtime_error("division by zero");
+                }
+                regfile[RegisterType::ACC].i_val /= imm.i_val;
+            }
+            case ImmType::FLOATING: {
+                if (regfile[decInstr.r1].f_val == 0) {
+                    throw std::runtime_error("division by zero");
+                }
+                regfile[RegisterType::ACC].f_val /= imm.f_val;
+            }
+            default:;
+        }
         DISPATCH()
 
     ANDI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val & decInstr.imm;
 
+        imm = loadConstant(decInstr.immIdx);
+        regfile[RegisterType::ACC].i_val &= imm.i_val;
         DISPATCH()
 
     ORI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val | decInstr.imm;
 
+        imm = loadConstant(decInstr.immIdx);
+        regfile[RegisterType::ACC].i_val |= imm.i_val;
         DISPATCH()
 
     XORI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val ^ decInstr.imm;
 
+        imm = loadConstant(decInstr.immIdx);
+        regfile[RegisterType::ACC].i_val ^= imm.i_val;
         DISPATCH()
 
     SLI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val << decInstr.imm;
 
+        imm = loadConstant(decInstr.immIdx);
+        regfile[RegisterType::ACC].i_val << imm.i_val;
         DISPATCH()
 
     SRI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].u_val = regfile[decInstr.rs1].u_val >> decInstr.imm;
 
+        imm = loadConstant(decInstr.immIdx);
+        regfile[RegisterType::ACC].i_val >> imm.i_val;
         DISPATCH()
 
-    FSQRTI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (decInstr.fpimm < 0) {
+    SIN:
+
+        regfile[RegisterType::ACC].f_val = std::sin(regfile[RegisterType::ACC].f_val);
+        DISPATCH()
+
+    COS:
+
+        regfile[RegisterType::ACC].f_val = std::cos(regfile[RegisterType::ACC].f_val);
+        DISPATCH()
+
+    SQRT:
+
+        if (regfile[RegisterType::ACC].f_val < 0) {
             throw std::runtime_error("sqrt of negative number");
-        }        
-        regfile[decInstr.rd].f_val = std::sqrt(decInstr.fpimm);
-
+        } 
+        regfile[RegisterType::ACC].f_val = std::sqrt(regfile[RegisterType::ACC].f_val);
         DISPATCH()
 
-    FSINI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = std::sin(decInstr.fpimm);
+    MV:
 
+        memcpy(&regfile[decInstr.r1].i_val, &regfile[decInstr.r2].i_val, sizeof(regfile[decInstr.r1].i_val));
         DISPATCH()
 
-    FCOSI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = std::cos(decInstr.fpimm);
+    MVI:
 
+        imm = loadConstant(decInstr.immIdx);
+        memcpy(&regfile[decInstr.r1].i_val, &imm.i_val, sizeof(regfile[decInstr.r1].i_val));
         DISPATCH()
 
-    FTANI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = std::tan(decInstr.fpimm);
+    CALL_INTINSIC:
 
-        DISPATCH()
-
-    DSQRTI:
-
-        DISPATCH()
-
-    DSINI:
-
-        DISPATCH()
-
-    DCOSI:
-
-        DISPATCH()
-
-    DTANI:
-
-        DISPATCH()
-
-    INEGI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].s_val = -decInstr.s_imm;
-
-        DISPATCH()
-
-    IMVI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].s_val = decInstr.s_imm;
-
-        DISPATCH()
-
-    FNEGI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = -decInstr.fpimm;
-
-        DISPATCH()
-
-    FMVI:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        regfile[decInstr.rd].f_val = decInstr.fpimm;
-
-        DISPATCH()
-
-    DNEGI:
-
-        DISPATCH()
-
-    DMVI:
-
-        DISPATCH()
-
-
-    BEQ:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].s_val == regfile[decInstr.rs2].s_val)
-            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
-
-        DISPATCH()
-
-    BNE:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].s_val != regfile[decInstr.rs2].s_val)
-            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
-
-        DISPATCH()
-
-    IBLT:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].s_val < regfile[decInstr.rs2].s_val)
-            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
-
-        DISPATCH()
-
-    IBGE:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].s_val >= regfile[decInstr.rs2].s_val)
-            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
-
-        DISPATCH()
-
-    FBLT:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].f_val < regfile[decInstr.rs2].f_val)
-            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
-
-        DISPATCH()
-
-    FBGE:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].f_val >= regfile[decInstr.rs2].f_val)
-            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
-
-        DISPATCH()
-
-
-    DBLT:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].d_val < regfile[decInstr.rs2].d_val)
-            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
-
-        DISPATCH()
-
-    DBGE:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].d_val >= regfile[decInstr.rs2].d_val)
-            pc += decInstr.imm - INSTRUCTION_BYTESIZE;
-
-        DISPATCH()
-
-
-    LOADB:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].u_val + decInstr.imm >= sizeof(m_vm->m_memory) - sizeof(Byte))
-            throw std::runtime_error("invalid address");
-
-        memcpy(&regfile[decInstr.rd].u_val, &memory[regfile[decInstr.rs1].u_val + decInstr.imm], sizeof(Byte));
-
-        DISPATCH()
-
-    LOADH:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].u_val + decInstr.imm >= sizeof(m_vm->m_memory) - sizeof(Half))
-            throw std::runtime_error("invalid address");
-
-        memcpy(&regfile[decInstr.rd].u_val, &memory[regfile[decInstr.rs1].u_val + decInstr.imm], sizeof(Half));
-
-        DISPATCH()
-
-    LOADW:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].u_val + decInstr.imm >= sizeof(m_vm->m_memory) - sizeof(Word))
-            throw std::runtime_error("invalid address");
-
-        memcpy(&regfile[decInstr.rd].u_val, &memory[regfile[decInstr.rs1].u_val + decInstr.imm], sizeof(Word));
-
-        DISPATCH()
-
-    LOADD:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].u_val + decInstr.imm >= sizeof(m_vm->m_memory) - sizeof(DWord))
-            throw std::runtime_error("invalid address");
-
-        memcpy(&regfile[decInstr.rd].u_val, &memory[regfile[decInstr.rs1].u_val + decInstr.imm], sizeof(DWord));
-
-        DISPATCH()
-
-
-    STOREB:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].u_val + decInstr.imm >= sizeof(m_vm->m_memory) - sizeof(Byte))
-            throw std::runtime_error("invalid address");
-
-        memcpy(&memory[regfile[decInstr.rs1].u_val + decInstr.imm], &regfile[decInstr.rs2].u_val, sizeof(Byte));
-
-        DISPATCH()
-
-    STOREH:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].u_val + decInstr.imm >= sizeof(m_vm->m_memory) - sizeof(Half))
-            throw std::runtime_error("invalid address");
-
-        memcpy(&memory[regfile[decInstr.rs1].u_val + decInstr.imm], &regfile[decInstr.rs2].u_val, sizeof(Half));
-
-        DISPATCH()
-
-    STOREW:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].u_val + decInstr.imm >= sizeof(m_vm->m_memory) - sizeof(Word))
-            throw std::runtime_error("invalid address");
-
-        memcpy(&memory[regfile[decInstr.rs1].u_val + decInstr.imm], &regfile[decInstr.rs2].u_val, sizeof(Word));
-
-        DISPATCH()
-
-    STORED:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        if (regfile[decInstr.rs1].u_val + decInstr.imm >= sizeof(m_vm->m_memory) - sizeof(DWord))
-            throw std::runtime_error("invalid address");
-
-        memcpy(&memory[regfile[decInstr.rs1].u_val + decInstr.imm], &regfile[decInstr.rs2].u_val, sizeof(DWord));
-
-        DISPATCH()
-
-
-    I2F:
-
-        
-        DISPATCH()
-
-    I2D:
-
-        
-        DISPATCH()
-
-    F2I:
-
-        
-        DISPATCH()
-
-    F2D:
-
-        
-        DISPATCH()
-
-    D2I:
-
-        
-        DISPATCH()
-
-    D2F:
-
-        
-        DISPATCH()
-
-
-    RET:
-
-        return true;
-        DISPATCH()
-
-    IRET:
-
-        return true;
-        DISPATCH()
-
-    FRET:
-
-        return true;
-        DISPATCH()
-
-    DRET:
-
-        return true;
-        DISPATCH()
-
-    JMP:
-        m_decoder.decodeInstruction(*currInstr, decInstr);
-        pc += decInstr.imm - INSTRUCTION_BYTESIZE;
-
-        DISPATCH()
-
-    INITRINSIC:
-
-        m_decoder.decodeInstruction(*currInstr, decInstr);
         switch(decInstr.intrinType) {
 
-            case IntrinsicType::INTRINSIC_ISCAN: {
-
-                UnsignedRegValue storeAddress = regfile[decInstr.rs1].u_val;
-                if (storeAddress >= sizeof(m_vm->m_memory) - sizeof(int))
-                    throw std::runtime_error("invalid address");
-
-                int tmp;
-                std::cin >> tmp;
-                if (std::cin.fail())
+            case IntrinsicType::INTRINSIC_SCAN: {
+                std::cin >> regfile[RegisterType::ACC].i_val;
+                if (std::cin.fail()) {
                     throw std::runtime_error("invalid input");
-
-                memcpy(m_vm->m_memory + storeAddress, &tmp, sizeof(int));
-
+                }
                 break;
             }
-            case IntrinsicType::INTRINSIC_IPRINT: {
-
-                UnsignedRegValue loadAddress = regfile[decInstr.rs1].u_val;
-                if (loadAddress >= sizeof(m_vm->m_memory) - sizeof(int))
-                    throw std::runtime_error("invalid address");
-
-                int tmp;
-                memcpy(&tmp, m_vm->m_memory + loadAddress, sizeof(int));
-                std::cout << tmp << std::endl;
-
+            case IntrinsicType::INTRINSIC_PRINT: {
+                std::cout << regfile[RegisterType::ACC].i_val << std::endl;
                 break;
             }
-            case IntrinsicType::INTRINSIC_FSCAN: {
-
-                UnsignedRegValue storeAddress = regfile[decInstr.rs1].u_val;
-                if (storeAddress >= sizeof(m_vm->m_memory) - sizeof(float))
-                    throw std::runtime_error("invalid address");
-
-                float tmp;
-                std::cin >> tmp;
-                if (std::cin.fail())
+            case IntrinsicType::INTRINSIC_SCANF: {
+                std::cin >> regfile[RegisterType::ACC].f_val;
+                if (std::cin.fail()) {
                     throw std::runtime_error("invalid input");
-
-                memcpy(m_vm->m_memory + storeAddress, &tmp, sizeof(float));
-
+                }
                 break;
             }
-            case IntrinsicType::INTRINSIC_FPRINT: {
-
-                UnsignedRegValue loadAddress = regfile[decInstr.rs1].u_val;
-                if (loadAddress >= sizeof(m_vm->m_memory) - sizeof(float))
-                    throw std::runtime_error("invalid address");
-
-                float tmp;
-                memcpy(&tmp, m_vm->m_memory + loadAddress, sizeof(float));
-                std::cout << tmp << std::endl;
-
+            case IntrinsicType::INTRINSIC_PRINTF: {
+                std::cout << regfile[RegisterType::ACC].f_val << std::endl;
                 break;
             }
             default:
                 break;
 
         }
+        DISPATCH()
+
+    JMP:
+
+        imm = loadConstant(decInstr.immIdx);
+        pc += imm.i_val - INSTRUCTION_BYTESIZE;
+        DISPATCH()
+
+    BEQ:
+
+        if (regfile[RegisterType::ACC].i_val == regfile[decInstr.r1].i_val) {
+            imm = loadConstant(decInstr.immIdx);
+            pc += imm.i_val - INSTRUCTION_BYTESIZE;
+        }
+        DISPATCH()
+
+    BNE:
+
+        if (regfile[RegisterType::ACC].i_val != regfile[decInstr.r1].i_val) {
+            imm = loadConstant(decInstr.immIdx);
+            pc += imm.i_val - INSTRUCTION_BYTESIZE;
+        }
+        DISPATCH()
+
+    BGE:
+
+        if (regfile[RegisterType::ACC].i_val >= regfile[decInstr.r1].i_val) {
+            imm = loadConstant(decInstr.immIdx);
+            pc += imm.i_val - INSTRUCTION_BYTESIZE;
+        }
+        DISPATCH()
+
+    BLT:
+
+        if (regfile[RegisterType::ACC].i_val < regfile[decInstr.r1].i_val) {
+            imm = loadConstant(decInstr.immIdx);
+            pc += imm.i_val - INSTRUCTION_BYTESIZE;
+        }
+        DISPATCH()
+
+    BGEF:
+
+        if (regfile[RegisterType::ACC].f_val >= regfile[decInstr.r1].f_val) {
+            imm = loadConstant(decInstr.immIdx);
+            pc += imm.i_val - INSTRUCTION_BYTESIZE;
+        }
+        DISPATCH()
+
+    BLTF:
+
+        if (regfile[RegisterType::ACC].f_val < regfile[decInstr.r1].f_val) {
+            imm = loadConstant(decInstr.immIdx);
+            pc += imm.i_val - INSTRUCTION_BYTESIZE;
+        }
+        DISPATCH()
+
+    CALL:
+
 
         DISPATCH()
+
+    RET:
+
+        return true;
+        DISPATCH()
+
     }
     catch (const std::runtime_error& error) {
         std::cerr << "Error occured during interpreting: " << error.what() << std::endl;

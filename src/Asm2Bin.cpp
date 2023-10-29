@@ -3,7 +3,6 @@
 
 #include "Common.h"
 #include "Parser.h"
-#include "Decoder.h"
 
 
 int main(int argc, char* argv[]) {
@@ -13,26 +12,12 @@ int main(int argc, char* argv[]) {
     }
 
     Common::Parser parser;
-    VM::Decoder coder;
     Common::Program program;
-    std::vector<VM::DecodedInstruction> decInstructions; 
 
-    if (!parser.parseAsmProgram(argv[1], decInstructions)) {
+    if (!parser.parseAsmProgram(argv[1], program)) {
         std::cerr << "Could not parse the file" << std::endl;
         return -1;
     }
-
-    if (decInstructions.empty()) {
-        std::cout << "Warn: program is empty" << std::endl;
-    }
-
-    for (size_t i = 0; i < decInstructions.size(); ++i) {
-        VM::EncodedInstruction encInstr;
-        coder.encodeInstruction(decInstructions[i], encInstr);
-        program.instructions.push_back(encInstr);
-    }
-
-    program.entryPoint = 0;
 
     std::string outFilename = argv[1];
     size_t lastIndex = outFilename.find_last_of(".");
