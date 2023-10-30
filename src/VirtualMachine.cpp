@@ -6,7 +6,7 @@
 namespace VM {
 
 bool VirtualMachine::run() {
-    bool interpretResult = m_interpreter.interpret(m_pc);
+    bool interpretResult = m_interpreter.interpret();
 
     return interpretResult;
 }
@@ -15,6 +15,7 @@ bool VirtualMachine::loadProgram(const Common::Program& program) {
     // Perform copying of the program
     m_pc = program.entryPoint;
     memcpy(m_memory, program.instructions.data(), program.instructions.size() * sizeof(EncodedInstruction));
+    memcpy(m_memory + VM_CONSTANT_POOL_ADDRESS, program.constants.data(), program.constants.size() * sizeof(Immediate));
 
     return true;
 }

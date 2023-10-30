@@ -17,8 +17,10 @@ private:
     VirtualMachine* m_vm;
     Decoder m_decoder;
 
+    inline Immediate loadConstant(const ImmediateIndex idx);
+
 public:
-    bool interpret(const uint64_t entry);
+    bool interpret();
 
     Interpreter(VirtualMachine* p_vm) : m_vm{p_vm} {};
 };

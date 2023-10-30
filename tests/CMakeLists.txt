@@ -4,6 +4,7 @@ set(TESTS
     square_eq
     arithmetic
     branching
+    intrinsic
 )
 
 foreach(EXEC IN LISTS TESTS)

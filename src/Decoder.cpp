@@ -18,191 +18,99 @@ void Decoder::decodeInstruction(const EncodedInstruction encInstr, DecodedInstru
 
     switch(opcode) {
 
-        // ============= Arithmetic type I ============= //
-        // instr rd, rs1, rs2
-        case InstructionType::IADD:
-        case InstructionType::ISUB:
-        case InstructionType::IMUL:
-        case InstructionType::IDIV:
-        case InstructionType::FADD:
-        case InstructionType::FSUB:
-        case InstructionType::FMUL:
-        case InstructionType::FDIV:
-        case InstructionType::DADD:
-        case InstructionType::DSUB:
-        case InstructionType::DMUL:
-        case InstructionType::DDIV:
+        // ================================== Type A ================================== //
+        case InstructionType::LOAD_ACC:
+        case InstructionType::STORE_ACC:
+        case InstructionType::TO_FLOAT_REG:
+        case InstructionType::TO_INT_REG:
+        case InstructionType::ADD:
+        case InstructionType::SUB:
+        case InstructionType::MUL:
+        case InstructionType::DIV:
         case InstructionType::AND:
         case InstructionType::OR:
         case InstructionType::XOR:
         case InstructionType::SL:
         case InstructionType::SR:
+        case InstructionType::ADDF:
+        case InstructionType::SUBF:
+        case InstructionType::MULF:
+        case InstructionType::DIVF:
         {
-            decInstr.rd  = static_cast<RegisterType>(getPartialBitsShifted<22, 18>(encInstr));
-            decInstr.rs1 = static_cast<RegisterType>(getPartialBitsShifted<17, 13>(encInstr));
-            decInstr.rs2 = static_cast<RegisterType>(getPartialBitsShifted<12, 8>(encInstr));
+            decInstr.r1 = static_cast<RegisterType>(getPartialBitsShifted<15, 8>(encInstr));
             decInstr.opcode = opcode;
             break;
         }
 
-        // ============= Arithmetic type II ============ //
-        // instr rd, rs1
-        case InstructionType::FSQRT:
-        case InstructionType::FSIN:
-        case InstructionType::FCOS:
-        case InstructionType::FTAN:
-        case InstructionType::DSQRT:
-        case InstructionType::DSIN:
-        case InstructionType::DCOS:
-        case InstructionType::DTAN:
-        case InstructionType::INEG:
-        case InstructionType::IMV:
-        case InstructionType::FNEG:
-        case InstructionType::FMV:
-        case InstructionType::DNEG:
-        case InstructionType::DMV:
+        // ================================== Type B ================================== //
+        case InstructionType::LOAD_ACC_MEM:
+        case InstructionType::STORE_ACC_MEM:
+        case InstructionType::BEQ:
+        case InstructionType::BNE:
+        case InstructionType::BGE:
+        case InstructionType::BLT:
+        case InstructionType::BGEF:
+        case InstructionType::BLTF:
+        case InstructionType::MVI:
         {
-            decInstr.rd  = static_cast<RegisterType>(getPartialBitsShifted<17, 13>(encInstr));
-            decInstr.rs1 = static_cast<RegisterType>(getPartialBitsShifted<12, 8>(encInstr));
+            decInstr.r1 = static_cast<RegisterType>(getPartialBitsShifted<15, 8>(encInstr));
+            decInstr.immIdx = static_cast<VM::ImmediateIndex>(getPartialBitsShifted<31, 16>(encInstr));
             decInstr.opcode = opcode;
             break;
         }
 
-        // ======== Arithmetic immediate type I ======== //
-        // instr rd, rs1, imm
-        case InstructionType::IADDI:
-        case InstructionType::ISUBI:
-        case InstructionType::IMULI:
-        case InstructionType::IDIVI:
-        case InstructionType::FADDI:
-        case InstructionType::FSUBI:
-        case InstructionType::FMULI:
-        case InstructionType::FDIVI:
-        case InstructionType::DADDI:
-        case InstructionType::DSUBI:
-        case InstructionType::DMULI:
-        case InstructionType::DDIVI:
+        // ================================== Type I ================================== //
+        case InstructionType::LOAD_ACCI:
+        case InstructionType::ADDI:
+        case InstructionType::SUBI:
+        case InstructionType::MULI:
+        case InstructionType::DIVI:
         case InstructionType::ANDI:
         case InstructionType::ORI:
         case InstructionType::XORI:
         case InstructionType::SLI:
         case InstructionType::SRI:
+        case InstructionType::JMP:
         {
-            decInstr.imm = getPartialBitsShifted<63, 32>(encInstr);
-            decInstr.rd  = static_cast<RegisterType>(getPartialBitsShifted<17, 13>(encInstr));
-            decInstr.rs1 = static_cast<RegisterType>(getPartialBitsShifted<12, 8>(encInstr));
+            decInstr.immIdx = static_cast<VM::ImmediateIndex>(getPartialBitsShifted<31, 16>(encInstr));
             decInstr.opcode = opcode;
             break;
         }
 
-        // ======== Arithmetic immediate type II ======= //
-        // instr rd, imm
-        case InstructionType::FSQRTI:
-        case InstructionType::FSINI:
-        case InstructionType::FCOSI:
-        case InstructionType::FTANI:
-        case InstructionType::DSQRTI:
-        case InstructionType::DSINI:
-        case InstructionType::DCOSI:
-        case InstructionType::DTANI:
-        case InstructionType::INEGI:
-        case InstructionType::IMVI:
-        case InstructionType::FNEGI:
-        case InstructionType::FMVI:
-        case InstructionType::DNEGI:
-        case InstructionType::DMVI:
-        {
-            decInstr.imm = getPartialBitsShifted<63, 32>(encInstr);
-            decInstr.rd  = static_cast<RegisterType>(getPartialBitsShifted<12, 8>(encInstr));
-            decInstr.opcode = opcode;
-            break;
-        }
-
-        // ================= Branching ================= //
-        // instr rs1, rs2, imm
-        case InstructionType::BEQ:
-        case InstructionType::BNE:
-        case InstructionType::IBLT:
-        case InstructionType::IBGE:
-        case InstructionType::FBLT:
-        case InstructionType::FBGE:
-        case InstructionType::DBLT:
-        case InstructionType::DBGE:
-        {
-            decInstr.imm = getPartialBitsShifted<63, 32>(encInstr);
-            decInstr.rs2 = static_cast<RegisterType>(getPartialBitsShifted<17, 13>(encInstr));
-            decInstr.rs1 = static_cast<RegisterType>(getPartialBitsShifted<12, 8>(encInstr));
-            decInstr.opcode = opcode;
-            break;            
-        }
-
-        // ==================== Load =================== //
-        // instr rd, rs1, imm
-        case InstructionType::LOADB:
-        case InstructionType::LOADH:
-        case InstructionType::LOADW:
-        case InstructionType::LOADD:
-        {
-            decInstr.imm = getPartialBitsShifted<63, 32>(encInstr);
-            decInstr.rd  = static_cast<RegisterType>(getPartialBitsShifted<17, 13>(encInstr));
-            decInstr.rs1 = static_cast<RegisterType>(getPartialBitsShifted<12, 8>(encInstr));
-            decInstr.opcode = opcode;
-            break;              
-        }
-
-        // =================== Store =================== //
-        // instr rs1, rs2, imm
-        case InstructionType::STOREB:
-        case InstructionType::STOREH:
-        case InstructionType::STOREW:
-        case InstructionType::STORED:
-        {
-            decInstr.imm = getPartialBitsShifted<63, 32>(encInstr);
-            decInstr.rs2 = static_cast<RegisterType>(getPartialBitsShifted<17, 13>(encInstr));
-            decInstr.rs1 = static_cast<RegisterType>(getPartialBitsShifted<12, 8>(encInstr));
-            decInstr.opcode = opcode;
-            break;              
-        }
-
-        // =================== Casts =================== //
-        // instr rs1, rs2, imm
-        case InstructionType::I2F:
-        case InstructionType::I2D:
-        case InstructionType::F2I:
-        case InstructionType::F2D:
-        case InstructionType::D2I:
-        case InstructionType::D2F:
+        // ================================== Type C ================================== //
+        case InstructionType::TO_FLOAT:
+        case InstructionType::TO_INT:
+        case InstructionType::NEG:
+        case InstructionType::NEGF:
+        case InstructionType::SIN:
+        case InstructionType::COS:
+        case InstructionType::SQRT:
         {
             decInstr.opcode = opcode;
             break;
         }
 
-        // ================= Intrinsics ================ //
-        // intrinsic intr_num
-        case InstructionType::INTRINSIC:
+        // ================================== Type R ================================== //
+        case InstructionType::MV:
         {
-            decInstr.rs1 = static_cast<RegisterType>(getPartialBitsShifted<20, 16>(encInstr));
+            decInstr.r1 = static_cast<RegisterType>(getPartialBitsShifted<15, 8>(encInstr));
+            decInstr.r2 = static_cast<RegisterType>(getPartialBitsShifted<23, 16>(encInstr));
+            decInstr.opcode = opcode;
+            break;
+        }
+
+        // ================================== Type N ================================== //
+        case InstructionType::CALL_INTRINSIC:
+        {
             decInstr.intrinType = getIntrinsicType(encInstr);
             decInstr.opcode = opcode;
             break;
         }
 
-        // =================== Return ================== //
-        // instr
+        // ================================== Type ? ================================== //
+        case InstructionType::CALL:
         case InstructionType::RET:
-        case InstructionType::IRET:
-        case InstructionType::FRET:
-        case InstructionType::DRET:
         {
-            decInstr.opcode = opcode;
-            break;
-        }
-
-        // ==================== Jumps ================== //
-        // instr imm
-        case InstructionType::JMP:
-        {
-            decInstr.imm = getPartialBitsShifted<63, 32>(encInstr);
             decInstr.opcode = opcode;
             break;
         }
@@ -218,211 +126,94 @@ void Decoder::encodeInstruction(const DecodedInstruction& decInstr, EncodedInstr
 
     switch(decInstr.opcode) {
 
-        // ============= Arithmetic type I ============= //
-        // instr rd, rs1, rs2
-        case InstructionType::IADD:
-        case InstructionType::ISUB:
-        case InstructionType::IMUL:
-        case InstructionType::IDIV:        
-        case InstructionType::FADD:
-        case InstructionType::FSUB:
-        case InstructionType::FMUL:
-        case InstructionType::FDIV:
-        case InstructionType::DADD:
-        case InstructionType::DSUB:
-        case InstructionType::DMUL:
-        case InstructionType::DDIV:
+        // ================================== Type A ================================== //
+        case InstructionType::LOAD_ACC:
+        case InstructionType::STORE_ACC:
+        case InstructionType::TO_FLOAT_REG:
+        case InstructionType::TO_INT_REG:
+        case InstructionType::ADD:
+        case InstructionType::SUB:
+        case InstructionType::MUL:
+        case InstructionType::DIV:
         case InstructionType::AND:
         case InstructionType::OR:
         case InstructionType::XOR:
         case InstructionType::SL:
         case InstructionType::SR:
+        case InstructionType::ADDF:
+        case InstructionType::SUBF:
+        case InstructionType::MULF:
+        case InstructionType::DIVF:
         {
-            encInstr =
-                makePartialBits<22, 18>(decInstr.rd)
-                | makePartialBits<17, 13>(decInstr.rs1)
-                | makePartialBits<12, 8>(decInstr.rs2)
-                | makePartialBits<7, 0>(decInstr.opcode);
-
+            encInstr = makePartialBits<15, 8>(decInstr.r1) | makePartialBits<7, 0>(decInstr.opcode);
             break;
         }
 
-        // ============= Arithmetic type II ============ //
-        // instr rd, rs1
-        case InstructionType::FSQRT:
-        case InstructionType::FSIN:
-        case InstructionType::FCOS:
-        case InstructionType::FTAN:
-        case InstructionType::DSQRT:
-        case InstructionType::DSIN:
-        case InstructionType::DCOS:
-        case InstructionType::DTAN:
-        case InstructionType::INEG:
-        case InstructionType::IMV:
-        case InstructionType::FNEG:
-        case InstructionType::FMV:
-        case InstructionType::DNEG:
-        case InstructionType::DMV:
+        // ================================== Type B ================================== //
+        case InstructionType::LOAD_ACC_MEM:
+        case InstructionType::STORE_ACC_MEM:
+        case InstructionType::BEQ:
+        case InstructionType::BNE:
+        case InstructionType::BGE:
+        case InstructionType::BLT:
+        case InstructionType::BGEF:
+        case InstructionType::BLTF:
+        case InstructionType::MVI:
         {
-            encInstr =
-                makePartialBits<17, 13>(decInstr.rd)
-                | makePartialBits<12, 8>(decInstr.rs1)
-                | makePartialBits<7, 0>(decInstr.opcode);
-
+            encInstr = makePartialBits<31, 16>(decInstr.immIdx) | makePartialBits<15, 8>(decInstr.r1) | makePartialBits<7, 0>(decInstr.opcode);
             break;
         }
 
-        // ======== Arithmetic immediate type I ======== //
-        // instr rd, rs1, imm
-        case InstructionType::IADDI:
-        case InstructionType::ISUBI:
-        case InstructionType::IMULI:
-        case InstructionType::IDIVI:
-        case InstructionType::FADDI:
-        case InstructionType::FSUBI:
-        case InstructionType::FMULI:
-        case InstructionType::FDIVI:
-        case InstructionType::DADDI:
-        case InstructionType::DSUBI:
-        case InstructionType::DMULI:
-        case InstructionType::DDIVI:
+        // ================================== Type I ================================== //
+        case InstructionType::LOAD_ACCI:
+        case InstructionType::ADDI:
+        case InstructionType::SUBI:
+        case InstructionType::MULI:
+        case InstructionType::DIVI:
         case InstructionType::ANDI:
         case InstructionType::ORI:
         case InstructionType::XORI:
         case InstructionType::SLI:
         case InstructionType::SRI:
-        {
-            encInstr =
-                makePartialBits<63, 32>(decInstr.imm)
-                | makePartialBits<17, 13>(decInstr.rd)
-                | makePartialBits<12, 8>(decInstr.rs1)
-                | makePartialBits<7, 0>(decInstr.opcode);
-
-            break;
-        }
-
-        // ======== Arithmetic immediate type II ======= //
-        // instr rd, imm
-        case InstructionType::FSQRTI:
-        case InstructionType::FSINI:
-        case InstructionType::FCOSI:
-        case InstructionType::FTANI:
-        case InstructionType::DSQRTI:
-        case InstructionType::DSINI:
-        case InstructionType::DCOSI:
-        case InstructionType::DTANI:
-        case InstructionType::INEGI:
-        case InstructionType::IMVI:
-        case InstructionType::FNEGI:
-        case InstructionType::FMVI:
-        case InstructionType::DNEGI:
-        case InstructionType::DMVI:
-        {
-            encInstr =
-                makePartialBits<63, 32>(decInstr.imm)
-                | makePartialBits<12, 8>(decInstr.rd)
-                | makePartialBits<7, 0>(decInstr.opcode);
-
-            break;
-        }
-
-        // ================= Branching ================= //
-        // instr rs1, rs2, imm
-        case InstructionType::BEQ:
-        case InstructionType::BNE:
-        case InstructionType::IBLT:
-        case InstructionType::IBGE:
-        case InstructionType::FBLT:
-        case InstructionType::FBGE:
-        case InstructionType::DBLT:
-        case InstructionType::DBGE:
-        {
-            encInstr =
-                makePartialBits<63, 32>(decInstr.imm)
-                | makePartialBits<17, 13>(decInstr.rs2)
-                | makePartialBits<12, 8>(decInstr.rs1)
-                | makePartialBits<7, 0>(decInstr.opcode);
-
-            break;
-        }
-
-        // ==================== Load =================== //
-        // instr rd, rs1, imm
-        case InstructionType::LOADB:
-        case InstructionType::LOADH:
-        case InstructionType::LOADW:
-        case InstructionType::LOADD:
-        {
-            encInstr =
-                makePartialBits<63, 32>(decInstr.imm)
-                | makePartialBits<17, 13>(decInstr.rd)
-                | makePartialBits<12, 8>(decInstr.rs1)
-                | makePartialBits<7, 0>(decInstr.opcode);
-
-            break;
-        }
-
-        // =================== Store =================== //
-        // instr rs1, rs2, imm
-        case InstructionType::STOREB:
-        case InstructionType::STOREH:
-        case InstructionType::STOREW:
-        case InstructionType::STORED:
-        {
-            encInstr =
-                makePartialBits<63, 32>(decInstr.imm)
-                | makePartialBits<17, 13>(decInstr.rs2)
-                | makePartialBits<12, 8>(decInstr.rs1)
-                | makePartialBits<7, 0>(decInstr.opcode);
-
-            break;
-        }
-
-        // =================== Casts =================== //
-        // instr rs1, rs2, imm
-        case InstructionType::I2F:
-        case InstructionType::I2D:
-        case InstructionType::F2I:
-        case InstructionType::F2D:
-        case InstructionType::D2I:
-        case InstructionType::D2F:
-        {
-            encInstr = makePartialBits<7, 0>(decInstr.opcode);
-            break;
-        }
-
-        // ================= Intrinsics ================ //
-        // intrinsic intr_num
-        case InstructionType::INTRINSIC:
-        {
-            encInstr =
-                makePartialBits<20, 16>(decInstr.rs1)
-                | makePartialBits<15, 8>(decInstr.intrinType)
-                | makePartialBits<7, 0>(decInstr.opcode);
-
-            break;
-        }
-
-        // =================== Return ================== //
-        // instr
-        case InstructionType::RET:
-        case InstructionType::IRET:
-        case InstructionType::FRET:
-        case InstructionType::DRET:
-        {
-            encInstr = makePartialBits<7, 0>(decInstr.opcode);
-            break;
-        }
-
-        // ==================== Jumps ================== //
-        // instr imm
         case InstructionType::JMP:
         {
-            encInstr =
-                makePartialBits<63, 32>(decInstr.imm)
-                | makePartialBits<7, 0>(decInstr.opcode);
+            encInstr = makePartialBits<31, 16>(decInstr.immIdx) | makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
 
-                break;
+        // ================================== Type C ================================== //
+        case InstructionType::TO_FLOAT:
+        case InstructionType::TO_INT:
+        case InstructionType::NEG:
+        case InstructionType::NEGF:
+        case InstructionType::SIN:
+        case InstructionType::COS:
+        case InstructionType::SQRT:
+        {
+            encInstr = makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+
+        // ================================== Type R ================================== //
+        case InstructionType::MV:
+        {
+            encInstr = makePartialBits<23, 16>(decInstr.r2) | makePartialBits<15, 8>(decInstr.r1) | makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+
+        // ================================== Type N ================================== //
+        case InstructionType::CALL_INTRINSIC:
+        {
+            encInstr = makePartialBits<15, 8>(decInstr.intrinType) | makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+
+        // ================================== Type ? ================================== //
+        case InstructionType::CALL:
+        case InstructionType::RET:
+        {
+            encInstr = makePartialBits<7, 0>(decInstr.opcode);
+            break;
         }
         default: {
             encInstr = makePartialBits<7, 0>(InstructionType::INSTRUCTION_INVALID);

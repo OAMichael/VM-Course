@@ -1,30 +1,62 @@
 /* Test program
 
-    FMVI x1, 2.0f           ; a = 2.0f
-    FMVI x2, -5.0f          ; b = -5.0f
-    FMVI x3, 2.0f           ; c = 4.0f
+    MVI x1, 2.0
+    MVI x2, -5.0
+    MVI x3, 2.0
 
-    FMUL x4, x1, x3         ; a*c
-    FMULI x4, x4, 4         ; 4*a*c
-    FMUL x5, x2, x2         ; b*b
-    FSUB x4, x5, x4         ; D = b*b - 4*a*c
-    FSQRT x4, x4            ; sqrt(D)
-    FMULI x6, x1, -2        ; -2 * a
-    FDIV x4, x4, x6         ; sqrt(D) / (-2 * a)
+    LOAD_ACC x3
 
-    FDIV x5, x2, x6         ; b / (-2 * a)
+    MULF x1                 ; a*c in acc
+    MULI 4.0                ; 4*a*c in acc
+    STORE_ACC x4            ; 4*a*c in x4
 
-    FSUB x6, x5, x4         ; x_1
+    LOAD_ACC x2             ; b in acc
+    MULF x2                 ; b*b in acc
+    SUBF x4                 ; D = b*b - 4*a*c in acc
 
-    IMVI x7, 4000
-    STOREW x7, x6, 0
-    INTRINSIC x7, FPRINT    ; print x_1
+    MVI x6, 0.0             ; 0 in x6
 
-    FADD x6, x5, x4         ; x_2
+    BLTF x6, 100            ; D < 0
 
-    IMVI x7, 4004
-    STOREW x7, x6, 0
-    INTRINSIC x7, FPRINT    ; print x_2
+    BEQ x6, 72              ; D == 0
+
+    ; D > 0
+    SQRT                    ; sqrt(D) in acc
+    STORE_ACC x6            ; sqrt(D) in x6
+
+    LOAD_ACCI -2.0          ; -2 in acc
+    MULF x1                 ; -2*a in acc
+    STORE_ACC x7            ; -2*a in x7
+
+    LOAD_ACC x6             ; sqrt(D) in acc
+    DIVF x7                 ; sqrt(D) / (-2 * a) in acc
+    STORE_ACC x6            ; sqrt(D) / (-2 * a) in x6
+
+    LOAD_ACC x2             ; b in acc
+    DIVF x7                 ; b / (-2 * a) in acc
+    STORE_ACC x7            ; b / (-2 * a) in x7
+
+    ADDF x6                 ; x_1
+
+    CALL_INTRINSIC PRINTF   ; print x_1
+
+    LOAD_ACC x7             ; b / (-2 * a) in acc
+    SUBF x6                 ; x_2
+
+    CALL_INTRINSIC PRINTF   ; print x_2
+
+
+    JMP 28
+
+    ; D == 0
+    LOAD_ACCI -2.0          ; -2 in acc
+    MULF x1                 ; -2*a in acc
+    STORE_ACC x7            ; -2*a in x7
+
+    LOAD_ACC x2             ; b in acc
+    DIVF x7                 ; b / (-2 * a) in acc
+
+    CALL_INTRINSIC PRINTF   ; print x_2
 
     RET
 
@@ -51,8 +83,8 @@ TEST(InstructionTest, firstTest)
 
     float x1, x2;
     ss >> x1 >> x2;
-    ASSERT_EQ(x1, 2.f);
-    ASSERT_EQ(x2, 0.5f);
+    ASSERT_EQ(x1, 0.5f);
+    ASSERT_EQ(x2, 2.0f);
 }
 
 int main(int argc, char *argv[])

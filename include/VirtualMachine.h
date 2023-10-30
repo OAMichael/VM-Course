@@ -8,8 +8,9 @@
 
 namespace VM {
 
-// 256 KiB for now. TODO: organize memory
-static constexpr size_t VM_MEMORY_BYTESIZE = 1 << 18;
+static constexpr size_t VM_MEMORY_BYTESIZE       = 1 << 18;     // 256 KiB for now. TODO: organize memory
+static constexpr size_t VM_CONSTANT_POOL_SIZE    = 1 << 12;     // 4 KiB of constants
+static constexpr size_t VM_CONSTANT_POOL_ADDRESS = VM_MEMORY_BYTESIZE - VM_CONSTANT_POOL_SIZE;  // Put the pool at the end of memory
 
 
 class VirtualMachine {

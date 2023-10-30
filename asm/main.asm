@@ -1,53 +1,62 @@
-IMVI x4, 4000
-INTRINSIC x4, FSCAN
-LOADW x1, x4, 0         ; a
+CALL_INTRINSIC SCANF
+STORE_ACC x1            ; a in x1
 
-IMVI x4, 4004
-INTRINSIC x4, FSCAN
-LOADW x2, x4, 0         ; b
+CALL_INTRINSIC SCANF
+STORE_ACC x2            ; b in x2
 
-IMVI x4, 4008
-INTRINSIC x4, FSCAN
-LOADW x3, x4, 0         ; c
+CALL_INTRINSIC SCANF
+STORE_ACC x3            ; c in x3
 
-FMUL x4, x1, x3         ; a*c
-FMULI x4, x4, 4.0f      ; 4*a*c
-FMUL x5, x2, x2         ; b*b
-FSUB x4, x5, x4         ; D = b*b - 4*a*c
+MULF x1                 ; a*c in acc
+MULI 4.0                ; 4*a*c in acc
+STORE_ACC x4            ; 4*a*c in x4
 
-FMVI x6, 0.0f
+LOAD_ACC x2             ; b in acc
+MULF x2                 ; b*b in acc
+SUBF x4                 ; D = b*b - 4*a*c in acc
 
-FBLT x4, x6, 160        ; D < 0
+MVI x6, 0.0             ; 0 in x6
 
-BEQ x4, x6, 112         ; D == 0
+BLTF x6, 100            ; D < 0
+
+BEQ x6, 72              ; D == 0
 
 ; D > 0
-FSQRT x4, x4            ; sqrt(D)
-FMULI x6, x1, -2.0f     ; -2 * a
-FDIV x4, x4, x6         ; sqrt(D) / (-2 * a)
+SQRT                    ; sqrt(D) in acc
+STORE_ACC x6            ; sqrt(D) in x6
 
-FDIV x5, x2, x6         ; b / (-2 * a)
+LOAD_ACCI -2.0          ; -2 in acc
+MULF x1                 ; -2*a in acc
+STORE_ACC x7            ; -2*a in x7
 
-FSUB x6, x5, x4         ; x_1
+LOAD_ACC x6             ; sqrt(D) in acc
+DIVF x7                 ; sqrt(D) / (-2 * a) in acc
+STORE_ACC x6            ; sqrt(D) / (-2 * a) in x6
 
-IMVI x7, 4012
-STOREW x7, x6, 0
-INTRINSIC x7, FPRINT    ; print x_1
+LOAD_ACC x2             ; b in acc
+DIVF x7                 ; b / (-2 * a) in acc
+STORE_ACC x7            ; b / (-2 * a) in x7
 
-FADD x6, x5, x4         ; x_2
+ADDF x6                 ; x_1
 
-IMVI x7, 4016
-STOREW x7, x6, 0
-INTRINSIC x7, FPRINT    ; print x_2
+CALL_INTRINSIC PRINTF   ; print x_1
 
-JMP 48
+LOAD_ACC x7             ; b / (-2 * a) in acc
+SUBF x6                 ; x_2
+
+CALL_INTRINSIC PRINTF   ; print x_2
+
+
+JMP 28
 
 ; D == 0
-FMULI x6, x1, -2.0f     ; -2 * a
-FDIV x6, x2, x6         ; b / (-2 * a)
+LOAD_ACCI -2.0          ; -2 in acc
+MULF x1                 ; -2*a in acc
+STORE_ACC x7            ; -2*a in x7
 
-IMVI x7, 4012
-STOREW x7, x6, 0
-INTRINSIC x7, FPRINT    ; print x_1
+LOAD_ACC x2             ; b in acc
+DIVF x7                 ; b / (-2 * a) in acc
+
+CALL_INTRINSIC PRINTF   ; print x_2
 
 RET
