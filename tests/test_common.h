@@ -24,6 +24,28 @@ public:
     }
 };
 
+class CinRedefiner {
+private:
+    std::stringstream my;
+    std::streambuf *cin_buff;
+
+public:
+    void changeOnMy() {
+        cin_buff = std::cin.rdbuf();
+        std::cin.rdbuf(my.rdbuf());
+    }
+
+    std::stringstream& get() {
+        return my;
+    }
+
+    std::stringstream returnBack() {
+        std::cin.rdbuf(cin_buff);
+        std::stringstream ss(my.str());
+        return ss;
+    }
+};
+
 }
 
 #endif
