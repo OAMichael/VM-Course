@@ -8,128 +8,135 @@ fields:
   r1:
     name: r1
     location: {bits: [{msb: 15, lsb: 8, from: 7, to: 0}], mask: 65280, dbg_hex_mask: ff00}
+  intrCode:
+    name: intrCode
+    location: {bits: [{msb: 15, lsb: 8, from: 7, to: 0}], mask: 65280, dbg_hex_mask: ff00}
   r2:
     name: r2
     location: {bits: [{msb: 23, lsb: 16, from: 7, to: 0}], mask: 16711680, dbg_hex_mask: ff0000}
-  immm:
+  imm:
     name: imm
     location: {bits: [{msb: 31, lsb: 16, from: 15, to: 0}], mask: 4278190080, dbg_hex_mask: ffff0000}
+
+types:
+  onlyReg:    [opcode, r1]
+  onlyImm:    [opcode, imm]
+  nothing:    [opcode]
+  twoRegs:    [opcode, r1, r2]
+  regAndImm:  [opcode, r1, imm]
+  intrinsic:  [opcode, intrCode]
 
 instructions:
   $1:
     name: loadAcc
-    fields: [opcode, r1]
+    type: onlyReg
     implAcc: write
   $2:
     name: storeAcc
-    fields: [opcode, r1]
+    type: onlyReg
     implAcc: read
   $3:
     name: loadAccImm
-    fields: [opcode, imm]
+    type: onlyImm
     implAcc: write
   $4:
-    name: storeAccImm
-    fields: [opcode, imm]
+    name: toFloatReg
+    type: onlyReg
     implAcc: write
   $5:
-    name: toFloatReg
-    fields: [opcode, r1]
-    implAcc: none
-  $6:
     name: toIntReg
-    fields: [opcode, r1]
-    implAcc: none
-  $7:
-    name: toFloat
-    fields: [opcode]
-    implAcc: readwrite
-  $8:
-    name: toInt
-    fields: [opcode]
-    implAcc: readwrite
-  $9:
-    name: mov
-    fields: [opcode, r1, r2]
-    implAcc: none
-  $10:
-    name: loadAccMem
-    fields: [opcode, r1, offset]
+    type: onlyReg
     implAcc: write
-  $11:
+  $6:
+    name: toFloat
+    type: nothing
+    implAcc: readWrite
+  $7:
+    name: toInt
+    type: nothing
+    implAcc: readWrite
+  $8:
+    name: mov
+    type: twoRegs
+    implAcc: none
+  $9:
+    name: loadAccMem
+    type: regAndImm
+    implAcc: write
+  $10:
     name: storeAccMem
-    fields: [opcode, r1, offset]
+    type: regAndImm
     implAcc: read
-  $12:
+  $11:
     name: add
-    fields: [opcode, r1]
-    implAcc: readwrite
-  $13:
+    type: onlyReg
+    implAcc: readWrite
+  $12:
     name: sub
-    fields: [opcode, r1]
-    implAcc: readwrite
-  $14:
+    type: onlyReg
+    implAcc: readWrite
+  $13:
     name: mul
-    fields: [opcode, r1]
-    implAcc: readwrite
-  $15:
+    type: onlyReg
+    implAcc: readWrite
+  $14:
     name: div
-    fields: [opcode, r1]
-    implAcc: readwrite
-  $16:
+    type: onlyReg
+    implAcc: readWrite
+  $15:
     name: addf
-    fields: [opcode, r1]
-    implAcc: readwrite
-  $17:
+    type: onlyReg
+    implAcc: readWrite
+  $16:
     name: subf
-    fields: [opcode, r1]
-    implAcc: readwrite
-  $18:
+    type: onlyReg
+    implAcc: readWrite
+  $17:
     name: mulf
-    fields: [opcode, r1]
-    implAcc: readwrite
-  $19:
+    type: onlyReg
+    implAcc: readWrite
+  $18:
     name: divf
-    fields: [opcode, r1]
-    implAcc: readwrite
-  $20:
+    type: onlyReg
+    implAcc: readWrite
+  $19:
     name: sin
-    fields: [opcode]
-    implAcc: readwrite
-  $21:
+    type: nothing
+    implAcc: readWrite
+  $20:
     name: cos
-    fields: [opcode]
-    implAcc: readwrite
-  $22:
+    type: nothing
+    implAcc: readWrite
+  $21:
     name: sqrt
-    fields: [opcode]
-    implAcc: readwrite
-  $23:
+    type: nothing
+    implAcc: readWrite
+  $22:
     name: callIntr
-    fields: [opcode, imm]
+    type: intrinsic
+    implAcc: readWrite
+  $23:
+    name: jump
+    type: onlyImm
     implAcc: none
   $24:
-    name: jump
-    fields: [opcode, imm]
-    implAcc: none         # what about acc??
-  $25:
     name: beq
-    fields: [opcode, r1]
-    implAcc: readwrite    # what about acc??
-  $26:
+    type: regAndImm
+    implAcc: readWrite
+  $25:
     name: bge
-    fields: [opcode, r1]
-    implAcc: readwrite    # what about acc??
-  $27:
+    type: regAndImm
+    implAcc: readWrite
+  $26:
     name: bg
-    fields: [opcode, r1]
-    implAcc: readwrite    # what about acc??
-  $28:                    # need solution about calling convention
+    type: regAndImm
+    implAcc: readWrite
+  $27:
     name: call
-    fields: [opcode, imm] # only immidiate or r1 too or single r1...
-    implAcc: none         # what about accumulator
-  $29:
+    type: onlyImm
+    implAcc: none
+  $28:
     name: ret
-    fields: [opcode]      # only immidiate or r1 too
-    implAcc: read         # what about accumulator
+    type: nothing
+    implAcc: write
   
