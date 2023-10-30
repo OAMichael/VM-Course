@@ -6,7 +6,7 @@
 namespace VM {
 
 bool VirtualMachine::run() {
-    bool interpretResult = m_interpreter.interpret(m_pc);
+    bool interpretResult = m_interpreter.interpret();
 
     return interpretResult;
 }

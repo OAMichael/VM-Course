@@ -139,7 +139,7 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 case VM::InstructionType::MVI:
                 {
                     decInstr.r1 = getRegisterFromStr(operandsStr[0]);
-                    decInstr.immIdx = program.constants.size();
+                    decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
                     decInstr.opcode = opcode;
 
                     VM::Immediate constant;
@@ -169,7 +169,7 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 case VM::InstructionType::SRI:
                 case VM::InstructionType::JMP:
                 {
-                    decInstr.immIdx = program.constants.size();
+                    decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
                     decInstr.opcode = opcode;
 
                     VM::Immediate constant;

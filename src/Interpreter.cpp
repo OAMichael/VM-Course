@@ -17,7 +17,7 @@ inline Immediate Interpreter::loadConstant(const ImmediateIndex idx) {
 }
 
 
-bool Interpreter::interpret(const uint64_t entry) {
+bool Interpreter::interpret() {
 
     auto& pc = m_vm->m_pc;
     uint8_t* memory = m_vm->m_memory;
@@ -154,12 +154,12 @@ bool Interpreter::interpret(const uint64_t entry) {
 
     SL:
 
-        regfile[RegisterType::ACC].i_val << regfile[decInstr.r1].i_val;
+        regfile[RegisterType::ACC].i_val = regfile[RegisterType::ACC].i_val << regfile[decInstr.r1].i_val;
         DISPATCH()
 
     SR:
 
-        regfile[RegisterType::ACC].i_val >> regfile[decInstr.r1].i_val;
+        regfile[RegisterType::ACC].i_val = regfile[RegisterType::ACC].i_val >> regfile[decInstr.r1].i_val;
         DISPATCH()
 
     NEG:
@@ -199,9 +199,11 @@ bool Interpreter::interpret(const uint64_t entry) {
         switch (imm.type) {
             case ImmType::INTEGER: {
                 regfile[RegisterType::ACC].i_val += imm.i_val;
+                break;
             }
             case ImmType::FLOATING: {
                 regfile[RegisterType::ACC].f_val += imm.f_val;
+                break;
             }
             default:;
         }
@@ -214,9 +216,11 @@ bool Interpreter::interpret(const uint64_t entry) {
         switch (imm.type) {
             case ImmType::INTEGER: {
                 regfile[RegisterType::ACC].i_val -= imm.i_val;
+                break;
             }
             case ImmType::FLOATING: {
                 regfile[RegisterType::ACC].f_val -= imm.f_val;
+                break;
             }
             default:;
         }
@@ -228,9 +232,11 @@ bool Interpreter::interpret(const uint64_t entry) {
         switch (imm.type) {
             case ImmType::INTEGER: {
                 regfile[RegisterType::ACC].i_val *= imm.i_val;
+                break;
             }
             case ImmType::FLOATING: {
                 regfile[RegisterType::ACC].f_val *= imm.f_val;
+                break;
             }
             default:;
         }
@@ -245,12 +251,14 @@ bool Interpreter::interpret(const uint64_t entry) {
                     throw std::runtime_error("division by zero");
                 }
                 regfile[RegisterType::ACC].i_val /= imm.i_val;
+                break;
             }
             case ImmType::FLOATING: {
                 if (regfile[decInstr.r1].f_val == 0) {
                     throw std::runtime_error("division by zero");
                 }
                 regfile[RegisterType::ACC].f_val /= imm.f_val;
+                break;
             }
             default:;
         }
@@ -277,13 +285,13 @@ bool Interpreter::interpret(const uint64_t entry) {
     SLI:
 
         imm = loadConstant(decInstr.immIdx);
-        regfile[RegisterType::ACC].i_val << imm.i_val;
+        regfile[RegisterType::ACC].i_val = regfile[RegisterType::ACC].i_val << imm.i_val;
         DISPATCH()
 
     SRI:
 
         imm = loadConstant(decInstr.immIdx);
-        regfile[RegisterType::ACC].i_val >> imm.i_val;
+        regfile[RegisterType::ACC].i_val = regfile[RegisterType::ACC].i_val >> imm.i_val;
         DISPATCH()
 
     SIN:

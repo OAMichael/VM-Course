@@ -28,7 +28,7 @@ struct ProgramHeader {
 };
 
 
-static bool serializeProgram(const std::string& filename, const Program& program) {
+[[maybe_unused]] static bool serializeProgram(const std::string& filename, const Program& program) {
     ProgramHeader header;
 
     memcpy(header.p_message, programHeaderMessage, sizeof(programHeaderMessage));
@@ -39,9 +39,9 @@ static bool serializeProgram(const std::string& filename, const Program& program
     std::ofstream outFile;
     outFile.open(filename, std::ios::binary | std::ios::out | std::ios::trunc);
 
-    outFile.write((char*)&header, sizeof(ProgramHeader));
-    outFile.write((char*)program.instructions.data(), program.instructions.size() * sizeof(VM::EncodedInstruction));
-    outFile.write((char*)program.constants.data(), program.constants.size() * sizeof(VM::Immediate));
+    outFile.write((const char*)&header, sizeof(ProgramHeader));
+    outFile.write((const char*)program.instructions.data(), program.instructions.size() * sizeof(VM::EncodedInstruction));
+    outFile.write((const char*)program.constants.data(), program.constants.size() * sizeof(VM::Immediate));
 
     outFile.close();
 
@@ -49,7 +49,7 @@ static bool serializeProgram(const std::string& filename, const Program& program
 }
 
 
-static bool deserializeProgram(const std::string& filename, Program& program) {
+[[maybe_unused]] static bool deserializeProgram(const std::string& filename, Program& program) {
     std::ifstream inFile;
     inFile.open(filename, std::ios::binary | std::ios::in);
     if (!inFile) {
@@ -108,5 +108,6 @@ static bool deserializeProgram(const std::string& filename, Program& program) {
 }
 
 }   // Common
+
 
 #endif  // COMMON_H

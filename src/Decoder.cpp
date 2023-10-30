@@ -54,7 +54,7 @@ void Decoder::decodeInstruction(const EncodedInstruction encInstr, DecodedInstru
         case InstructionType::MVI:
         {
             decInstr.r1 = static_cast<RegisterType>(getPartialBitsShifted<15, 8>(encInstr));
-            decInstr.immIdx = getPartialBitsShifted<31, 16>(encInstr);
+            decInstr.immIdx = static_cast<VM::ImmediateIndex>(getPartialBitsShifted<31, 16>(encInstr));
             decInstr.opcode = opcode;
             break;
         }
@@ -72,7 +72,7 @@ void Decoder::decodeInstruction(const EncodedInstruction encInstr, DecodedInstru
         case InstructionType::SRI:
         case InstructionType::JMP:
         {
-            decInstr.immIdx = getPartialBitsShifted<31, 16>(encInstr);
+            decInstr.immIdx = static_cast<VM::ImmediateIndex>(getPartialBitsShifted<31, 16>(encInstr));
             decInstr.opcode = opcode;
             break;
         }
