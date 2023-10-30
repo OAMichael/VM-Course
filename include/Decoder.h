@@ -31,9 +31,6 @@ private:
 
 
 public:
-    InstructionType getOpcode(const EncodedInstruction instr) const;
-    IntrinsicType getIntrinsicType(const EncodedInstruction instr) const;
-
     void decodeInstruction(const EncodedInstruction encInstr, DecodedInstruction& decInstr) const;
     void encodeInstruction(const DecodedInstruction& decInstr, EncodedInstruction& encInstr) const;
 };

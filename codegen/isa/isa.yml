@@ -4,19 +4,19 @@
 fields:
   opcode: 
     name: opcode
-    location: {bits: [{msb: 7, lsb: 0, from: 7, to: 0}], mask: 255, dbg_hex_mask: ff}
+    location: {bits: {msb: 7, lsb: 0, from: 7, to: 0}, mask: 255, dbg_hex_mask: ff}
   r1:
     name: r1
-    location: {bits: [{msb: 15, lsb: 8, from: 7, to: 0}], mask: 65280, dbg_hex_mask: ff00}
+    location: {bits: {msb: 15, lsb: 8, from: 7, to: 0}, mask: 65280, dbg_hex_mask: ff00}
   intrCode:
     name: intrCode
-    location: {bits: [{msb: 15, lsb: 8, from: 7, to: 0}], mask: 65280, dbg_hex_mask: ff00}
+    location: {bits: {msb: 15, lsb: 8, from: 7, to: 0}, mask: 65280, dbg_hex_mask: ff00}
   r2:
     name: r2
-    location: {bits: [{msb: 23, lsb: 16, from: 7, to: 0}], mask: 16711680, dbg_hex_mask: ff0000}
+    location: {bits: {msb: 23, lsb: 16, from: 7, to: 0}, mask: 16711680, dbg_hex_mask: ff0000}
   imm:
     name: imm
-    location: {bits: [{msb: 31, lsb: 16, from: 15, to: 0}], mask: 4278190080, dbg_hex_mask: ffff0000}
+    location: {bits: {msb: 31, lsb: 16, from: 15, to: 0}, mask: 4278190080, dbg_hex_mask: ffff0000}
 
 types:
   onlyReg:    [opcode, r1]
@@ -28,31 +28,31 @@ types:
 
 instructions:
   $1:
-    name: loadAcc
+    name: load_Acc
     type: onlyReg
     implAcc: write
   $2:
-    name: storeAcc
+    name: store_Acc
     type: onlyReg
     implAcc: read
   $3:
-    name: loadAccImm
+    name: load_Acc_Imm
     type: onlyImm
     implAcc: write
   $4:
-    name: toFloatReg
+    name: to_Float_Reg
     type: onlyReg
     implAcc: write
   $5:
-    name: toIntReg
+    name: to_Int_Reg
     type: onlyReg
     implAcc: write
   $6:
-    name: toFloat
+    name: to_Float
     type: nothing
     implAcc: readWrite
   $7:
-    name: toInt
+    name: to_Int
     type: nothing
     implAcc: readWrite
   $8:
@@ -60,11 +60,11 @@ instructions:
     type: twoRegs
     implAcc: none
   $9:
-    name: loadAccMem
+    name: load_Acc_Mem
     type: regAndImm
     implAcc: write
   $10:
-    name: storeAccMem
+    name: store_Acc_Mem
     type: regAndImm
     implAcc: read
   $11:
@@ -112,7 +112,7 @@ instructions:
     type: nothing
     implAcc: readWrite
   $22:
-    name: callIntr
+    name: call_Intr
     type: intrinsic
     implAcc: readWrite
   $23:
@@ -133,10 +133,19 @@ instructions:
     implAcc: readWrite
   $27:
     name: call
-    type: onlyImm
+    type: regAndImm
     implAcc: none
   $28:
     name: ret
     type: nothing
     implAcc: write
-  
+
+intrinsics:
+  $1:
+    name: scan
+  $2:
+    name: print
+  $3:
+    name: scanf
+  $4:
+    name: printf

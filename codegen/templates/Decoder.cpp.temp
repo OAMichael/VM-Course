@@ -1,0 +1,166 @@
+#include "Decoder.h"
+
+
+namespace {
+
+/* [[[cog
+import cog
+from yaml import load, dump
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper
+
+cog.msg("generate get part funcs")
+data = load(open(isa_file, 'r'), Loader=Loader)
+
+fields = data['fields'].values() # ['opcode'] # ['location']['bits']
+
+cppTypes = {'opcode': 'InstructionType', 'r1': 'RegisterType', 'r2': 'RegisterType', 'intrCode': 'IntrinsicType', 'imm': 'ImmediateIndex'}
+
+for field in fields:
+    typeName = cppTypes[field['name']]
+    cog.outl(f"inline VM::{typeName} get_{field['name']}(const EncodedInstruction instr) {{")
+    bits = field['location']['bits']
+    cog.outl(f"\treturn static_cast<VM::{typeName}>(getPartialBitsShifted<{bits['msb']}, {bits['lsb']}>(instr));")
+    cog.outl("}")
+]]] */
+
+// [[[end]]]
+
+}
+
+namespace VM {
+
+void Decoder::decodeInstruction(const EncodedInstruction &encInstr, DecodedInstruction& decInstr) const {
+    const InstructionType opcode = getOpcode(encInstr);
+
+    switch(opcode) {
+        /* [[[cog
+        types = data['types']
+        print(types)
+        instr_refer_to_types = {}
+        for instr in data['instructions'].values():
+            instr_refer_to_types.setdefault(instr['type'], []).append(instr)
+
+        for type, params in types.items():
+            for instr in instr_refer_to_types[type]:
+                cog.outl(f'case InstructionType::{instr["name"].upper()}:')
+            cog.outl('{')
+            for part in params:
+                cog.outl(f'\tdecInstr.{part} = get_{part}(encInstr)')
+            cog.outl('}')
+        
+        cog.outl('default: {')
+        cog.outl('\tdecInstr.opcode = InstructionType::INSTRUCTION_INVALID;')
+        cog.outl('\tbreak;')
+        cog.outl('}')
+        ]]] */
+        
+        // [[[end]]]
+    }
+}
+
+
+void Decoder::encodeInstruction(const DecodedInstruction& decInstr, EncodedInstruction& encInstr) const {
+
+    switch(decInstr.opcode) {
+
+        // ================================== Type A ================================== //
+        case InstructionType::LOAD_ACC:
+        case InstructionType::STORE_ACC:
+        case InstructionType::TO_FLOAT_REG:
+        case InstructionType::TO_INT_REG:
+        case InstructionType::ADD:
+        case InstructionType::SUB:
+        case InstructionType::MUL:
+        case InstructionType::DIV:
+        case InstructionType::AND:
+        case InstructionType::OR:
+        case InstructionType::XOR:
+        case InstructionType::SL:
+        case InstructionType::SR:
+        case InstructionType::ADDF:
+        case InstructionType::SUBF:
+        case InstructionType::MULF:
+        case InstructionType::DIVF:
+        {
+            encInstr = makePartialBits<15, 8>(decInstr.r1) | makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+
+        // ================================== Type B ================================== //
+        case InstructionType::LOAD_ACC_MEM:
+        case InstructionType::STORE_ACC_MEM:
+        case InstructionType::BEQ:
+        case InstructionType::BNE:
+        case InstructionType::BGE:
+        case InstructionType::BLT:
+        case InstructionType::BGEF:
+        case InstructionType::BLTF:
+        case InstructionType::MVI:
+        {
+            encInstr = makePartialBits<31, 16>(decInstr.immIdx) | makePartialBits<15, 8>(decInstr.r1) | makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+
+        // ================================== Type I ================================== //
+        case InstructionType::LOAD_ACCI:
+        case InstructionType::ADDI:
+        case InstructionType::SUBI:
+        case InstructionType::MULI:
+        case InstructionType::DIVI:
+        case InstructionType::ANDI:
+        case InstructionType::ORI:
+        case InstructionType::XORI:
+        case InstructionType::SLI:
+        case InstructionType::SRI:
+        case InstructionType::JMP:
+        {
+            encInstr = makePartialBits<31, 16>(decInstr.immIdx) | makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+
+        // ================================== Type C ================================== //
+        case InstructionType::TO_FLOAT:
+        case InstructionType::TO_INT:
+        case InstructionType::NEG:
+        case InstructionType::NEGF:
+        case InstructionType::SIN:
+        case InstructionType::COS:
+        case InstructionType::SQRT:
+        {
+            encInstr = makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+
+        // ================================== Type R ================================== //
+        case InstructionType::MV:
+        {
+            encInstr = makePartialBits<23, 16>(decInstr.r2) | makePartialBits<15, 8>(decInstr.r1) | makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+
+        // ================================== Type N ================================== //
+        case InstructionType::CALL_INTRINSIC:
+        {
+            encInstr = makePartialBits<15, 8>(decInstr.intrinType) | makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+
+        // ================================== Type ? ================================== //
+        case InstructionType::CALL:
+        case InstructionType::RET:
+        {
+            encInstr = makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+        default: {
+            encInstr = makePartialBits<7, 0>(InstructionType::INSTRUCTION_INVALID);
+            break;
+        }
+    }
+}
+
+
+}   // VM
