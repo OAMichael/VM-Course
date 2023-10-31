@@ -37,9 +37,9 @@ TEST(InstructionTest, firstTest)
     ASSERT_TRUE(vm.run());
     auto ss = c.returnBack();
 
-    float x;
+    double x;
     ss >> x;
-    ASSERT_EQ(x, -35.7189f);
+    ASSERT_DOUBLE_EQ(x, -35.7189);
 }
 
 int main(int argc, char *argv[])

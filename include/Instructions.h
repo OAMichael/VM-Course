@@ -8,44 +8,7 @@
 namespace VM {
 
 static constexpr const uint32_t INSTRUCTION_BYTESIZE = 4;
-
-enum RegisterType : uint16_t {
-    ACC = 0,
-    X0,
-    X1,
-    X2,
-    X3,
-    X4,
-    X5,
-    X6,
-    X7,
-    X8,
-    X9,
-    X10,
-    X11,
-    X12,
-    X13,
-    X14,
-    X15,
-    X16,
-    X17,
-    X18,
-    X19,
-    X20,
-    X21,
-    X22,
-    X23,
-    X24,
-    X25,
-    X26,
-    X27,
-    X28,
-    X29,
-    X30,
-    X31,
-
-    REGISTER_COUNT
-};
+static constexpr const uint32_t FRAME_REGISTER_COUNT = 256;
 
 
 enum InstructionType : uint8_t {
@@ -236,6 +199,7 @@ union Register {
 
 using EncodedInstruction = uint32_t;
 using ImmediateIndex = uint16_t;
+using RegisterType = uint8_t;
 
 struct Immediate {
     ImmType type;
@@ -252,6 +216,12 @@ struct DecodedInstruction {
 
     InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
     IntrinsicType intrinType;
+};
+
+struct Frame {
+    uint64_t pc;
+    Register regfile[FRAME_REGISTER_COUNT];
+    Frame* parent;
 };
 
 }   // VM
