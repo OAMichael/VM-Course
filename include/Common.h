@@ -12,6 +12,7 @@
 namespace Common {
 
 static constexpr const char programHeaderMessage[] = "bibaboba";
+static constexpr uint64_t DEFAULT_ENTRY_POINT = 0;
 
 struct Program {
     uint64_t entryPoint;
@@ -71,7 +72,7 @@ struct ProgramHeader {
     inFile.read((char*)&header, sizeof(ProgramHeader));
     remainSize -= sizeof(ProgramHeader);
 
-    std::string readMessage((char*)header.p_message);
+    std::string readMessage((char*)header.p_message, sizeof(programHeaderMessage) - 1);
     if (readMessage != programHeaderMessage) {
         inFile.close();
         return false;

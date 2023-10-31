@@ -81,10 +81,10 @@ TEST(InstructionTest, firstTest)
     ASSERT_TRUE(vm.run());
     auto ss = c.returnBack();
 
-    float x1, x2;
+    double x1, x2;
     ss >> x1 >> x2;
-    ASSERT_EQ(x1, 0.5f);
-    ASSERT_EQ(x2, 2.0f);
+    ASSERT_DOUBLE_EQ(x1, 0.5);
+    ASSERT_DOUBLE_EQ(x2, 2.0);
 }
 
 int main(int argc, char *argv[])

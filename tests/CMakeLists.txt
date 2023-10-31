@@ -5,6 +5,7 @@ set(TESTS
     arithmetic
     branching
     intrinsic
+    call
 )
 
 foreach(EXEC IN LISTS TESTS)

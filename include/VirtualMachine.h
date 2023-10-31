@@ -26,8 +26,8 @@ private:
 
 
     // Virtual machine state
-    uint64_t m_pc = 0;
-    Register m_regfile[RegisterType::REGISTER_COUNT] = {};
+    uint64_t m_entry = 0;
+    Register m_accumulator = {};
     uint8_t m_memory[VM_MEMORY_BYTESIZE] = {};
 
 public:
@@ -35,7 +35,6 @@ public:
     bool loadProgram(const Common::Program& program);
     bool loadProgram(const std::string& filename);
     bool run();
-    const Register getRegisterValue(RegisterType reg) const; // for check only not use
 
     VirtualMachine() : m_interpreter{this} {};
 
