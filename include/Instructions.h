@@ -8,7 +8,6 @@
 
 namespace VM {
 
-static constexpr const uint32_t INSTRUCTION_BYTESIZE = 4;
 static constexpr const uint32_t FRAME_REGISTER_COUNT = 256;
 
 enum BasicObjectType : uint8_t {

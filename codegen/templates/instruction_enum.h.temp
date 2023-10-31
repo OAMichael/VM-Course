@@ -25,7 +25,7 @@ enum InstructionType : uint8_t {
 
     instr_size = len(data['instructions'].values())
 
-    for opcode, instr in zip(data['instructions'], data['instructions'].values()):
+    for opcode, instr in data['instructions'].items():
         cog.outl(f"{instr['name'].upper():<20} = {opcode.replace('$', '')},")
     ]]] */
     
@@ -42,7 +42,7 @@ enum IntrinsicType : uint8_t {
     cog.msg("generate intrinsics enum")
 
     intr_size = len(data['intrinsics'].values())
-    for idx, (opcode, intr) in enumerate(zip(data['intrinsics'], data['intrinsics'].values())):
+    for idx, (opcode, intr) in enumerate(data['intrinsics'].items()):
         cog.outl(f"INTRINSIC_{intr['name'].upper():<10} = {opcode.replace('$', '')},")
     ]]] */
     
@@ -78,31 +78,7 @@ static const std::unordered_map<std::string, IntrinsicType> intrinsicsNameOpcode
     ]]] */
     
     // [[[end]]]
-};
 
-union Register {
-    int64_t i_val;
-    double  f_val;
-};
-
-using EncodedInstruction = uint32_t;
-using ImmediateIndex = uint16_t;
-
-struct Immediate {
-    ImmType type;
-    union {
-        int64_t  i_val;
-        double   f_val;
-        uint64_t p_str;     // Reserved for later
-    };
-};
-
-struct DecodedInstruction {
-    RegisterType r1, r2;
-    ImmediateIndex immIdx;  // Immediate index in constant pool
-
-    InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
-    IntrinsicType intrinType;
 };
 
 }
