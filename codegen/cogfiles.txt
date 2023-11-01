@@ -1,2 +1,0 @@
-./templates/instruction_enum.h.temp -D isa_file=./isa/isa.yml -o ./tmp/instruction_enum.h
-./templates/Decoder.cpp.temp -D isa_file=./isa/isa.yml -o ./tmp/Decoder.cpp

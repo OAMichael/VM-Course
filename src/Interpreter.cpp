@@ -84,22 +84,22 @@ bool Interpreter::interpret(const uint64_t entry) {
 
     LOAD_ACCI:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         memcpy(&accumulator, &imm.i_val, sizeof(accumulator));
 
         DISPATCH()
 
     LOAD_ACC_MEM:
 
-        imm = loadConstant(decInstr.immIdx);
-        memcpy(&accumulator, memory + regfile[decInstr.r1].i_val + imm.i_val, sizeof(accumulator));
+        imm = loadConstant(decInstr.imm);
+        memcpy(&accumulator, memory + decInstr.r1 + imm.i_val, sizeof(accumulator));
 
         DISPATCH()
 
     STORE_ACC_MEM:
 
-        imm = loadConstant(decInstr.immIdx);
-        memcpy(memory + regfile[decInstr.r1].i_val + imm.i_val, &accumulator, sizeof(accumulator));
+        imm = loadConstant(decInstr.imm);
+        memcpy(memory + decInstr.r1 + imm.i_val, &accumulator, sizeof(accumulator));
 
         DISPATCH()
 
@@ -203,7 +203,7 @@ bool Interpreter::interpret(const uint64_t entry) {
         DISPATCH()
 
     ADDI:
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         switch (imm.type) {
             case BasicObjectType::INTEGER: {
                 accumulator.i_val += imm.i_val;
@@ -222,7 +222,7 @@ bool Interpreter::interpret(const uint64_t entry) {
 
     SUBI:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         switch (imm.type) {
             case BasicObjectType::INTEGER: {
                 accumulator.i_val -= imm.i_val;
@@ -240,7 +240,7 @@ bool Interpreter::interpret(const uint64_t entry) {
 
     MULI:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         switch (imm.type) {
             case BasicObjectType::INTEGER: {
                 accumulator.i_val *= imm.i_val;
@@ -258,7 +258,7 @@ bool Interpreter::interpret(const uint64_t entry) {
 
     DIVI:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         switch (imm.type) {
             case BasicObjectType::INTEGER: {
                 if (regfile[decInstr.r1].i_val == 0) {
@@ -282,31 +282,31 @@ bool Interpreter::interpret(const uint64_t entry) {
 
     ANDI:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         accumulator.i_val &= imm.i_val;
         DISPATCH()
 
     ORI:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         accumulator.i_val |= imm.i_val;
         DISPATCH()
 
     XORI:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         accumulator.i_val ^= imm.i_val;
         DISPATCH()
 
     SLI:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         accumulator.i_val = accumulator.i_val << imm.i_val;
         DISPATCH()
 
     SRI:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         accumulator.i_val = accumulator.i_val >> imm.i_val;
         DISPATCH()
 
@@ -335,13 +335,13 @@ bool Interpreter::interpret(const uint64_t entry) {
 
     MVI:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         memcpy(&regfile[decInstr.r1].i_val, &imm.i_val, sizeof(regfile[decInstr.r1].i_val));
         DISPATCH()
 
     CALL_INTINSIC:
 
-        switch(decInstr.intrinType) {
+        switch(decInstr.intrCode) {
 
             case IntrinsicType::SCAN: {
                 std::cin >> accumulator.i_val;
@@ -398,14 +398,14 @@ bool Interpreter::interpret(const uint64_t entry) {
 
     JMP:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
         m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
         DISPATCH()
 
     BEQ:
 
         if (accumulator.i_val == regfile[decInstr.r1].i_val) {
-            imm = loadConstant(decInstr.immIdx);
+            imm = loadConstant(decInstr.imm);
             m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
         }
         DISPATCH()
@@ -413,7 +413,7 @@ bool Interpreter::interpret(const uint64_t entry) {
     BNE:
 
         if (accumulator.i_val != regfile[decInstr.r1].i_val) {
-            imm = loadConstant(decInstr.immIdx);
+            imm = loadConstant(decInstr.imm);
             m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
         }
         DISPATCH()
@@ -421,7 +421,7 @@ bool Interpreter::interpret(const uint64_t entry) {
     BGE:
 
         if (accumulator.i_val >= regfile[decInstr.r1].i_val) {
-            imm = loadConstant(decInstr.immIdx);
+            imm = loadConstant(decInstr.imm);
             m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
         }
         DISPATCH()
@@ -429,7 +429,7 @@ bool Interpreter::interpret(const uint64_t entry) {
     BLT:
 
         if (accumulator.i_val < regfile[decInstr.r1].i_val) {
-            imm = loadConstant(decInstr.immIdx);
+            imm = loadConstant(decInstr.imm);
             m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
         }
         DISPATCH()
@@ -437,7 +437,7 @@ bool Interpreter::interpret(const uint64_t entry) {
     BGEF:
 
         if (accumulator.f_val >= regfile[decInstr.r1].f_val) {
-            imm = loadConstant(decInstr.immIdx);
+            imm = loadConstant(decInstr.imm);
             m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
         }
         DISPATCH()
@@ -445,14 +445,14 @@ bool Interpreter::interpret(const uint64_t entry) {
     BLTF:
 
         if (accumulator.f_val < regfile[decInstr.r1].f_val) {
-            imm = loadConstant(decInstr.immIdx);
+            imm = loadConstant(decInstr.imm);
             m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
         }
         DISPATCH()
 
     CALL:
 
-        imm = loadConstant(decInstr.immIdx);
+        imm = loadConstant(decInstr.imm);
 
         size_t numArgs = decInstr.numArgs;
         int64_t offset = imm.i_val;

@@ -36,7 +36,7 @@ instructions:
     type: onlyReg
     implAcc: read
   $3:
-    name: load_Acc_Imm
+    name: load_AccI
     type: onlyImm
     implAcc: write
   $4:
@@ -56,89 +56,165 @@ instructions:
     type: nothing
     implAcc: readWrite
   $8:
-    name: mov
+    name: mv
     type: twoRegs
     implAcc: none
   $9:
+    name: mvi
+    type: regAndImm
+    implAcc: none
+  $10:
     name: load_Acc_Mem
     type: regAndImm
     implAcc: write
-  $10:
+  $11:
     name: store_Acc_Mem
     type: regAndImm
     implAcc: read
-  $11:
+  $12:
     name: add
     type: onlyReg
     implAcc: readWrite
-  $12:
+  $13:
     name: sub
     type: onlyReg
     implAcc: readWrite
-  $13:
+  $14:
     name: mul
     type: onlyReg
     implAcc: readWrite
-  $14:
+  $15:
     name: div
     type: onlyReg
     implAcc: readWrite
-  $15:
-    name: addf
-    type: onlyReg
-    implAcc: readWrite
   $16:
-    name: subf
+    name: and
     type: onlyReg
     implAcc: readWrite
   $17:
-    name: mulf
+    name: or
     type: onlyReg
     implAcc: readWrite
   $18:
-    name: divf
+    name: xor
     type: onlyReg
     implAcc: readWrite
   $19:
+    name: sl
+    type: onlyReg
+    implAcc: readWrite
+  $20:
+    name: sr
+    type: onlyReg
+    implAcc: readWrite
+  $21:
+    name: addi
+    type: onlyImm
+    implAcc: readWrite
+  $22:
+    name: subi
+    type: onlyImm
+    implAcc: readWrite
+  $23:
+    name: muli
+    type: onlyImm
+    implAcc: readWrite
+  $24:
+    name: divi
+    type: onlyImm
+    implAcc: readWrite
+  $25:
+    name: andi
+    type: onlyImm
+    implAcc: readWrite
+  $26:
+    name: ori
+    type: onlyImm
+    implAcc: readWrite
+  $27:
+    name: xori
+    type: onlyImm
+    implAcc: readWrite
+  $28:
+    name: sli
+    type: onlyImm
+    implAcc: readWrite
+  $29:
+    name: sri
+    type: onlyImm
+    implAcc: readWrite
+  $30:
+    name: addf
+    type: onlyReg
+    implAcc: readWrite
+  $31:
+    name: subf
+    type: onlyReg
+    implAcc: readWrite
+  $32:
+    name: mulf
+    type: onlyReg
+    implAcc: readWrite
+  $33:
+    name: divf
+    type: onlyReg
+    implAcc: readWrite
+  $34:
+    name: neg
+    type: nothing
+    implAcc: readWrite
+  $35:
     name: sin
     type: nothing
     implAcc: readWrite
-  $20:
+  $36:
     name: cos
     type: nothing
     implAcc: readWrite
-  $21:
+  $37:
     name: sqrt
     type: nothing
     implAcc: readWrite
-  $22:
+  $38:
     name: call_Intr
     type: intrinsic
     implAcc: readWrite
-  $23:
-    name: jump
+  $39:
+    name: jmp
     type: onlyImm
     implAcc: none
-  $24:
+  $40:
     name: beq
-    type: regAndImm
+    type: onlyReg
     implAcc: readWrite
-  $25:
+  $41:
+    name: bne
+    type: onlyReg
+    implAcc: readWrite
+  $42:
     name: bge
-    type: regAndImm
+    type: onlyReg
     implAcc: readWrite
-  $26:
-    name: bg
-    type: regAndImm
+  $43:
+    name: bgt
+    type: onlyReg
     implAcc: readWrite
-  $27:
+  $44:
+    name: ble
+    type: onlyReg
+    implAcc: readWrite
+  $45:
+    name: blt
+    type: onlyReg
+    implAcc: readWrite
+  $46:
     name: call
-    type: regAndImm
+    type: onlyImm
     implAcc: none
-  $28:
+  $47:
     name: ret
     type: nothing
-    implAcc: write
+    implAcc: none
 
 intrinsics:
   $1:

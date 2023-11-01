@@ -79,8 +79,8 @@ static inline double getDoubleFromStr(const std::string& str) {
 }
 
 static inline VM::IntrinsicType getIntrinsicFromStr(const std::string& str) {
-    auto it = VM::intrinsicsNameType.find(str);
-    if (it == VM::intrinsicsNameType.cend())
+    auto it = VM::intrinsicsNameOpcode.find("INTRINSIC_" + str); 
+    if (it == VM::intrinsicsNameOpcode.cend())
         throw std::runtime_error("invalid intrinsic");
 
     return it->second;
@@ -383,10 +383,10 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                         }
                     }
                     if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
-                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
+                        decInstr.imm = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
                     }
                     else {
-                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
+                        decInstr.imm = static_cast<VM::ImmediateIndex>(program.constants.size());
                         program.constants.push_back(constant);
                     }
 
@@ -458,10 +458,10 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                         }
                     }
                     if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
-                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
+                        decInstr.imm = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
                     }
                     else {
-                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
+                        decInstr.imm = static_cast<VM::ImmediateIndex>(program.constants.size());
                         program.constants.push_back(constant);
                     }
 
@@ -497,12 +497,12 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 }
 
                 // ================================== Type N ================================== //
-                case VM::InstructionType::CALL_INTRINSIC:
+                case VM::InstructionType::CALL_INTR:
                 {
                     if (tokens.size() != 2) {
                         throw std::runtime_error("invalid instruction: " + tokens[0]);
                     }
-                    decInstr.intrinType = getIntrinsicFromStr(tokens[1]);
+                    decInstr.intrCode = getIntrinsicFromStr(tokens[1]);
                     decInstr.opcode = opcode;
                     break;
                 }
@@ -526,10 +526,10 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                     constant.i_val = VM::INSTRUCTION_BYTESIZE * ((int64_t)funcIt->second.first - i);
 
                     if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
-                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
+                        decInstr.imm = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
                     }
                     else {
-                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
+                        decInstr.imm = static_cast<VM::ImmediateIndex>(program.constants.size());
                         program.constants.push_back(constant);
                     }
 

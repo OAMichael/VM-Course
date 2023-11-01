@@ -57,7 +57,7 @@ struct DecodedInstruction {
     };
 
     RegisterType r2;
-    ImmediateIndex immIdx;  // Immediate index in constant pool
+    ImmediateIndex imm;  // Immediate index in constant pool
 
     InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
 };

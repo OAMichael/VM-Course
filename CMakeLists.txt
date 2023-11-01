@@ -22,8 +22,6 @@ add_subdirectory(thirdParty/googletest)
 
 add_compile_options(${COMPILE_OPTIONS})
 
-include_directories(include)
-add_subdirectory(codegen)
 add_subdirectory(src)
 add_subdirectory(vm)
 add_subdirectory(tests)

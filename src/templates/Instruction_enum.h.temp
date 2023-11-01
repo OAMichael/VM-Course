@@ -20,7 +20,7 @@ enum InstructionType : uint8_t {
     except ImportError:
         from yaml import Loader, Dumper
 
-    cog.msg("generate instruction enum")
+    cog.msg("Instruction_enum.h: generate instruction enum")
     data = load(open(isa_file, 'r'), Loader=Loader)
 
     instr_size = len(data['instructions'].values())
@@ -39,7 +39,7 @@ enum IntrinsicType : uint8_t {
     INTRINSIC_INVALID = 0,
 
     /* [[[cog
-    cog.msg("generate intrinsics enum")
+    cog.msg("Instruction_enum.h: generate intrinsics enum")
 
     intr_size = len(data['intrinsics'].values())
     for idx, (opcode, intr) in enumerate(data['intrinsics'].items()):
@@ -51,11 +51,11 @@ enum IntrinsicType : uint8_t {
     INTRINSIC_COUNT
 };
 
-constexpr const std::unordered_map<std::string, InstructionType> instructionsNameOpcode = {
+static const std::unordered_map<std::string, InstructionType> instructionsNameOpcode = {
     { "INSTRUCTION_INVALID", InstructionType::INSTRUCTION_INVALID },
 
     /* [[[cog
-    cog.msg("generate instruction name opcodes")
+    cog.msg("Instruction_enum.h: generate instruction name opcodes")
 
     for idx, instr in enumerate(data['instructions'].values()):
         name = '\"' + instr['name'].upper() + '\"'
@@ -70,7 +70,7 @@ static const std::unordered_map<std::string, IntrinsicType> intrinsicsNameOpcode
     {"INTRINSIC_INVALID" , IntrinsicType::INTRINSIC_INVALID},
 
     /* [[[cog
-    cog.msg("generate intrinsic name opcodes")
+    cog.msg("Instruction_enum.h: generate intrinsic name opcodes")
 
     for idx, intr in enumerate(data['intrinsics'].values()):
         name = '\"' + "INTRINSIC_" + intr['name'].upper() + '\"'

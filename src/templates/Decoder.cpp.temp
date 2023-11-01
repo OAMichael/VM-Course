@@ -11,7 +11,7 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
-cog.msg("generate get and make part funcs")
+cog.msg("Decoder.cpp: generate get and make part funcs")
 data = load(open(isa_file, 'r'), Loader=Loader)
 
 fields = data['fields'].values() # ['opcode'] # ['location']['bits']
@@ -20,16 +20,16 @@ cppTypes = {'opcode': 'InstructionType', 'r1': 'RegisterType', 'r2': 'RegisterTy
 
 for field in fields:
     typeName = cppTypes[field['name']]
-    cog.outl(f"inline VM::{typeName} get_{field['name']}(const EncodedInstruction instr) {{")
+    cog.outl(f"inline VM::{typeName} get_{field['name']}(const VM::EncodedInstruction instr) {{")
     bits = field['location']['bits']
-    cog.outl(f"\treturn static_cast<VM::{typeName}>(getPartialBitsShifted<{bits['msb']}, {bits['lsb']}>(instr));")
+    cog.outl(f"\treturn static_cast<VM::{typeName}>(VM::getPartialBitsShifted<{bits['msb']}, {bits['lsb']}>(instr));")
     cog.outl("}")
 
 for field in fields:
     typeName = cppTypes[field['name']]
     cog.outl(f"inline uint32_t make_{field['name']}(const uint32_t val) {{")
     bits = field['location']['bits']
-    cog.outl(f"\treturn makePartialBits<{bits['msb']}, {bits['lsb']}>(instr);")
+    cog.outl(f"\treturn VM::makePartialBits<{bits['msb']}, {bits['lsb']}>(val);")
     cog.outl("}")
 
 ]]] */
@@ -41,10 +41,12 @@ for field in fields:
 namespace VM {
 
 void Decoder::decodeInstruction(const EncodedInstruction &encInstr, DecodedInstruction& decInstr) const {
-    const InstructionType opcode = getOpcode(encInstr);
+    const InstructionType opcode = get_opcode(encInstr);
 
     switch(opcode) {
         /* [[[cog
+        cog.msg("Decoder.cpp: generate decode instr")
+
         types = data['types']
 
         instr_refer_to_types = {}
@@ -56,7 +58,7 @@ void Decoder::decodeInstruction(const EncodedInstruction &encInstr, DecodedInstr
                 cog.outl(f'case InstructionType::{instr["name"].upper()}:')
             cog.outl('{')
             for part in params:
-                cog.outl(f'\tdecInstr.{part} = get_{part}(encInstr)')
+                cog.outl(f'\tdecInstr.{part} = get_{part}(encInstr);')
             cog.outl('\tbreak;')
             cog.outl('}')
         
@@ -75,6 +77,8 @@ void Decoder::encodeInstruction(const DecodedInstruction& decInstr, EncodedInstr
 
     switch(decInstr.opcode) {
         /* [[[cog
+        cog.msg("Decoder.cpp: generate encode instr")
+
         for type, params in types.items():
             for instr in instr_refer_to_types[type]:
                 cog.outl(f'case InstructionType::{instr["name"].upper()}:')
