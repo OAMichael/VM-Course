@@ -11,6 +11,9 @@ int main(int argc, char* argv[]) {
     if (argc > 1) {
         programFile = argv[1];
     }
+    else {
+        std::cout << "Using default program: " << programFile << std::endl;
+    }
 
     if (!deserializeProgram(programFile, program)) {
         std::cerr << "Could not load program: " << programFile << std::endl;

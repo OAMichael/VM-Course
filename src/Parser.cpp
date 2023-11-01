@@ -8,7 +8,7 @@
 namespace Common {
 
 static inline VM::RegisterType getRegisterFromStr(const std::string& str) {
-    if (str[0] != 'x')
+    if (str[0] != 'x' && str[0] != 'r')
         throw std::runtime_error("invalid register");
 
     return static_cast<VM::RegisterType>(std::stoul(str.substr(1, str.npos)));
@@ -27,9 +27,17 @@ static inline double getDoubleFromStr(const std::string& str) {
 }
 
 static inline VM::IntrinsicType getIntrinsicFromStr(const std::string& str) {
-    auto it = VM::intrinsicsNameType.find("INTRINSIC_" + str); 
+    auto it = VM::intrinsicsNameType.find(str);
     if (it == VM::intrinsicsNameType.cend())
         throw std::runtime_error("invalid intrinsic");
+
+    return it->second;
+}
+
+static inline VM::BasicObjectType getBasicTypeFromStr(const std::string& str) {
+    auto it = VM::objectsNameType.find(str);
+    if (it == VM::objectsNameType.cend())
+        throw std::runtime_error("invalid basic type");
 
     return it->second;
 }
@@ -86,8 +94,8 @@ bool Parser::parseOpcodeAndOperands(const std::string& origLine, std::string& op
 }
 
 
-std::pair<std::string, size_t> Parser::parseFunctionLabel(const std::string& line) const {
-    size_t numArgs = 0;
+std::pair<std::string, uint8_t> Parser::parseFunctionLabel(const std::string& line) const {
+    uint8_t numArgs = 0;
     std::string funcLabel = "";
 
     size_t colonIdx = line.find_last_of(":");
@@ -101,11 +109,11 @@ std::pair<std::string, size_t> Parser::parseFunctionLabel(const std::string& lin
         std::size_t n = argsStr.find_first_of(digits);
         if (n != argsStr.npos) {
             std::string numStr = argsStr.substr(n, argsStr.find_first_not_of(digits, n));
-            numArgs = std::stoll(numStr);
+            numArgs = static_cast<uint8_t>(std::stoi(numStr));
         }
     }
 
-    return std::pair<std::string, size_t>(funcLabel, numArgs);
+    return std::pair<std::string, uint8_t>(funcLabel, numArgs);
 }
 
 
@@ -120,7 +128,7 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
         }
 
         std::vector<std::string> instructionLines;
-        std::unordered_map<std::string, std::pair<uint64_t, size_t>> functions_pc_args;
+        std::unordered_map<std::string, std::pair<uint64_t, uint8_t>> functions_pc_args;
         std::string line;
 
         // Read all file information at first
@@ -134,7 +142,7 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
             // This is function label
             if (line.find("FUNC ") != line.npos) {
                 auto label_args = parseFunctionLabel(line);
-                functions_pc_args[label_args.first] = std::pair<uint64_t, size_t>(instructionLines.size(), label_args.second);
+                functions_pc_args[label_args.first] = std::pair<uint64_t, uint8_t>(instructionLines.size(), label_args.second);
                 continue;
             }
 
@@ -200,11 +208,11 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
 
                     VM::Immediate constant{};
                     if (operandsStr[1].find(".") != operandsStr[1].npos) {
-                        constant.type = VM::ImmType::FLOATING;
+                        constant.type = VM::BasicObjectType::FLOATING;
                         constant.f_val = getDoubleFromStr(operandsStr[1]);
                     }
                     else {
-                        constant.type = VM::ImmType::INTEGER;
+                        constant.type = VM::BasicObjectType::INTEGER;
                         constant.i_val = getInt64FromStr(operandsStr[1]);
                     }
                     program.constants.push_back(constant);
@@ -230,11 +238,11 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
 
                     VM::Immediate constant{};
                     if (operandsStr[0].find(".") != operandsStr[0].npos) {
-                        constant.type = VM::ImmType::FLOATING;
+                        constant.type = VM::BasicObjectType::FLOATING;
                         constant.f_val = getDoubleFromStr(operandsStr[0]);
                     }
                     else {
-                        constant.type = VM::ImmType::INTEGER;
+                        constant.type = VM::BasicObjectType::INTEGER;
                         constant.i_val = getInt64FromStr(operandsStr[0]);
                     }
                     program.constants.push_back(constant);
@@ -276,17 +284,24 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 case VM::InstructionType::CALL:
                 {
                     decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
-                    decInstr.r1 = static_cast<VM::RegisterType>(functions_pc_args[operandsStr[0]].second);
+                    decInstr.numArgs = functions_pc_args[operandsStr[0]].second;
                     decInstr.opcode = opcode;
 
                     VM::Immediate constant{};
-                    constant.type = VM::ImmType::INTEGER;
+                    constant.type = VM::BasicObjectType::INTEGER;
                     constant.i_val = VM::INSTRUCTION_BYTESIZE * ((int64_t)functions_pc_args[operandsStr[0]].first - i);
                     program.constants.push_back(constant);
                     break;
                 }
                 case VM::InstructionType::RET:
                 {
+                    decInstr.opcode = opcode;
+                    break;
+                }
+                case VM::InstructionType::NEW:
+                case VM::InstructionType::NEWARRAY:
+                {
+                    decInstr.objType = getBasicTypeFromStr(operandsStr[0]);
                     decInstr.opcode = opcode;
                     break;
                 }

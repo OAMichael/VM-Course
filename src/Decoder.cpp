@@ -52,7 +52,6 @@ void Decoder::decodeInstruction(const EncodedInstruction encInstr, DecodedInstru
         case InstructionType::BGEF:
         case InstructionType::BLTF:
         case InstructionType::MVI:
-        case InstructionType::CALL:
         {
             decInstr.r1 = static_cast<RegisterType>(getPartialBitsShifted<15, 8>(encInstr));
             decInstr.immIdx = static_cast<VM::ImmediateIndex>(getPartialBitsShifted<31, 16>(encInstr));
@@ -109,8 +108,22 @@ void Decoder::decodeInstruction(const EncodedInstruction encInstr, DecodedInstru
         }
 
         // ================================== Type ? ================================== //
+        case InstructionType::CALL:
+        {
+            decInstr.numArgs = static_cast<uint8_t>(getPartialBitsShifted<15, 8>(encInstr));
+            decInstr.immIdx = static_cast<VM::ImmediateIndex>(getPartialBitsShifted<31, 16>(encInstr));
+            decInstr.opcode = opcode;
+            break;
+        }
         case InstructionType::RET:
         {
+            decInstr.opcode = opcode;
+            break;
+        }
+        case InstructionType::NEW:
+        case InstructionType::NEWARRAY:
+        {
+            decInstr.objType = static_cast<VM::BasicObjectType>(getPartialBitsShifted<15, 8>(encInstr));
             decInstr.opcode = opcode;
             break;
         }
@@ -159,7 +172,6 @@ void Decoder::encodeInstruction(const DecodedInstruction& decInstr, EncodedInstr
         case InstructionType::BGEF:
         case InstructionType::BLTF:
         case InstructionType::MVI:
-        case InstructionType::CALL:
         {
             encInstr = makePartialBits<31, 16>(decInstr.immIdx) | makePartialBits<15, 8>(decInstr.r1) | makePartialBits<7, 0>(decInstr.opcode);
             break;
@@ -210,9 +222,20 @@ void Decoder::encodeInstruction(const DecodedInstruction& decInstr, EncodedInstr
         }
 
         // ================================== Type ? ================================== //
+        case InstructionType::CALL:
+        {
+            encInstr = makePartialBits<31, 16>(decInstr.immIdx) | makePartialBits<15, 8>(decInstr.numArgs) | makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
         case InstructionType::RET:
         {
             encInstr = makePartialBits<7, 0>(decInstr.opcode);
+            break;
+        }
+        case InstructionType::NEW:
+        case InstructionType::NEWARRAY:
+        {
+            encInstr = makePartialBits<15, 8>(decInstr.objType) | makePartialBits<7, 0>(decInstr.opcode);
             break;
         }
         default: {

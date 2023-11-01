@@ -8,9 +8,16 @@
 
 namespace VM {
 
-static constexpr size_t VM_MEMORY_BYTESIZE       = 1 << 18;     // 256 KiB for now. TODO: organize memory
-static constexpr size_t VM_CONSTANT_POOL_SIZE    = 1 << 12;     // 4 KiB of constants
-static constexpr size_t VM_CONSTANT_POOL_ADDRESS = VM_MEMORY_BYTESIZE - VM_CONSTANT_POOL_SIZE;  // Put the pool at the end of memory
+
+static constexpr uint64_t VM_PROGRAM_MEMORY_BYTESIZE  = 1 << 15;     // 32 KiB of instructions
+static constexpr uint64_t VM_CONSTANT_MEMORY_BYTESIZE = 1 << 15;     // 32 KiB of constants
+static constexpr uint64_t VM_ARENA_MEMORY_BYTESIZE    = 1 << 18;     // 256 KiB of arena memory
+
+static constexpr uint64_t VM_TOTAL_MEMORY_BYTESIZE    = VM_PROGRAM_MEMORY_BYTESIZE + VM_CONSTANT_MEMORY_BYTESIZE + VM_ARENA_MEMORY_BYTESIZE;
+
+static constexpr uint64_t VM_PROGRAM_MEMORY_ADDRESS   = 0;
+static constexpr uint64_t VM_CONSTANT_MEMORY_ADDRESS  = VM_PROGRAM_MEMORY_BYTESIZE;             // Put the constant pool right after program instruction memory
+static constexpr uint64_t VM_ARENA_MEMORY_ADDRESS     = VM_PROGRAM_MEMORY_BYTESIZE + VM_CONSTANT_MEMORY_ADDRESS;
 
 
 class VirtualMachine {
@@ -28,7 +35,8 @@ private:
     // Virtual machine state
     uint64_t m_entry = 0;
     Register m_accumulator = {};
-    uint8_t m_memory[VM_MEMORY_BYTESIZE] = {};
+    uint64_t m_arenaPointer = VM_ARENA_MEMORY_ADDRESS;
+    uint8_t  m_memory[VM_TOTAL_MEMORY_BYTESIZE] = {};
 
 public:
 

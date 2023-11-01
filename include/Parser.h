@@ -17,7 +17,7 @@ private:
 
     bool removeExtraSpacesAndComments(std::string& line) const;
     bool parseOpcodeAndOperands(const std::string& origLine, std::string& opcode, std::string (&operands)[2]) const;
-    std::pair<std::string, size_t> parseFunctionLabel(const std::string& line) const;
+    std::pair<std::string, uint8_t> parseFunctionLabel(const std::string& line) const;
 
 public:
     bool parseAsmProgram(const std::string& filename, Common::Program& program) const;

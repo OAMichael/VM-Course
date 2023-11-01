@@ -12,7 +12,7 @@ namespace VM {
 
 
 inline Immediate Interpreter::loadConstant(const ImmediateIndex idx) {
-    Immediate* constantPool = (Immediate*)(m_vm->m_memory + VM_CONSTANT_POOL_ADDRESS);
+    Immediate* constantPool = (Immediate*)(m_vm->m_memory + VM_CONSTANT_MEMORY_ADDRESS);
     return constantPool[idx];
 }
 
@@ -24,9 +24,10 @@ bool Interpreter::interpret(const uint64_t entry) {
     m_currFrame->pc = entry;
     m_currFrame->parent = nullptr;
 
-    static uint8_t* memory = m_vm->m_memory;
-    static Register& accumulator = m_vm->m_accumulator;
+    static uint8_t*  memory = m_vm->m_memory;
     static Register* regfile = m_currFrame->regfile;
+    static Register& accumulator = m_vm->m_accumulator;
+    static uint64_t& arenaPointer = m_vm->m_arenaPointer;
 
     EncodedInstruction* currInstr;
     DecodedInstruction decInstr;
@@ -47,7 +48,9 @@ bool Interpreter::interpret(const uint64_t entry) {
 
         &&SIN, &&COS, &&SQRT, &&MV, &&MVI, &&CALL_INTINSIC,
 
-        &&JMP, &&BEQ, &&BNE, &&BGE, &&BLT, &&BGEF, &&BLTF, &&CALL, &&RET
+        &&JMP, &&BEQ, &&BNE, &&BGE, &&BLT, &&BGEF, &&BLTF, &&CALL, &&RET,
+
+        &&NEW, &&NEWARRAY
     };
 
 
@@ -89,14 +92,14 @@ bool Interpreter::interpret(const uint64_t entry) {
     LOAD_ACC_MEM:
 
         imm = loadConstant(decInstr.immIdx);
-        memcpy(&accumulator, memory + decInstr.r1 + imm.i_val, sizeof(accumulator));
+        memcpy(&accumulator, memory + regfile[decInstr.r1].i_val + imm.i_val, sizeof(accumulator));
 
         DISPATCH()
 
     STORE_ACC_MEM:
 
         imm = loadConstant(decInstr.immIdx);
-        memcpy(memory + decInstr.r1 + imm.i_val, &accumulator, sizeof(accumulator));
+        memcpy(memory + regfile[decInstr.r1].i_val + imm.i_val, &accumulator, sizeof(accumulator));
 
         DISPATCH()
 
@@ -202,15 +205,17 @@ bool Interpreter::interpret(const uint64_t entry) {
     ADDI:
         imm = loadConstant(decInstr.immIdx);
         switch (imm.type) {
-            case ImmType::INTEGER: {
+            case BasicObjectType::INTEGER: {
                 accumulator.i_val += imm.i_val;
                 break;
             }
-            case ImmType::FLOATING: {
+            case BasicObjectType::FLOATING: {
                 accumulator.f_val += imm.f_val;
                 break;
             }
-            default:;
+            default: {
+                throw std::runtime_error("unknown basic object type");
+            }
         }
 
         DISPATCH()
@@ -219,15 +224,17 @@ bool Interpreter::interpret(const uint64_t entry) {
 
         imm = loadConstant(decInstr.immIdx);
         switch (imm.type) {
-            case ImmType::INTEGER: {
+            case BasicObjectType::INTEGER: {
                 accumulator.i_val -= imm.i_val;
                 break;
             }
-            case ImmType::FLOATING: {
+            case BasicObjectType::FLOATING: {
                 accumulator.f_val -= imm.f_val;
                 break;
             }
-            default:;
+            default: {
+                throw std::runtime_error("unknown basic object type");
+            }
         }
         DISPATCH()
 
@@ -235,15 +242,17 @@ bool Interpreter::interpret(const uint64_t entry) {
 
         imm = loadConstant(decInstr.immIdx);
         switch (imm.type) {
-            case ImmType::INTEGER: {
+            case BasicObjectType::INTEGER: {
                 accumulator.i_val *= imm.i_val;
                 break;
             }
-            case ImmType::FLOATING: {
+            case BasicObjectType::FLOATING: {
                 accumulator.f_val *= imm.f_val;
                 break;
             }
-            default:;
+            default: {
+                throw std::runtime_error("unknown basic object type");
+            }
         }
         DISPATCH()
 
@@ -251,21 +260,23 @@ bool Interpreter::interpret(const uint64_t entry) {
 
         imm = loadConstant(decInstr.immIdx);
         switch (imm.type) {
-            case ImmType::INTEGER: {
+            case BasicObjectType::INTEGER: {
                 if (regfile[decInstr.r1].i_val == 0) {
                     throw std::runtime_error("division by zero");
                 }
                 accumulator.i_val /= imm.i_val;
                 break;
             }
-            case ImmType::FLOATING: {
+            case BasicObjectType::FLOATING: {
                 if (regfile[decInstr.r1].f_val == 0) {
                     throw std::runtime_error("division by zero");
                 }
                 accumulator.f_val /= imm.f_val;
                 break;
             }
-            default:;
+            default: {
+                throw std::runtime_error("unknown basic object type");
+            }
         }
         DISPATCH()
 
@@ -332,30 +343,31 @@ bool Interpreter::interpret(const uint64_t entry) {
 
         switch(decInstr.intrinType) {
 
-            case IntrinsicType::INTRINSIC_SCAN: {
+            case IntrinsicType::SCAN: {
                 std::cin >> accumulator.i_val;
                 if (std::cin.fail()) {
                     throw std::runtime_error("invalid input");
                 }
                 break;
             }
-            case IntrinsicType::INTRINSIC_PRINT: {
+            case IntrinsicType::PRINT: {
                 std::cout << accumulator.i_val << std::endl;
                 break;
             }
-            case IntrinsicType::INTRINSIC_SCANF: {
+            case IntrinsicType::SCANF: {
                 std::cin >> accumulator.f_val;
                 if (std::cin.fail()) {
                     throw std::runtime_error("invalid input");
                 }
                 break;
             }
-            case IntrinsicType::INTRINSIC_PRINTF: {
+            case IntrinsicType::PRINTF: {
                 std::cout << accumulator.f_val << std::endl;
                 break;
             }
-            default:
-                break;
+            default: {
+                throw std::runtime_error("unknown intrinsic type");
+            }
 
         }
         DISPATCH()
@@ -418,7 +430,7 @@ bool Interpreter::interpret(const uint64_t entry) {
 
         imm = loadConstant(decInstr.immIdx);
 
-        size_t numArgs = decInstr.r1;
+        size_t numArgs = decInstr.numArgs;
         int64_t offset = imm.i_val;
 
         // Create new frame
@@ -443,6 +455,43 @@ bool Interpreter::interpret(const uint64_t entry) {
         m_currFrame = parent;
         regfile = m_currFrame->regfile;
 
+        DISPATCH()
+
+    NEW:
+
+        accumulator.i_val = arenaPointer;
+        switch (decInstr.objType) {
+            case BasicObjectType::INTEGER: {
+                arenaPointer += sizeof(uint64_t);
+                break;
+            }
+            case BasicObjectType::FLOATING: {
+                arenaPointer += sizeof(double);
+                break;
+            }
+            default: {
+                throw std::runtime_error("unknown basic object type");
+            }
+        }
+        DISPATCH()
+
+    NEWARRAY:
+
+        auto allocSize = accumulator.i_val;
+        accumulator.i_val = arenaPointer;
+        switch (decInstr.objType) {
+            case BasicObjectType::INTEGER: {
+                arenaPointer += sizeof(uint64_t) * allocSize;
+                break;
+            }
+            case BasicObjectType::FLOATING: {
+                arenaPointer += sizeof(double) * allocSize;
+                break;
+            }
+            default: {
+                throw std::runtime_error("unknown basic object type");
+            }
+        }
         DISPATCH()
 
     }

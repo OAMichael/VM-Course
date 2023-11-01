@@ -6,6 +6,7 @@ set(TESTS
     branching
     intrinsic
     call
+    array
 )
 
 foreach(EXEC IN LISTS TESTS)
