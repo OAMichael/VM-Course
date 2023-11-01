@@ -87,6 +87,9 @@ enum InstructionType : uint8_t {
     CALL,                   // ???
     RET,                    // ???
 
+    NEW,                    // acc.i_val <- &allocated
+    NEWARRAY,               // acc.i_val <- &allocated
+
     INSTRUCTION_COUNT,
 };
 
@@ -94,21 +97,21 @@ enum InstructionType : uint8_t {
 enum IntrinsicType : uint8_t {
     INTRINSIC_INVALID = 0,
 
-    INTRINSIC_SCAN,         // acc.i_val <- stdin
-    INTRINSIC_PRINT,        // stdout <- acc.i_val
-    INTRINSIC_SCANF,        // acc.f_val <- (double)stdin
-    INTRINSIC_PRINTF,       // stdout <- acc.f_val
+    SCAN,                   // acc.i_val <- stdin
+    PRINT,                  // stdout <- acc.i_val
+    SCANF,                  // acc.f_val <- (double)stdin
+    PRINTF,                 // stdout <- acc.f_val
 
     INTRINSIC_COUNT
 };
 
 
-enum ImmType : uint8_t {
+enum BasicObjectType : uint8_t {
     INTEGER = 0,
     FLOATING,
     STRING,
 
-    IMM_TYPE_COUNT
+    OBJECT_TYPE_COUNT
 };
 
 
@@ -179,15 +182,25 @@ static const std::unordered_map<std::string, InstructionType> instructionsNameOp
     { "BGEF",                InstructionType::BGEF                },
 
     { "CALL",                InstructionType::CALL                },
-    { "RET",                 InstructionType::RET                 }
+    { "RET",                 InstructionType::RET                 },
+
+    { "NEW",                 InstructionType::NEW                 },
+    { "NEWARRAY",            InstructionType::NEWARRAY            }
 };
 
 
 static const std::unordered_map<std::string, IntrinsicType> intrinsicsNameType = {
-    { "INTRINSIC_SCAN",     INTRINSIC_SCAN   },
-    { "INTRINSIC_PRINT",    INTRINSIC_PRINT  },
-    { "INTRINSIC_SCANF",    INTRINSIC_SCANF  },
-    { "INTRINSIC_PRINTF",   INTRINSIC_PRINTF }
+    { "SCAN",   IntrinsicType::SCAN   },
+    { "PRINT",  IntrinsicType::PRINT  },
+    { "SCANF",  IntrinsicType::SCANF  },
+    { "PRINTF", IntrinsicType::PRINTF }
+};
+
+
+static const std::unordered_map<std::string, BasicObjectType> objectsNameType = {
+    { "INTEGER",  BasicObjectType::INTEGER  },
+    { "FLOATING", BasicObjectType::FLOATING },
+    { "STRING",   BasicObjectType::STRING   }
 };
 
 
@@ -202,7 +215,7 @@ using ImmediateIndex = uint16_t;
 using RegisterType = uint8_t;
 
 struct Immediate {
-    ImmType type;
+    BasicObjectType type;
     union {
         int64_t  i_val;
         double   f_val;
@@ -211,11 +224,17 @@ struct Immediate {
 };
 
 struct DecodedInstruction {
-    RegisterType r1, r2;
+    union {
+        RegisterType    r1;         // For registers
+        IntrinsicType   intrinType; // For intrinsics
+        uint8_t         numArgs;    // For call
+        BasicObjectType objType;    // For new and newarray
+    };
+
+    RegisterType r2;
     ImmediateIndex immIdx;  // Immediate index in constant pool
 
     InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
-    IntrinsicType intrinType;
 };
 
 struct Frame {
