@@ -1,0 +1,318 @@
+#ifndef GENERATED_INTERPRETER_H
+#define GENERATED_INTERPRETER_H
+
+#include <iostream>
+#include <cstring>
+#include <exception>
+
+#include <cmath>
+
+#include "VirtualMachine.h"
+#include "Interpreter.h"
+
+namespace VM {
+
+
+inline Immediate Interpreter::loadConstant(const ImmediateIndex idx) {
+    Immediate* constantPool = (Immediate*)(m_vm->m_memory + VM_CONSTANT_POOL_ADDRESS);
+    return constantPool[idx];
+}
+
+
+bool Interpreter::interpret(const uint64_t entry) {
+
+    // Initialize root frame
+    m_currFrame = new Frame();
+    m_currFrame->pc = entry;
+    m_currFrame->parent = nullptr;
+    regfile = m_currFrame->regfile;
+
+    EncodedInstruction* currInstr;
+    DecodedInstruction decInstr;
+
+    #define DISPATCH()                                                      \
+    {                                                                       \
+        currInstr = (EncodedInstruction*)(memory + m_currFrame->pc);        \
+        m_currFrame->pc += INSTRUCTION_BYTESIZE;                            \
+        m_decoder.decodeInstruction(*currInstr, decInstr);                  \
+        goto *dispatchTable[decInstr.opcode];                               \
+    }
+    static void* dispatchTable[InstructionType::INSTRUCTION_COUNT] = {
+        &&INSTRUCTION_INVALID,
+        /* [[[cog
+        import cog
+        from yaml import load, dump
+        try:
+            from yaml import CLoader as Loader, CDumper as Dumper
+        except ImportError:
+            from yaml import Loader, Dumper
+
+        cog.msg("Dispatch.h: generate interpreter")
+        data = load(open(isa_file, 'r'), Loader=Loader)
+
+        size_instr = len(data['instructions'].values())
+        for idx, instr in enumerate(data['instructions'].values()):
+            cog.outl(f"&&{instr['name'].upper()}__{',' if idx != size_instr - 1 else ''}")
+        ]]] */
+
+        // [[[end]]]
+    };
+
+
+    try {
+
+        // Actual main interpretation
+        DISPATCH()
+
+
+        INSTRUCTION_INVALID:
+            throw std::runtime_error("got invalid instruction");
+
+        /* [[[cog
+        for instr in data['instructions'].values():
+            cog.outl(f"{instr['name'].upper()}__:")
+            cog.outl("\texec_{}(decInstr);".format(instr['name']))
+            cog.outl("\tDISPATCH();")
+        ]]] */
+
+        // [[[end]]]
+    }
+    catch (const std::runtime_error& error) {
+        std::cerr << "Error occured during interpreting: " << error.what() << std::endl;
+        return false;
+    }
+}
+
+inline void Interpreter::exec_load_Acc (const DecodedInstruction &instr) {
+    accumulator =  regfile[instr.r1];
+}
+inline void Interpreter::exec_store_Acc (const DecodedInstruction &instr) {
+    regfile[instr.r1] = accumulator;
+}
+inline void Interpreter::exec_load_AccI (const DecodedInstruction &instr) {
+    accumulator =  regfile[instr.r1];
+}
+inline void Interpreter::exec_to_Float_Reg (const DecodedInstruction &instr) {
+    accumulator.f_val = static_cast<double>(regfile[instr.r1].i_val);
+}
+inline void Interpreter::exec_to_Int_Reg (const DecodedInstruction &instr) {
+    accumulator.i_val = static_cast<uint64_t>(regfile[instr.r1].f_val);
+}
+inline void Interpreter::exec_to_Float (const DecodedInstruction &instr) {
+    accumulator.f_val = static_cast<double>(accumulator.i_val);
+}
+inline void Interpreter::exec_to_Int (const DecodedInstruction &instr) {
+    accumulator.i_val = static_cast<uint64_t>(accumulator.f_val);
+}
+inline void Interpreter::exec_mv (const DecodedInstruction &instr) {
+    memcpy(&(regfile[instr.r1].i_val), &(regfile[instr.r2].i_val), sizeof(regfile[instr.r1].i_val));
+}
+inline void Interpreter::exec_mvi (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    memcpy(&(regfile[instr.r1].i_val), &imm.i_val, sizeof(regfile[instr.r1].i_val));
+}
+inline void Interpreter::exec_load_Acc_Mem (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    memcpy(&accumulator, memory + instr.r1 + imm.i_val, sizeof(accumulator));
+}
+inline void Interpreter::exec_store_Acc_Mem (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    memcpy(memory + instr.r1 + imm.i_val, &accumulator, sizeof(accumulator));
+}
+inline void Interpreter::exec_add (const DecodedInstruction &instr) {
+    accumulator.i_val += regfile[instr.r1].i_val;
+}
+inline void Interpreter::exec_sub (const DecodedInstruction &instr) {
+    accumulator.i_val -= regfile[instr.r1].i_val;
+}
+inline void Interpreter::exec_mul (const DecodedInstruction &instr) {
+    accumulator.i_val *= regfile[instr.r1].i_val;
+}
+inline void Interpreter::exec_div (const DecodedInstruction &instr) {
+    if (regfile[instr.r1].i_val == 0) {
+        throw std::runtime_error("division by zero");
+    }
+    accumulator.i_val /= regfile[instr.r1].i_val;
+}
+inline void Interpreter::exec_and (const DecodedInstruction &instr) {
+    accumulator.i_val &= regfile[instr.r1].i_val;
+}
+inline void Interpreter::exec_or (const DecodedInstruction &instr) {
+    accumulator.i_val |= regfile[instr.r1].i_val;
+}
+inline void Interpreter::exec_xor (const DecodedInstruction &instr) {
+    accumulator.i_val ^= regfile[instr.r1].i_val;
+}
+inline void Interpreter::exec_sl (const DecodedInstruction &instr) {
+    accumulator.i_val <<= regfile[instr.r1].i_val;
+}
+inline void Interpreter::exec_sr (const DecodedInstruction &instr) {
+    accumulator.i_val >>= regfile[instr.r1].i_val;
+}
+inline void Interpreter::exec_addi (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    switch (imm.type) {
+        case ImmType::INTEGER: {
+            accumulator.i_val += imm.i_val;
+            break;
+        }
+        case ImmType::FLOATING: {
+            accumulator.f_val += imm.f_val;
+            break;
+        }
+        default:;
+    }
+}
+inline void Interpreter::exec_subi (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    switch (imm.type) {
+        case ImmType::INTEGER: {
+            accumulator.i_val -= imm.i_val;
+            break;
+        }
+        case ImmType::FLOATING: {
+            accumulator.f_val -= imm.f_val;
+            break;
+        }
+        default:;
+    }
+}
+inline void Interpreter::exec_muli (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    switch (imm.type) {
+        case ImmType::INTEGER: {
+            accumulator.i_val *= imm.i_val;
+            break;
+        }
+        case ImmType::FLOATING: {
+            accumulator.f_val *= imm.f_val;
+            break;
+        }
+        default:;
+    }
+}
+inline void Interpreter::exec_divi (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    if (regfile[instr.r1].i_val == 0) {
+        throw std::runtime_error("division by zero");
+    }
+
+    switch (imm.type) {
+        case ImmType::INTEGER: {
+            accumulator.i_val /= imm.i_val;
+            break;
+        }
+        case ImmType::FLOATING: {
+            accumulator.f_val /= imm.f_val;
+            break;
+        }
+        default:;
+    }
+}
+inline void Interpreter::exec_andi (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    accumulator.i_val &= imm.i_val;
+}
+inline void Interpreter::exec_ori (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    accumulator.i_val |= imm.i_val;
+}
+inline void Interpreter::exec_xori (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    accumulator.i_val ^= imm.i_val;
+}
+inline void Interpreter::exec_sli (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    accumulator.i_val <<= imm.i_val;
+}
+inline void Interpreter::exec_sri (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    accumulator.i_val >>= imm.i_val;
+}
+inline void Interpreter::exec_addf (const DecodedInstruction &instr) {
+    accumulator.f_val += regfile[instr.r1].f_val;
+}
+inline void Interpreter::exec_subf (const DecodedInstruction &instr) {
+    accumulator.f_val -= regfile[instr.r1].f_val;
+}
+inline void Interpreter::exec_mulf (const DecodedInstruction &instr) {
+    accumulator.f_val *= regfile[instr.r1].f_val;
+}
+inline void Interpreter::exec_divf (const DecodedInstruction &instr) {
+    if (regfile[instr.r1].i_val == 0) {
+        throw std::runtime_error("division by zero");
+    }
+    accumulator.f_val /= regfile[instr.r1].f_val;
+}
+inline void Interpreter::exec_neg (const DecodedInstruction &instr) {
+    accumulator.i_val = -accumulator.i_val;
+}
+inline void Interpreter::exec_sin (const DecodedInstruction &instr) {
+    accumulator.f_val = std::sin(accumulator.f_val);
+}
+inline void Interpreter::exec_cos (const DecodedInstruction &instr) {
+    accumulator.f_val = std::cos(accumulator.f_val);
+}
+inline void Interpreter::exec_sqrt (const DecodedInstruction &instr) {
+    accumulator.f_val = std::sqrt(accumulator.f_val);
+}
+inline void Interpreter::exec_call_Intr (const DecodedInstruction &instr) {
+    switch(instr.intrCode) {
+        case IntrinsicType::INTRINSIC_SCAN: {
+            std::cin >> accumulator.i_val;
+            if (std::cin.fail()) {
+                throw std::runtime_error("invalid input");
+            }
+            break;
+        }
+        case IntrinsicType::INTRINSIC_PRINT: {
+            std::cout << accumulator.i_val << std::endl;
+            break;
+        }
+        case IntrinsicType::INTRINSIC_SCANF: {
+            std::cin >> accumulator.f_val;
+            if (std::cin.fail()) {
+                throw std::runtime_error("invalid input");
+            }
+            break;
+        }
+        case IntrinsicType::INTRINSIC_PRINTF: {
+            std::cout << accumulator.f_val << std::endl;
+            break;
+        }
+        default:
+            break;
+
+    }
+}
+inline void Interpreter::exec_jmp (const DecodedInstruction &instr) {
+    Immediate imm = loadConstant(instr.imm);
+    m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
+}
+inline void Interpreter::exec_beq (const DecodedInstruction &instr) {
+
+}
+inline void Interpreter::exec_bne (const DecodedInstruction &instr) {
+
+}
+inline void Interpreter::exec_bge (const DecodedInstruction &instr) {
+
+}
+inline void Interpreter::exec_bgt (const DecodedInstruction &instr) {
+
+}
+inline void Interpreter::exec_ble (const DecodedInstruction &instr) {
+
+}
+inline void Interpreter::exec_blt (const DecodedInstruction &instr) {
+
+}
+inline void Interpreter::exec_call (const DecodedInstruction &instr) {
+
+}
+inline void Interpreter::exec_ret (const DecodedInstruction &instr) {
+
+}
+
+}
+#endif

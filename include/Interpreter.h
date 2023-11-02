@@ -6,11 +6,9 @@
 #include "Common.h"
 #include "Instructions.h"
 #include "Decoder.h"
-
+#include "VirtualMachine.h"
 
 namespace VM {
-
-class VirtualMachine;
 
 class Interpreter {
 private:
@@ -18,12 +16,18 @@ private:
     Decoder m_decoder;
     Frame* m_currFrame;
 
+    uint8_t* memory;
+    Register& accumulator;
+    Register* regfile;
+
     inline Immediate loadConstant(const ImmediateIndex idx);
+
+    #include "generated/Executors.h"
 
 public:
     bool interpret(const uint64_t entry);
 
-    Interpreter(VirtualMachine* p_vm) : m_vm{p_vm} {};
+    Interpreter(VirtualMachine* p_vm) : m_vm{p_vm}, memory{p_vm->m_memory}, accumulator{m_vm->m_accumulator} {};
 };
 
 }   // VM

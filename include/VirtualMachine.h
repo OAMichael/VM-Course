@@ -57,7 +57,6 @@ public:
     VirtualMachine() : m_interpreter{this} {};
 
     friend class Interpreter;
-
 };
 
 }   // VM

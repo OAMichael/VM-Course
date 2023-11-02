@@ -30,190 +30,237 @@ instructions:
   $1:
     name: load_Acc
     type: onlyReg
+    comment: acc <- r1
     implAcc: write
   $2:
     name: store_Acc
     type: onlyReg
+    comment: r1 <- acc
     implAcc: read
   $3:
     name: load_AccI
     type: onlyImm
+    comment: acc <- imm
     implAcc: write
   $4:
     name: to_Float_Reg
     type: onlyReg
+    comment: acc.f_val <- (double)r1.i_val
     implAcc: write
   $5:
     name: to_Int_Reg
     type: onlyReg
+    comment: acc.i_val <- (int64_t)r1.f_val
     implAcc: write
   $6:
     name: to_Float
     type: nothing
+    comment: acc.f_val <- (double)acc.i_val
     implAcc: readWrite
   $7:
     name: to_Int
     type: nothing
+    comment: acc.i_val <- (int64_t)acc.f_val
     implAcc: readWrite
   $8:
     name: mv
     type: twoRegs
+    comment: r1 <- r2
     implAcc: none
   $9:
     name: mvi
     type: regAndImm
+    comment: r1 <- imm
     implAcc: none
   $10:
     name: load_Acc_Mem
     type: regAndImm
+    comment: acc <- mem[r1 + imm]
     implAcc: write
   $11:
     name: store_Acc_Mem
     type: regAndImm
+    comment: mem[r1 + imm] <- acc
     implAcc: read
   $12:
     name: add
     type: onlyReg
+    comment: acc.i_val <- acc.i_val + r1.i_val
     implAcc: readWrite
   $13:
     name: sub
     type: onlyReg
+    comment: acc.i_val <- acc.i_val - r1.i_val
     implAcc: readWrite
   $14:
     name: mul
     type: onlyReg
+    comment: acc.i_val <- acc.i_val * r1.i_val
     implAcc: readWrite
   $15:
     name: div
     type: onlyReg
+    comment: acc.i_val <- acc.i_val / r1.i_val
     implAcc: readWrite
   $16:
     name: and
     type: onlyReg
+    comment: acc.i_val <- acc.i_val & r1.i_val
     implAcc: readWrite
   $17:
     name: or
     type: onlyReg
+    comment: acc.i_val <- acc.i_val | r1.i_val
     implAcc: readWrite
   $18:
     name: xor
     type: onlyReg
+    comment: acc.i_val <- acc.i_val ^ r1.i_val
     implAcc: readWrite
   $19:
     name: sl
     type: onlyReg
+    comment: acc.i_val <- acc.i_val << r1.i_val
     implAcc: readWrite
   $20:
     name: sr
     type: onlyReg
+    comment: acc.i_val <- acc.i_val >> r1.i_val
     implAcc: readWrite
   $21:
     name: addi
     type: onlyImm
+    comment: acc.*_val <- acc.*_val + imm
     implAcc: readWrite
   $22:
     name: subi
     type: onlyImm
+    comment: acc.*_val <- acc.*_val - imm
     implAcc: readWrite
   $23:
     name: muli
     type: onlyImm
+    comment: acc.*_val <- acc.*_val * imm
     implAcc: readWrite
   $24:
     name: divi
     type: onlyImm
+    comment: acc.*_val <- acc.*_val / imm
     implAcc: readWrite
   $25:
     name: andi
     type: onlyImm
+    comment: acc.i_val <- acc.i_val & imm (integer imm only)
     implAcc: readWrite
   $26:
     name: ori
     type: onlyImm
+    comment: acc.i_val <- acc.i_val | imm (integer imm only)
     implAcc: readWrite
   $27:
     name: xori
     type: onlyImm
+    comment: acc.i_val <- acc.i_val ^ imm (integer imm only)
     implAcc: readWrite
   $28:
     name: sli
     type: onlyImm
+    comment: acc.i_val <- acc.i_val << imm (integer imm only)
     implAcc: readWrite
   $29:
     name: sri
     type: onlyImm
+    comment: acc.i_val <- acc.i_val >> imm (integer imm only)
     implAcc: readWrite
   $30:
     name: addf
     type: onlyReg
+    comment: acc.f_val <- acc.f_val + r1.f_val
     implAcc: readWrite
   $31:
     name: subf
     type: onlyReg
+    comment: acc.f_val <- acc.f_val - r1.f_val
     implAcc: readWrite
   $32:
     name: mulf
     type: onlyReg
+    comment: acc.f_val <- acc.f_val * r1.f_val
     implAcc: readWrite
   $33:
     name: divf
     type: onlyReg
+    comment: acc.f_val <- acc.f_val / r1.f_val
     implAcc: readWrite
   $34:
     name: neg
     type: nothing
+    comment: acc.*_val <- -acc.*_val
     implAcc: readWrite
   $35:
     name: sin
     type: nothing
+    comment: acc.f_val <- sin(acc.f_val)
     implAcc: readWrite
   $36:
     name: cos
     type: nothing
+    comment: acc.f_val <- cos(acc.f_val)
     implAcc: readWrite
   $37:
     name: sqrt
     type: nothing
+    comment: acc.f_val <- sqrt(acc.f_val)
     implAcc: readWrite
   $38:
     name: call_Intr
     type: intrinsic
+    comment: intrinsic $intr
     implAcc: readWrite
   $39:
     name: jmp
     type: onlyImm
+    comment: pc <- pc + imm
     implAcc: none
   $40:
     name: beq
     type: onlyReg
+    comment: "pc <- acc.i_val == r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $41:
     name: bne
     type: onlyReg
+    comment: "pc <- acc.i_val != r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $42:
     name: bge
     type: onlyReg
+    comment: "pc <- acc.i_val >= r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $43:
     name: bgt
     type: onlyReg
+    comment: "pc <- acc.i_val > r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $44:
     name: ble
     type: onlyReg
+    comment: "pc <- acc.i_val <= r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $45:
     name: blt
     type: onlyReg
+    comment: "pc <- acc.i_val < r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $46:
     name: call
     type: onlyImm
+    comment: "???"
     implAcc: none
   $47:
     name: ret
     type: nothing
+    comment: "???"
     implAcc: none
 
 intrinsics:

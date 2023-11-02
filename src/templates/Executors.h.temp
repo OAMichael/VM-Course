@@ -1,0 +1,23 @@
+#ifndef GENERATED_EXECUTORS_H
+#define GENERATED_EXECUTORS_H
+
+/* [[[cog
+import cog
+from yaml import load, dump
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper
+
+cog.msg("Executors.h: generate executors header")
+data = load(open(isa_file, 'r'), Loader=Loader)
+
+instr_size = len(data['instructions'].values())
+
+for opcode, instr in data['instructions'].items():
+    cog.outl(f"inline void exec_{instr['name']} (const DecodedInstruction &instr);")
+]]] */
+
+// [[[end]]]
+
+#endif

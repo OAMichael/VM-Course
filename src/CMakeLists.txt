@@ -5,8 +5,8 @@ set(ASM_2_BIN Asm2Bin)
 
 set(VM_SOURCES
     VirtualMachine.cpp
-    Interpreter.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/generated/Decoder.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/Interpreter.cpp
 )
 
 set(ASM_2_BIN_SOURCES
@@ -30,6 +30,8 @@ add_dependencies(${ASM_2_BIN} generate_all)
 
 set(TEMPLATES 
     ${CMAKE_CURRENT_SOURCE_DIR}/templates/Instruction_enum.h.temp
+    ${CMAKE_CURRENT_SOURCE_DIR}/templates/Executors.h.temp
+    ${CMAKE_CURRENT_SOURCE_DIR}/templates/Interpreter.cpp.temp
     ${CMAKE_CURRENT_SOURCE_DIR}/templates/Decoder.cpp.temp
 )
 

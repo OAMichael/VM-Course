@@ -4,9 +4,10 @@
 
 #include <cmath>
 
-#include "VirtualMachine.h"
 #include "Interpreter.h"
 
+
+#include "Executors.cpp"
 
 namespace VM {
 
@@ -33,6 +34,14 @@ bool Interpreter::interpret(const uint64_t entry) {
     DecodedInstruction decInstr;
     Immediate imm;
 
+    #define DISPATCH()                                                      \
+    {                                                                       \
+        currInstr = (EncodedInstruction*)(memory + m_currFrame->pc);        \
+        m_currFrame->pc += INSTRUCTION_BYTESIZE;                            \
+        m_decoder.decodeInstruction(*currInstr, decInstr);                  \
+        goto *dispatchTable[decInstr.opcode];                               \
+    }
+
     static void* dispatchTable[InstructionType::INSTRUCTION_COUNT] = {
         &&INSTRUCTION_INVALID,
 
@@ -52,15 +61,6 @@ bool Interpreter::interpret(const uint64_t entry) {
 
         &&NEW, &&NEWARRAY
     };
-
-
-    #define DISPATCH()                                                      \
-    {                                                                       \
-        currInstr = (EncodedInstruction*)(memory + m_currFrame->pc);        \
-        m_currFrame->pc += INSTRUCTION_BYTESIZE;                            \
-        m_decoder.decodeInstruction(*currInstr, decInstr);                  \
-        goto *dispatchTable[decInstr.opcode];                               \
-    }
 
     try {
 
