@@ -65,6 +65,8 @@ bool Parser::removeExtraSpacesAndComments(std::string& line) const {
     if (line.empty())
         return false;
 
+    line = line.substr(0, line.find_last_not_of(' ') + 1);
+
     return true;
 }
 
@@ -94,6 +96,16 @@ bool Parser::parseOpcodeAndOperands(const std::string& origLine, std::string& op
 }
 
 
+bool Parser::checkIfLineIsFunctionLabel(const std::string& line) const {
+    static const size_t FUNC_LEN = std::strlen("FUNC ");
+
+    // Function with no name is invalid
+    if (line.length() <= FUNC_LEN) {
+        return false;
+    }
+    return line.substr(0, FUNC_LEN) == "FUNC ";
+}
+
 std::pair<std::string, uint8_t> Parser::parseFunctionLabel(const std::string& line) const {
     uint8_t numArgs = 0;
     std::string funcLabel = "";
@@ -117,6 +129,27 @@ std::pair<std::string, uint8_t> Parser::parseFunctionLabel(const std::string& li
 }
 
 
+bool Parser::checkIfLineIsSimpleLabel(const std::string& line) const {
+    // Label always end with colon
+    if (line.back() != ':')
+        return false;
+
+    // There must be at least one symbol != ':'
+    if (line.length() < 2)
+        return false;
+
+    // Label always is only token
+    if (line.find(' ') != line.npos)
+        return false;
+
+    return true;
+}
+
+std::string Parser::parseSimpleLabel(const std::string& line) const {
+    return line.substr(0, line.length() - 1);
+}
+
+
 bool Parser::parseAsmProgram(const std::string& filename, Common::Program& program) const {
 
     std::ifstream file;
@@ -129,20 +162,28 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
 
         std::vector<std::string> instructionLines;
         std::unordered_map<std::string, std::pair<uint64_t, uint8_t>> functions_pc_args;
+        std::unordered_map<std::string, uint64_t> labels_pc;
         std::string line;
 
         // Read all file information at first
         while (std::getline(file, line)) {
 
-            // Comments and empty lines
+            // Comments, empty lines and spaces before and after all tokens
             if (!removeExtraSpacesAndComments(line)) {
                 continue;
             }
 
             // This is function label
-            if (line.find("FUNC ") != line.npos) {
+            if (checkIfLineIsFunctionLabel(line)) {
                 auto label_args = parseFunctionLabel(line);
                 functions_pc_args[label_args.first] = std::pair<uint64_t, uint8_t>(instructionLines.size(), label_args.second);
+                continue;
+            }
+
+            // This is simple label
+            if (checkIfLineIsSimpleLabel(line)) {
+                std::string label = parseSimpleLabel(line);
+                labels_pc[label] = instructionLines.size();
                 continue;
             }
 
@@ -159,7 +200,8 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
 
             auto opcodeIt = VM::instructionsNameOpcode.find(opcodeStr);
             if (opcodeIt == VM::instructionsNameOpcode.cend()) {
-                throw std::runtime_error("unknown instruction");
+                std::string er = "unknown instruction: " + opcodeStr;
+                throw std::runtime_error(er);
             }
 
             VM::InstructionType opcode = opcodeIt->second;
@@ -203,7 +245,6 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 case VM::InstructionType::MVI:
                 {
                     decInstr.r1 = getRegisterFromStr(operandsStr[0]);
-                    decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
                     decInstr.opcode = opcode;
 
                     VM::Immediate constant{};
@@ -213,9 +254,21 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                     }
                     else {
                         constant.type = VM::BasicObjectType::INTEGER;
-                        constant.i_val = getInt64FromStr(operandsStr[1]);
+                        if (auto it = labels_pc.find(operandsStr[1]); it != labels_pc.cend()) {
+                            constant.i_val = VM::INSTRUCTION_BYTESIZE * ((int64_t)it->second - i);
+                        }
+                        else {
+                            constant.i_val = getInt64FromStr(operandsStr[1]);
+                        }
                     }
-                    program.constants.push_back(constant);
+
+                    if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
+                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
+                    }
+                    else {
+                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
+                        program.constants.push_back(constant);
+                    }
 
                     break;
                 }
@@ -233,7 +286,6 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 case VM::InstructionType::SRI:
                 case VM::InstructionType::JMP:
                 {
-                    decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
                     decInstr.opcode = opcode;
 
                     VM::Immediate constant{};
@@ -243,9 +295,21 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                     }
                     else {
                         constant.type = VM::BasicObjectType::INTEGER;
-                        constant.i_val = getInt64FromStr(operandsStr[0]);
+                        if (auto it = labels_pc.find(operandsStr[0]); it != labels_pc.cend()) {
+                            constant.i_val = VM::INSTRUCTION_BYTESIZE * ((int64_t)it->second - i);
+                        }
+                        else {
+                            constant.i_val = getInt64FromStr(operandsStr[0]);
+                        }
                     }
-                    program.constants.push_back(constant);
+
+                    if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
+                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
+                    }
+                    else {
+                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
+                        program.constants.push_back(constant);
+                    }
 
                     break;
                 }
@@ -283,14 +347,21 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 // ================================== Type ? ================================== //
                 case VM::InstructionType::CALL:
                 {
-                    decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
                     decInstr.numArgs = functions_pc_args[operandsStr[0]].second;
                     decInstr.opcode = opcode;
 
                     VM::Immediate constant{};
                     constant.type = VM::BasicObjectType::INTEGER;
                     constant.i_val = VM::INSTRUCTION_BYTESIZE * ((int64_t)functions_pc_args[operandsStr[0]].first - i);
-                    program.constants.push_back(constant);
+
+                    if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
+                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
+                    }
+                    else {
+                        decInstr.immIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
+                        program.constants.push_back(constant);
+                    }
+
                     break;
                 }
                 case VM::InstructionType::RET:

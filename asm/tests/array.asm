@@ -12,8 +12,9 @@ FUNC FACTORIALS: 1
     STORE_ACC x2            ; x2 will be index in the array
 
 
-    JMP 52
+    JMP END_LOOP
 
+LOOP:
     ; Main loop
     LOAD_ACC x2
     MULI 8
@@ -32,7 +33,8 @@ FUNC FACTORIALS: 1
     ADDI 1
     STORE_ACC x2            ; Increment index
 
-    BLT x0, -48
+END_LOOP:
+    BLT x0, LOOP
 
 
     LOAD_ACC x1
@@ -48,7 +50,7 @@ FUNC MAIN: 0
     STORE_ACC x0
 
     LOAD_ACCI 0
-    BGE x0, 60              ; If 0 >= x0 then no calculations
+    BGE x0, EXIT            ; If 0 >= x0 then no calculations
 
     CALL FACTORIALS
 
@@ -57,7 +59,7 @@ FUNC MAIN: 0
     LOAD_ACCI 0
     STORE_ACC x2            ; Array index in x2
 
-
+LOOP_MAIN:
     LOAD_ACC x2
     MULI 8
     ADD x1
@@ -69,7 +71,7 @@ FUNC MAIN: 0
     LOAD_ACC x2
     ADDI 1
     STORE_ACC x2
-    BLT x0, -36
+    BLT x0, LOOP_MAIN
 
-
+EXIT:
     RET
