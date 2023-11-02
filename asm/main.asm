@@ -20,11 +20,12 @@ FUNC MAIN: 0
 
     MVI x6, 0.0             ; 0 in x6
 
-    BLTF x6, 100            ; D < 0
+    BLTF x6, EXIT           ; D < 0
 
-    BEQ x6, 72              ; D == 0
+    BEQ x6, ONE_ROOT        ; D == 0
 
     ; D > 0
+TWO_ROOTS:
     SQRT                    ; sqrt(D) in acc
     STORE_ACC x6            ; sqrt(D) in x6
 
@@ -50,8 +51,9 @@ FUNC MAIN: 0
     CALL_INTRINSIC PRINTF   ; print x_2
 
 
-    JMP 28
+    JMP EXIT
 
+ONE_ROOT:
     ; D == 0
     LOAD_ACCI -2.0          ; -2 in acc
     MULF x1                 ; -2*a in acc
@@ -62,4 +64,5 @@ FUNC MAIN: 0
 
     CALL_INTRINSIC PRINTF   ; print x_2
 
+EXIT:
     RET

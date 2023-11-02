@@ -221,6 +221,10 @@ struct Immediate {
         double   f_val;
         uint64_t p_str;     // Reserved for later
     };
+
+    inline bool operator==(const Immediate& other) {
+        return i_val == other.i_val;
+    }
 };
 
 struct DecodedInstruction {
