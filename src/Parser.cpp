@@ -346,8 +346,8 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 case VM::InstructionType::BNE:
                 case VM::InstructionType::BGE:
                 case VM::InstructionType::BLT:
-                case VM::InstructionType::BGEF:
-                case VM::InstructionType::BLTF:
+                case VM::InstructionType::BGT:
+                case VM::InstructionType::BLE:
                 case VM::InstructionType::MVI:
                 {
                     if (tokens.size() != 3) {
@@ -472,7 +472,6 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 case VM::InstructionType::TO_FLOAT:
                 case VM::InstructionType::TO_INT:
                 case VM::InstructionType::NEG:
-                case VM::InstructionType::NEGF:
                 case VM::InstructionType::SIN:
                 case VM::InstructionType::COS:
                 case VM::InstructionType::SQRT:

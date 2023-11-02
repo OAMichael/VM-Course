@@ -33,6 +33,7 @@ union Register {
 
 using EncodedInstruction = uint32_t;
 using ImmediateIndex = uint16_t;
+using numArgsType = uint8_t;
 using RegisterType = uint8_t;
 
 struct Immediate {
@@ -49,17 +50,19 @@ struct Immediate {
 };
 
 struct DecodedInstruction {
+    InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
+
     union {
         RegisterType    r1;         // For registers
-        IntrinsicType   intrinType; // For intrinsics
-        uint8_t         numArgs;    // For call
+        IntrinsicType   intrCode;   // For intrinsics
+        numArgsType     numArgs;    // For call
         BasicObjectType objType;    // For new and newarray
     };
 
-    RegisterType r2;
-    ImmediateIndex imm;  // Immediate index in constant pool
-
-    InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
+    union {
+        RegisterType r2;
+        ImmediateIndex imm;  // Immediate index in constant pool
+    };
 };
 
 struct Frame {

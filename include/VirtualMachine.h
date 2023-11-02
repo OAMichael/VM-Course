@@ -54,7 +54,7 @@ public:
     bool loadProgram(const std::string& filename);
     bool run();
 
-    VirtualMachine() : m_interpreter{this} {};
+    VirtualMachine() : m_interpreter(this) {};
 
     friend class Interpreter;
 };

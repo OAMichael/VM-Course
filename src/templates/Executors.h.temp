@@ -15,7 +15,7 @@ data = load(open(isa_file, 'r'), Loader=Loader)
 instr_size = len(data['instructions'].values())
 
 for opcode, instr in data['instructions'].items():
-    cog.outl(f"inline void exec_{instr['name']} (const DecodedInstruction &instr);")
+    cog.outl(f"inline void exec_{instr['name']} ({'[[maybe_unused]] ' if instr['type'] == 'nothing' else ''}const DecodedInstruction &instr);")
 ]]] */
 
 // [[[end]]]

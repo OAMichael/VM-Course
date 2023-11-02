@@ -13,20 +13,18 @@ except ImportError:
 cog.msg("Decoder.cpp: generate get and make part funcs")
 data = load(open(isa_file, 'r'), Loader=Loader)
 
-fields = data['fields'].values() # ['opcode'] # ['location']['bits']
+fields = data['fields'].items()
 
-cppTypes = {'opcode': 'InstructionType', 'r1': 'RegisterType', 'r2': 'RegisterType', 'intrCode': 'IntrinsicType', 'imm': 'ImmediateIndex'}
-
-for field in fields:
-    typeName = cppTypes[field['name']]
-    cog.outl(f"inline VM::{typeName} get_{field['name']}(const VM::EncodedInstruction instr) {{")
+for name, field in fields:
+    typeName = field['cpp_type_name']
+    cog.outl(f"inline VM::{typeName} get_{name}(const VM::EncodedInstruction instr) {{")
     bits = field['location']['bits']
     cog.outl(f"\treturn static_cast<VM::{typeName}>(VM::getPartialBitsShifted<{bits['msb']}, {bits['lsb']}>(instr));")
     cog.outl("}")
 
-for field in fields:
-    typeName = cppTypes[field['name']]
-    cog.outl(f"inline uint32_t make_{field['name']}(const uint32_t val) {{")
+for name, field in fields:
+    typeName = field['cpp_type_name']
+    cog.outl(f"inline uint32_t make_{name}(const uint32_t val) {{")
     bits = field['location']['bits']
     cog.outl(f"\treturn VM::makePartialBits<{bits['msb']}, {bits['lsb']}>(val);")
     cog.outl("}")

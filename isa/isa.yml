@@ -3,19 +3,25 @@
 
 fields:
   opcode: 
-    name: opcode
+    cpp_type_name: InstructionType
     location: {bits: {msb: 7, lsb: 0, from: 7, to: 0}, mask: 255, dbg_hex_mask: ff}
   r1:
-    name: r1
+    cpp_type_name: RegisterType
     location: {bits: {msb: 15, lsb: 8, from: 7, to: 0}, mask: 65280, dbg_hex_mask: ff00}
   intrCode:
-    name: intrCode
+    cpp_type_name: IntrinsicType
+    location: {bits: {msb: 15, lsb: 8, from: 7, to: 0}, mask: 65280, dbg_hex_mask: ff00}
+  numArgs:
+    cpp_type_name: numArgsType
+    location: {bits: {msb: 15, lsb: 8, from: 7, to: 0}, mask: 65280, dbg_hex_mask: ff00}
+  objType:
+    cpp_type_name: BasicObjectType
     location: {bits: {msb: 15, lsb: 8, from: 7, to: 0}, mask: 65280, dbg_hex_mask: ff00}
   r2:
-    name: r2
+    cpp_type_name: RegisterType
     location: {bits: {msb: 23, lsb: 16, from: 7, to: 0}, mask: 16711680, dbg_hex_mask: ff0000}
   imm:
-    name: imm
+    cpp_type_name: ImmediateIndex
     location: {bits: {msb: 31, lsb: 16, from: 15, to: 0}, mask: 4278190080, dbg_hex_mask: ffff0000}
 
 types:
@@ -24,6 +30,8 @@ types:
   nothing:    [opcode]
   twoRegs:    [opcode, r1, r2]
   regAndImm:  [opcode, r1, imm]
+  callType:   [opcode, numArgs]
+  alloca:     [opcode, objType]
   intrinsic:  [opcode, intrCode]
 
 instructions:
@@ -254,7 +262,7 @@ instructions:
     implAcc: readWrite
   $46:
     name: call
-    type: onlyImm
+    type: callType
     comment: "???"
     implAcc: none
   $47:
@@ -262,6 +270,16 @@ instructions:
     type: nothing
     comment: "???"
     implAcc: none
+  $48:
+    name: new
+    type: alloca
+    comment: acc.*_val <- alloc(size = sizeof(objType))
+    implAcc: write
+  $49:
+    name: newarray
+    type: alloca
+    comment: acc.*_val <- alloc(size = acc.i_val*sizeof(objType))
+    implAcc: readWrite
 
 intrinsics:
   $1:
