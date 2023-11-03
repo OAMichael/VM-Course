@@ -7,6 +7,7 @@ set(TESTS
     intrinsic
     call
     array
+    string
 )
 
 foreach(EXEC IN LISTS TESTS)
