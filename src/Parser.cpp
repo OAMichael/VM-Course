@@ -496,7 +496,7 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 }
 
                 // ================================== Type N ================================== //
-                case VM::InstructionType::CALL_INTR:
+                case VM::InstructionType::CALL_INTRINSIC:
                 {
                     if (tokens.size() != 2) {
                         throw std::runtime_error("invalid instruction: " + tokens[0]);

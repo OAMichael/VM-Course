@@ -13,13 +13,15 @@
 namespace VM {
 
 inline Immediate Interpreter::loadConstant(const ImmediateIndex idx) {
-    Immediate* constantPool = (Immediate*)(m_vm->m_memory + VM_CONSTANT_MEMORY_ADDRESS);
+    Immediate* constantPool = (Immediate*)(m_vm->m_memory + VM_CONSTANT_POOL_MEMORY_ADDRESS);
     return constantPool[idx];
 }
 
 
 bool Interpreter::interpret(const uint64_t entry) {
     // Initialize root frame
+    memory = m_vm->m_memory;
+    arenaPointer = &(m_vm->m_arenaPointer);
     m_currFrame = new Frame();
     m_currFrame->pc = entry;
     m_currFrame->parent = nullptr;
@@ -76,19 +78,23 @@ bool Interpreter::interpret(const uint64_t entry) {
         // [[[end]]]
     }
     catch (const std::runtime_error& error) {
+        if (std::string(error.what()) == std::string("end of program")) // it's bad and temporate method of end of program
+            return true;
+
         std::cerr << "Error occured during interpreting: " << error.what() << std::endl;
         return false;
     }
 }
 
 inline void Interpreter::exec_load_Acc (const DecodedInstruction &instr) {
-    accumulator =  regfile[instr.r1];
+    accumulator = regfile[instr.r1];
 }
 inline void Interpreter::exec_store_Acc (const DecodedInstruction &instr) {
     regfile[instr.r1] = accumulator;
 }
 inline void Interpreter::exec_load_AccI (const DecodedInstruction &instr) {
-    accumulator =  regfile[instr.r1];
+    Immediate imm = loadConstant(instr.imm);
+    memcpy(&accumulator, &imm.i_val, sizeof(accumulator));
 }
 inline void Interpreter::exec_to_Float_Reg (const DecodedInstruction &instr) {
     accumulator.f_val = static_cast<double>(regfile[instr.r1].i_val);
@@ -103,19 +109,19 @@ inline void Interpreter::exec_to_Int ([[maybe_unused]] const DecodedInstruction 
     accumulator.i_val = static_cast<uint64_t>(accumulator.f_val);
 }
 inline void Interpreter::exec_mv (const DecodedInstruction &instr) {
-    memcpy(&(regfile[instr.r1].i_val), &(regfile[instr.r2].i_val), sizeof(regfile[instr.r1].i_val));
+    regfile[instr.r1].i_val = regfile[instr.r2].i_val;
 }
 inline void Interpreter::exec_mvi (const DecodedInstruction &instr) {
     Immediate imm = loadConstant(instr.imm);
-    memcpy(&(regfile[instr.r1].i_val), &imm.i_val, sizeof(regfile[instr.r1].i_val));
+    regfile[instr.r1].i_val = imm.i_val;
 }
 inline void Interpreter::exec_load_Acc_Mem (const DecodedInstruction &instr) {
     Immediate imm = loadConstant(instr.imm);
-    memcpy(&accumulator, memory + instr.r1 + imm.i_val, sizeof(accumulator));
+    memcpy(&accumulator, memory + regfile[instr.r1].i_val + imm.i_val, sizeof(accumulator));
 }
 inline void Interpreter::exec_store_Acc_Mem (const DecodedInstruction &instr) {
     Immediate imm = loadConstant(instr.imm);
-    memcpy(memory + instr.r1 + imm.i_val, &accumulator, sizeof(accumulator));
+    memcpy(memory + regfile[instr.r1].i_val + imm.i_val, &accumulator, sizeof(accumulator));
 }
 inline void Interpreter::exec_add (const DecodedInstruction &instr) {
     accumulator.i_val += regfile[instr.r1].i_val;
@@ -254,7 +260,7 @@ inline void Interpreter::exec_cos ([[maybe_unused]] const DecodedInstruction &in
 inline void Interpreter::exec_sqrt ([[maybe_unused]] const DecodedInstruction &instr) {
     accumulator.f_val = std::sqrt(accumulator.f_val);
 }
-inline void Interpreter::exec_call_Intr (const DecodedInstruction &instr) {
+inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
     switch(instr.intrCode) {
         case IntrinsicType::INTRINSIC_SCAN: {
             std::cin >> accumulator.i_val;
@@ -336,12 +342,11 @@ inline void Interpreter::exec_call (const DecodedInstruction &instr) {
     m_currFrame->pc = newFrame->pc - INSTRUCTION_BYTESIZE + offset;
     regfile = m_currFrame->regfile;
     memcpy(m_currFrame->regfile, m_currFrame->parent->regfile, numArgs * sizeof(Register));
-
 }
 inline void Interpreter::exec_ret ([[maybe_unused]] const DecodedInstruction &instr) {
-    (void)instr;
     if (m_currFrame->parent == nullptr) {
         delete m_currFrame;// handle end of programm
+        throw std::runtime_error("end of program");
     }
 
     Frame* parent = m_currFrame->parent;
@@ -350,14 +355,14 @@ inline void Interpreter::exec_ret ([[maybe_unused]] const DecodedInstruction &in
     regfile = m_currFrame->regfile;
 }
 inline void Interpreter::exec_new (const DecodedInstruction &instr) {
-    accumulator.i_val = arenaPointer;
+    accumulator.i_val = *arenaPointer;
     switch (instr.objType) {
         case BasicObjectType::INTEGER: {
-            arenaPointer += sizeof(uint64_t);
+            *arenaPointer += sizeof(uint64_t);
             break;
         }
         case BasicObjectType::FLOATING: {
-            arenaPointer += sizeof(double);
+            *arenaPointer += sizeof(double);
             break;
         }
         default: {
@@ -367,14 +372,14 @@ inline void Interpreter::exec_new (const DecodedInstruction &instr) {
 }
 inline void Interpreter::exec_newarray (const DecodedInstruction &instr) {
     auto allocSize = accumulator.i_val;
-    accumulator.i_val = arenaPointer;
+    accumulator.i_val = *arenaPointer;
     switch (instr.objType) {
         case BasicObjectType::INTEGER: {
-            arenaPointer += sizeof(uint64_t) * allocSize;
+            *arenaPointer += sizeof(uint64_t) * allocSize;
             break;
         }
         case BasicObjectType::FLOATING: {
-            arenaPointer += sizeof(double) * allocSize;
+            *arenaPointer += sizeof(double) * allocSize;
             break;
         }
         default: {

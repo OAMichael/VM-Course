@@ -6,9 +6,10 @@
 #include "Common.h"
 #include "Instructions.h"
 #include "Decoder.h"
-#include "VirtualMachine.h"
 
 namespace VM {
+
+class VirtualMachine;
 
 class Interpreter {
 private:
@@ -17,9 +18,9 @@ private:
     Frame* m_currFrame;
 
     uint8_t* memory;
-    Register& accumulator;
+    uint64_t* arenaPointer;
+    Register accumulator{};
     Register* regfile;
-    uint64_t& arenaPointer;
 
     inline Immediate loadConstant(const ImmediateIndex idx);
 
@@ -28,7 +29,7 @@ private:
 public:
     bool interpret(const uint64_t entry);
 
-    Interpreter(VirtualMachine* p_vm) : m_vm(p_vm), memory(p_vm->m_memory), accumulator(m_vm->m_accumulator),  arenaPointer(m_vm->m_arenaPointer) {};
+    Interpreter(VirtualMachine* p_vm) : m_vm{p_vm} {};
 };
 
 }   // VM

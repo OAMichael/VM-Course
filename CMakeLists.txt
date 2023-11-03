@@ -16,7 +16,7 @@ set(COMPILE_OPTIONS
 	-Wlogical-op
 )
 
-include(./cmake/generation.cmake)
+include(./cmake/codeGeneration.cmake)
 
 add_subdirectory(thirdParty/googletest)
 

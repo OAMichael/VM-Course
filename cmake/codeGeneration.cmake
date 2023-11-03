@@ -9,7 +9,7 @@ execute_process(
 if (NOT ${EXIT_CODE} EQUAL 0)
     message(
         FATAL_ERROR
-        "The \"cog\" Python3 package is not installed. Please install it using the following command: \"pip3 install cogapp\"."
+        "The \"cog\" Python3 package is not installed. Please install it using the following command: \"pip install cogapp\"."
     )
 endif()
 

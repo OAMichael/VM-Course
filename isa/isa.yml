@@ -30,7 +30,7 @@ types:
   nothing:    [opcode]
   twoRegs:    [opcode, r1, r2]
   regAndImm:  [opcode, r1, imm]
-  callType:   [opcode, numArgs]
+  callType:   [opcode, numArgs, imm]
   alloca:     [opcode, objType]
   intrinsic:  [opcode, intrCode]
 
@@ -221,7 +221,7 @@ instructions:
     comment: acc.f_val <- sqrt(acc.f_val)
     implAcc: readWrite
   $38:
-    name: call_Intr
+    name: call_Intrinsic
     type: intrinsic
     comment: intrinsic $intr
     implAcc: readWrite
@@ -232,32 +232,32 @@ instructions:
     implAcc: none
   $40:
     name: beq
-    type: onlyReg
+    type: regAndImm
     comment: "pc <- acc.i_val == r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $41:
     name: bne
-    type: onlyReg
+    type: regAndImm
     comment: "pc <- acc.i_val != r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $42:
     name: bge
-    type: onlyReg
+    type: regAndImm
     comment: "pc <- acc.i_val >= r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $43:
     name: bgt
-    type: onlyReg
+    type: regAndImm
     comment: "pc <- acc.i_val > r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $44:
     name: ble
-    type: onlyReg
+    type: regAndImm
     comment: "pc <- acc.i_val <= r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $45:
     name: blt
-    type: onlyReg
+    type: regAndImm
     comment: "pc <- acc.i_val < r1.i_val ? pc + imm : pc"
     implAcc: readWrite
   $46:
@@ -290,3 +290,7 @@ intrinsics:
     name: scanf
   $4:
     name: printf
+  $5:
+    name: scans
+  $6:
+    name: prints

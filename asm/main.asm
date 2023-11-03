@@ -30,7 +30,7 @@ FUNC MAIN: 0
 
     MVI x6, 0.0             ; 0 in x6
 
-    BLTF x6, NO_ROOTS       ; D < 0
+    BLT x6, NO_ROOTS       ; D < 0
 
     BEQ x6, ONE_ROOT        ; D == 0
 

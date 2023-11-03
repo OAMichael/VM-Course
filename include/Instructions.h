@@ -50,8 +50,6 @@ struct Immediate {
 };
 
 struct DecodedInstruction {
-    InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
-
     union {
         RegisterType    r1;         // For registers
         IntrinsicType   intrCode;   // For intrinsics
@@ -59,10 +57,10 @@ struct DecodedInstruction {
         BasicObjectType objType;    // For new and newarray
     };
 
-    union {
-        RegisterType r2;
-        ImmediateIndex imm;  // Immediate index in constant pool
-    };
+    RegisterType r2;
+    ImmediateIndex imm;  // Immediate index in constant pool
+
+    InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
 };
 
 struct Frame {

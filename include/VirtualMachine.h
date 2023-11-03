@@ -43,7 +43,6 @@ private:
 
     // Virtual machine state
     uint64_t m_entry = 0;
-    Register m_accumulator = {};
     uint64_t m_arenaPointer = VM_ARENA_MEMORY_ADDRESS;
     uint64_t m_stringPoolPointer = VM_STRING_POOL_MEMORY_ADDRESS;
     uint8_t  m_memory[VM_TOTAL_MEMORY_BYTESIZE] = {};
@@ -54,7 +53,7 @@ public:
     bool loadProgram(const std::string& filename);
     bool run();
 
-    VirtualMachine() : m_interpreter(this) {};
+    VirtualMachine() : m_interpreter{this} {};
 
     friend class Interpreter;
 };
