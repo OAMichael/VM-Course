@@ -23,7 +23,7 @@ FUNC MAIN: 0
     LOAD_ACCI "\n"
     CALL_INTRINSIC PRINTS
 
-    LOAD_ACCI "ThatsFine"
+    LOAD_ACCI "ThatsFine\n"
     CALL_INTRINSIC PRINTS
 
     RET

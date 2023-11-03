@@ -244,7 +244,9 @@ bool Parser::parseIfFunctionLabel(const std::string& line, std::vector<std::stri
 }
 
 
-bool Parser::parseAsmProgram(const std::string& filename, Common::Program& program) const {
+bool Parser::parseAsmProgram(const std::string& filename, Common::Program& program) {
+
+    m_currFileline = 0;
 
     std::ifstream file;
     file.open(filename);
@@ -254,7 +256,7 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
             throw std::runtime_error("could not open the file");
         }
 
-        std::vector<std::string> instructionLines;
+        std::vector<std::pair<std::string, uint64_t>> instructionLines;
         std::unordered_map<std::string, std::pair<uint64_t, uint8_t>> functions_pc_args;
         std::unordered_map<std::string, uint64_t> labels_pc;
         std::string line;
@@ -263,6 +265,7 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
 
         // Read all file information at first
         while (std::getline(file, line)) {
+            ++m_currFileline;
 
             // Comments, empty lines and spaces before and after all tokens
             if (!removeExtraSpacesAndComments(line)) {
@@ -287,15 +290,16 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                 continue;
             }
 
-            instructionLines.push_back(line);
+            instructionLines.push_back(std::pair<std::string, uint64_t>(line, m_currFileline));
         }
         file.close();
 
         for (uint64_t i = 0; i < instructionLines.size(); ++i) {
+            m_currFileline = instructionLines[i].second;
 
             std::vector<std::string> tokens;
-            if (!parseOpcodeAndOperands(instructionLines[i], tokens) || tokens.empty()) {
-                throw std::runtime_error("could not parse line: " + instructionLines[i]);
+            if (!parseOpcodeAndOperands(instructionLines[i].first, tokens) || tokens.empty()) {
+                throw std::runtime_error("could not parse line: " + instructionLines[i].first);
             }
 
             auto opcodeIt = VM::instructionsNameOpcode.find(tokens[0]);
@@ -509,12 +513,17 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
                     if (tokens.size() != 2) {
                         throw std::runtime_error("invalid instruction: " + tokens[0]);
                     }
-                    decInstr.numArgs = functions_pc_args[tokens[1]].second;
+
+                    auto funcIt = functions_pc_args.find(tokens[1]);
+                    if (funcIt == functions_pc_args.end()) {
+                        throw std::runtime_error("invalid function: " + tokens[1]);
+                    }
+                    decInstr.numArgs = funcIt->second.second;
                     decInstr.opcode = opcode;
 
                     VM::Immediate constant{};
                     constant.type = VM::BasicObjectType::INTEGER;
-                    constant.i_val = VM::INSTRUCTION_BYTESIZE * ((int64_t)functions_pc_args[tokens[1]].first - i);
+                    constant.i_val = VM::INSTRUCTION_BYTESIZE * ((int64_t)funcIt->second.first - i);
 
                     if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
                         decInstr.immIdx = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
@@ -561,7 +570,7 @@ bool Parser::parseAsmProgram(const std::string& filename, Common::Program& progr
         }
     }
     catch(const std::runtime_error& e) {
-        std::cerr << "Errors occured during parsing " << filename << ": " << e.what() << std::endl;
+        std::cerr << "Errors occured during parsing " << filename << "." << m_currFileline << ": " << e.what() << std::endl;
         if (file.is_open()) {
             file.close();
         }
