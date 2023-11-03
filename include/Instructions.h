@@ -101,13 +101,17 @@ enum IntrinsicType : uint8_t {
     PRINT,                  // stdout <- acc.i_val
     SCANF,                  // acc.f_val <- (double)stdin
     PRINTF,                 // stdout <- acc.f_val
+    SCANS,                  // acc.i_val <- strPtr; strPool[strPtr] <- (string)stdin
+    PRINTS,                 // stdout <- strPool[acc.i_val]
 
     INTRINSIC_COUNT
 };
 
 
 enum BasicObjectType : uint8_t {
-    INTEGER = 0,
+    OBJECT_TYPE_INVALID = 0,
+
+    INTEGER,
     FLOATING,
     STRING,
 
@@ -168,7 +172,7 @@ static const std::unordered_map<std::string, InstructionType> instructionsNameOp
     { "SQRT",                InstructionType::SQRT                },
 
     { "MV",                  InstructionType::MV                  },
-    { "MVI",                  InstructionType::MVI                },
+    { "MVI",                 InstructionType::MVI                 },
 
     { "CALL_INTRINSIC",      InstructionType::CALL_INTRINSIC      },
 
@@ -193,7 +197,9 @@ static const std::unordered_map<std::string, IntrinsicType> intrinsicsNameType =
     { "SCAN",   IntrinsicType::SCAN   },
     { "PRINT",  IntrinsicType::PRINT  },
     { "SCANF",  IntrinsicType::SCANF  },
-    { "PRINTF", IntrinsicType::PRINTF }
+    { "PRINTF", IntrinsicType::PRINTF },
+    { "SCANS",  IntrinsicType::SCANS  },
+    { "PRINTS", IntrinsicType::PRINTS }
 };
 
 
@@ -223,7 +229,7 @@ struct Immediate {
     };
 
     inline bool operator==(const Immediate& other) {
-        return i_val == other.i_val;
+        return type == other.type && i_val == other.i_val;
     }
 };
 

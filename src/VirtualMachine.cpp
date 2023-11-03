@@ -15,8 +15,10 @@ bool VirtualMachine::loadProgram(const Common::Program& program) {
     // Perform copying of the program
     m_entry = program.entryPoint;
     memcpy(m_memory + VM_PROGRAM_MEMORY_ADDRESS, program.instructions.data(), program.instructions.size() * sizeof(EncodedInstruction));
-    memcpy(m_memory + VM_CONSTANT_MEMORY_ADDRESS, program.constants.data(), program.constants.size() * sizeof(Immediate));
+    memcpy(m_memory + VM_CONSTANT_POOL_MEMORY_ADDRESS, program.constants.data(), program.constants.size() * sizeof(Immediate));
+    memcpy(m_memory + VM_STRING_POOL_MEMORY_ADDRESS, program.strings.data(), program.strings.size() * sizeof(uint8_t));
 
+    m_stringPoolPointer += program.strings.size() * sizeof(uint8_t);
     return true;
 }
 

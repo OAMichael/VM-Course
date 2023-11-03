@@ -12,7 +12,7 @@ namespace VM {
 
 
 inline Immediate Interpreter::loadConstant(const ImmediateIndex idx) {
-    Immediate* constantPool = (Immediate*)(m_vm->m_memory + VM_CONSTANT_MEMORY_ADDRESS);
+    Immediate* constantPool = (Immediate*)(m_vm->m_memory + VM_CONSTANT_POOL_MEMORY_ADDRESS);
     return constantPool[idx];
 }
 
@@ -363,6 +363,30 @@ bool Interpreter::interpret(const uint64_t entry) {
             }
             case IntrinsicType::PRINTF: {
                 std::cout << accumulator.f_val << std::endl;
+                break;
+            }
+            case IntrinsicType::SCANS: {
+                uint32_t strSize = static_cast<uint32_t>(accumulator.i_val);
+
+                std::string str;
+                str.resize(strSize);
+                std::cin >> str;
+
+                accumulator.i_val = m_vm->m_stringPoolPointer - VM_STRING_POOL_MEMORY_ADDRESS;
+                std::memcpy(memory + m_vm->m_stringPoolPointer, &strSize, sizeof(uint32_t));
+                std::memcpy(memory + m_vm->m_stringPoolPointer + sizeof(uint32_t), str.data(), strSize);
+
+                m_vm->m_stringPoolPointer += sizeof(uint32_t) + strSize;
+                break;
+            }
+            case IntrinsicType::PRINTS: {
+                uint32_t strSize = 0;
+                std::memcpy(&strSize, memory + VM_STRING_POOL_MEMORY_ADDRESS + accumulator.i_val, sizeof(uint32_t));
+                std::string str;
+                str.resize(strSize);
+                std::memcpy(str.data(), memory + VM_STRING_POOL_MEMORY_ADDRESS + accumulator.i_val + sizeof(uint32_t), strSize);
+
+                std::cout << str.c_str();
                 break;
             }
             default: {

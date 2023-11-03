@@ -18,6 +18,7 @@ struct Program {
     uint64_t entryPoint;
     std::vector<VM::EncodedInstruction> instructions;
     std::vector<VM::Immediate> constants;
+    std::vector<uint8_t> strings;
 };
 
 
@@ -26,6 +27,7 @@ struct ProgramHeader {
     uint64_t p_entry;
     uint64_t p_instructionsSize;
     uint64_t p_constantsSize;
+    uint64_t p_stringsBytesize;
 };
 
 
@@ -36,6 +38,7 @@ struct ProgramHeader {
     header.p_entry = program.entryPoint;
     header.p_instructionsSize = program.instructions.size();
     header.p_constantsSize = program.constants.size();
+    header.p_stringsBytesize = program.strings.size();
 
     std::ofstream outFile;
     outFile.open(filename, std::ios::binary | std::ios::out | std::ios::trunc);
@@ -43,6 +46,7 @@ struct ProgramHeader {
     outFile.write((const char*)&header, sizeof(ProgramHeader));
     outFile.write((const char*)program.instructions.data(), program.instructions.size() * sizeof(VM::EncodedInstruction));
     outFile.write((const char*)program.constants.data(), program.constants.size() * sizeof(VM::Immediate));
+    outFile.write((const char*)program.strings.data(), program.strings.size() * sizeof(uint8_t));
 
     outFile.close();
 
@@ -79,6 +83,7 @@ struct ProgramHeader {
     }
     program.entryPoint = header.p_entry;
 
+
     const size_t instructionsBytesize = header.p_instructionsSize * sizeof(VM::EncodedInstruction);
     if (remainSize < instructionsBytesize) {
         inFile.close();
@@ -89,6 +94,7 @@ struct ProgramHeader {
     inFile.read((char*)program.instructions.data(), instructionsBytesize);
     remainSize -= instructionsBytesize;
 
+
     const size_t constantsBytesize = header.p_constantsSize * sizeof(VM::Immediate);
     if (remainSize < constantsBytesize) {
         inFile.close();
@@ -98,6 +104,17 @@ struct ProgramHeader {
     program.constants.resize(header.p_constantsSize);
     inFile.read((char*)program.constants.data(), constantsBytesize);
     remainSize -= constantsBytesize;
+
+
+    const size_t stringsBytesize = header.p_stringsBytesize * sizeof(uint8_t);
+    if (remainSize < stringsBytesize) {
+        inFile.close();
+        return false;
+    }
+
+    program.strings.resize(header.p_stringsBytesize);
+    inFile.read((char*)program.strings.data(), stringsBytesize);
+    remainSize -= stringsBytesize;
 
     if (remainSize != 0) {
         inFile.close();

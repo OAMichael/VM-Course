@@ -1,11 +1,21 @@
 
 FUNC MAIN: 0
+    LOAD_ACCI "Enter a: "
+    CALL_INTRINSIC PRINTS
 
     CALL_INTRINSIC SCANF
     STORE_ACC x1            ; a in x1
 
+
+    LOAD_ACCI "Enter b: "
+    CALL_INTRINSIC PRINTS
+
     CALL_INTRINSIC SCANF
     STORE_ACC x2            ; b in x2
+
+
+    LOAD_ACCI "Enter c: "
+    CALL_INTRINSIC PRINTS
 
     CALL_INTRINSIC SCANF
     STORE_ACC x3            ; c in x3
@@ -20,7 +30,7 @@ FUNC MAIN: 0
 
     MVI x6, 0.0             ; 0 in x6
 
-    BLTF x6, EXIT           ; D < 0
+    BLTF x6, NO_ROOTS       ; D < 0
 
     BEQ x6, ONE_ROOT        ; D == 0
 
@@ -43,6 +53,12 @@ TWO_ROOTS:
 
     ADDF x6                 ; x_1
 
+    STORE_ACC x8
+
+    LOAD_ACCI "Two roots:\n"
+    CALL_INTRINSIC PRINTS
+
+    LOAD_ACC x8
     CALL_INTRINSIC PRINTF   ; print x_1
 
     LOAD_ACC x7             ; b / (-2 * a) in acc
@@ -50,8 +66,8 @@ TWO_ROOTS:
 
     CALL_INTRINSIC PRINTF   ; print x_2
 
-
     JMP EXIT
+
 
 ONE_ROOT:
     ; D == 0
@@ -62,7 +78,19 @@ ONE_ROOT:
     LOAD_ACC x2             ; b in acc
     DIVF x7                 ; b / (-2 * a) in acc
 
-    CALL_INTRINSIC PRINTF   ; print x_2
+    STORE_ACC x8
+
+    LOAD_ACCI "One root:\n"
+    CALL_INTRINSIC PRINTS
+
+    LOAD_ACC x8
+    CALL_INTRINSIC PRINTF   ; print x_1
+
+    JMP EXIT
+
+NO_ROOTS:
+    LOAD_ACCI "No roots\n"
+    CALL_INTRINSIC PRINTS
 
 EXIT:
     RET
