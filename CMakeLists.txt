@@ -18,6 +18,7 @@ set(COMPILE_OPTIONS
 
 include(./cmake/codeGeneration.cmake)
 
+set(gtest_force_shared_crt on)
 add_subdirectory(thirdParty/googletest)
 
 add_compile_options(${COMPILE_OPTIONS})

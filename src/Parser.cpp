@@ -79,7 +79,7 @@ static inline double getDoubleFromStr(const std::string& str) {
 }
 
 static inline VM::IntrinsicType getIntrinsicFromStr(const std::string& str) {
-    auto it = VM::intrinsicsNameOpcode.find("INTRINSIC_" + str); 
+    auto it = VM::intrinsicsNameOpcode.find(str); 
     if (it == VM::intrinsicsNameOpcode.cend())
         throw std::runtime_error("invalid intrinsic");
 

@@ -36,19 +36,19 @@ enum InstructionType : uint8_t {
 
 
 enum IntrinsicType : uint8_t {
-    INTRINSIC_INVALID = 0,
+    INVALID = 0,
 
     /* [[[cog
     cog.msg("Instruction_enum.h: generate intrinsics enum")
 
     intr_size = len(data['intrinsics'].values())
     for idx, (opcode, intr) in enumerate(data['intrinsics'].items()):
-        cog.outl(f"INTRINSIC_{intr['name'].upper():<10} = {opcode.replace('$', '')},")
+        cog.outl(f"{intr['name'].upper():<10} = {opcode.replace('$', '')},")
     ]]] */
     
     // [[[end]]]
 
-    INTRINSIC_COUNT
+    COUNT
 };
 
 static const std::unordered_map<std::string, InstructionType> instructionsNameOpcode = {
@@ -67,14 +67,14 @@ static const std::unordered_map<std::string, InstructionType> instructionsNameOp
 
 
 static const std::unordered_map<std::string, IntrinsicType> intrinsicsNameOpcode = {
-    {"INTRINSIC_INVALID" , IntrinsicType::INTRINSIC_INVALID},
+    {"INVALID" , IntrinsicType::INVALID},
 
     /* [[[cog
     cog.msg("Instruction_enum.h: generate intrinsic name opcodes")
 
     for idx, intr in enumerate(data['intrinsics'].values()):
-        name = '\"' + "INTRINSIC_" + intr['name'].upper() + '\"'
-        cog.outl(f"{{{name:<20}, IntrinsicType::INTRINSIC_{intr['name'].upper():<10} }}{',' if (idx != intr_size - 1) else ''}")
+        name = '\"' + intr['name'].upper() + '\"'
+        cog.outl(f"{{{name:<20}, IntrinsicType::{intr['name'].upper():<10} }}{',' if (idx != intr_size - 1) else ''}")
     ]]] */
     
     // [[[end]]]
