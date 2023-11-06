@@ -16,12 +16,13 @@ set(COMPILE_OPTIONS
 	-Wlogical-op
 )
 
-# include(./cmake/generation.cmake)
+include(./cmake/codeGeneration.cmake)
 
+set(gtest_force_shared_crt on)
 add_subdirectory(thirdParty/googletest)
 
 add_compile_options(${COMPILE_OPTIONS})
-include_directories(include)
+
 add_subdirectory(src)
 add_subdirectory(vm)
 add_subdirectory(tests)

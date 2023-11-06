@@ -20,7 +20,7 @@ LABEL_0:
 LABEL_1:
     ; Float less than
     LOAD_ACC x1
-    BLTF x2, LABEL_2
+    BLT x2, LABEL_2
 
     MVI x6, 30
     JMP LABEL_3

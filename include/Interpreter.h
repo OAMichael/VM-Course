@@ -7,7 +7,6 @@
 #include "Instructions.h"
 #include "Decoder.h"
 
-
 namespace VM {
 
 class VirtualMachine;
@@ -18,7 +17,14 @@ private:
     Decoder m_decoder;
     Frame* m_currFrame;
 
+    uint8_t* memory;
+    uint64_t* arenaPointer;
+    Register accumulator{};
+    Register* regfile;
+
     inline Immediate loadConstant(const ImmediateIndex idx);
+
+    #include "generated/Executors.h"
 
 public:
     bool interpret(const uint64_t entry);

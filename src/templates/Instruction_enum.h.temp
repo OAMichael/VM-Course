@@ -1,0 +1,86 @@
+#ifndef GENERATED_INSTRUCTIONS_H
+#define GENERATED_INSTRUCTIONS_H
+
+#include <cstdint>
+#include <unordered_map>
+#include <string>
+
+namespace VM {
+
+static constexpr const uint32_t INSTRUCTION_BYTESIZE = 4;
+
+enum InstructionType : uint8_t {
+    INSTRUCTION_INVALID = 0,
+
+    /* [[[cog
+    import cog
+    from yaml import load, dump
+    try:
+        from yaml import CLoader as Loader, CDumper as Dumper
+    except ImportError:
+        from yaml import Loader, Dumper
+
+    cog.msg("Instruction_enum.h: generate instruction enum")
+    data = load(open(isa_file, 'r'), Loader=Loader)
+
+    instr_size = len(data['instructions'].values())
+
+    for opcode, instr in data['instructions'].items():
+        cog.outl(f"{instr['name'].upper():<20} = {opcode.replace('$', '')}, // {instr['comment']}")
+    ]]] */
+    
+    // [[[end]]]
+
+    INSTRUCTION_COUNT
+};
+
+
+enum IntrinsicType : uint8_t {
+    INVALID = 0,
+
+    /* [[[cog
+    cog.msg("Instruction_enum.h: generate intrinsics enum")
+
+    intr_size = len(data['intrinsics'].values())
+    for idx, (opcode, intr) in enumerate(data['intrinsics'].items()):
+        cog.outl(f"{intr['name'].upper():<10} = {opcode.replace('$', '')},")
+    ]]] */
+    
+    // [[[end]]]
+
+    COUNT
+};
+
+static const std::unordered_map<std::string, InstructionType> instructionsNameOpcode = {
+    { "INSTRUCTION_INVALID", InstructionType::INSTRUCTION_INVALID },
+
+    /* [[[cog
+    cog.msg("Instruction_enum.h: generate instruction name opcodes")
+
+    for idx, instr in enumerate(data['instructions'].values()):
+        name = '\"' + instr['name'].upper() + '\"'
+        cog.outl(f"{{{name:<20}, InstructionType::{instr['name'].upper():<15} }}{',' if (idx != instr_size - 1) else ''}")
+    ]]] */
+    
+    // [[[end]]]
+};
+
+
+static const std::unordered_map<std::string, IntrinsicType> intrinsicsNameOpcode = {
+    {"INVALID" , IntrinsicType::INVALID},
+
+    /* [[[cog
+    cog.msg("Instruction_enum.h: generate intrinsic name opcodes")
+
+    for idx, intr in enumerate(data['intrinsics'].values()):
+        name = '\"' + intr['name'].upper() + '\"'
+        cog.outl(f"{{{name:<20}, IntrinsicType::{intr['name'].upper():<10} }}{',' if (idx != intr_size - 1) else ''}")
+    ]]] */
+    
+    // [[[end]]]
+
+};
+
+}
+
+#endif
