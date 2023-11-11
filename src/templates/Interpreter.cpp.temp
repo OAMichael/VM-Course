@@ -308,6 +308,86 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             std::cout << str.c_str();
             break;
         }
+        case IntrinsicType::STRLEN: {
+            // Length can be both < or == than size because string might have or have no '\0'
+            uint32_t strSize = 0;
+            std::memcpy(&strSize, memory + VM_STRING_POOL_MEMORY_ADDRESS + accumulator.i_val, sizeof(uint32_t));
+            std::string str;
+            str.resize(strSize);
+            std::memcpy(str.data(), memory + VM_STRING_POOL_MEMORY_ADDRESS + accumulator.i_val + sizeof(uint32_t), strSize);
+
+            accumulator.i_val = str.length();
+            break;
+        }
+        case IntrinsicType::STRCAT: {
+            uint32_t strSize1 = 0;
+            uint32_t strSize2 = 0;
+
+            // Allocate new string
+            accumulator.i_val = m_vm->m_stringPoolPointer - VM_STRING_POOL_MEMORY_ADDRESS;
+
+            // Get pointers to two strings from x0 and x1
+            uint64_t strAddress1 = regfile[0].i_val;
+            uint64_t strAddress2 = regfile[1].i_val;
+
+            // Read string 1
+            std::memcpy(&strSize1, memory + VM_STRING_POOL_MEMORY_ADDRESS + strAddress1, sizeof(uint32_t));
+            std::string str1;
+            str1.resize(strSize1);
+            std::memcpy(str1.data(), memory + VM_STRING_POOL_MEMORY_ADDRESS + strAddress1 + sizeof(uint32_t), strSize1);
+
+
+            // Read string 2
+            std::memcpy(&strSize2, memory + VM_STRING_POOL_MEMORY_ADDRESS + strAddress2, sizeof(uint32_t));
+            std::string str2;
+            str2.resize(strSize2);
+            std::memcpy(str2.data(), memory + VM_STRING_POOL_MEMORY_ADDRESS + strAddress2 + sizeof(uint32_t), strSize2);
+
+            std::string concat = str1 + str2;
+            uint32_t catSize = static_cast<uint32_t>(concat.size());
+            std::memcpy(memory + m_vm->m_stringPoolPointer, &catSize, sizeof(uint32_t));
+            std::memcpy(memory + m_vm->m_stringPoolPointer + sizeof(uint32_t), concat.data(), catSize);
+
+            m_vm->m_stringPoolPointer += sizeof(uint32_t) + catSize;
+            break;
+        }
+        case IntrinsicType::SUBSTR: {
+            // Get address of original string
+            uint64_t origAddress = accumulator.i_val;
+
+            // Get indices of substr from x0 and x1
+            uint64_t idx0 = regfile[0].i_val;
+            uint64_t idx1 = regfile[1].i_val;
+
+            if (idx1 < idx0) {
+                throw std::runtime_error("invalid string indices");
+            }
+
+            // Allocate new string
+            accumulator.i_val = m_vm->m_stringPoolPointer - VM_STRING_POOL_MEMORY_ADDRESS;
+
+            // Read original string
+            uint32_t origSize = 0;
+            std::memcpy(&origSize, memory + VM_STRING_POOL_MEMORY_ADDRESS + origAddress, sizeof(uint32_t));
+            std::string orig;
+            orig.resize(origSize);
+            std::memcpy(orig.data(), memory + VM_STRING_POOL_MEMORY_ADDRESS + origAddress + sizeof(uint32_t), origSize);   
+
+            if (idx1 >= orig.size()) {
+                throw std::runtime_error("invalid string indices");
+            }
+
+            // Actual substr
+            std::string substr = orig.substr(idx0, idx1 - idx0 + 1);
+
+            // Now serialize substr
+            uint32_t substrSize = static_cast<uint32_t>(substr.size());
+            std::memcpy(memory + m_vm->m_stringPoolPointer, &substrSize, sizeof(uint32_t));
+            std::memcpy(memory + m_vm->m_stringPoolPointer + sizeof(uint32_t), substr.data(), substrSize);
+
+            m_vm->m_stringPoolPointer += sizeof(uint32_t) + substrSize;
+            break;
+        }
         default:
             break;
 
