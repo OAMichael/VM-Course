@@ -164,6 +164,33 @@ TEST(InstructionTest, stringTest)
     ASSERT_EQ(str3, "ThatsFine");
 }
 
+TEST(InstructionTest, strfuncTest)
+{
+    Common::Program test;
+    deserializeProgram("../asm/tests/strfunc.prog", test);
+
+    VM::VirtualMachine vm;
+    vm.loadProgram(test);
+
+    VM_Tests::CoutRedefiner out;
+    out.changeOnMy();
+
+    ASSERT_TRUE(vm.run());
+    auto ss_out = out.returnBack();
+
+    std::string str1;
+    std::string str2;
+    uint32_t size1;
+    uint32_t size2;
+
+    ss_out >> str1 >> size1 >> str2 >> size2;
+
+    ASSERT_EQ(str1,  "WhatsoeverString");
+    ASSERT_EQ(size1, 16);
+    ASSERT_EQ(str2,  "Ayo!");
+    ASSERT_EQ(size2, 4);
+}
+
 int main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);

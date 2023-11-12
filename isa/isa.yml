@@ -294,3 +294,9 @@ intrinsics:
     name: scans
   $6:
     name: prints
+  $7:
+    name: strlen
+  $8:
+    name: strcat
+  $9:
+    name: substr
