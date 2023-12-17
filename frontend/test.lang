@@ -1,0 +1,54 @@
+int function sum(int a, int b) {
+    return a + b
+}
+
+
+void function main() {
+    int x = 32
+    print(x)
+    print(x / 4)
+
+    int z = 9
+    z = 2 * x + sum(1, 4) + sum(5, 6)
+    print(z)
+
+    print(sum(2, 1515))
+
+    int y[16]
+    y[5] = 11
+    y[9] = 22
+    y[x / 4] = 33
+    print(y[5])
+    print(y[9])
+    print(y[x / 4])
+
+    if (x > 15) {
+        print(228)
+    }
+
+    print(x)
+    if (x > 35) {
+        print(1337)
+    }
+    else {
+        print(1488)
+    }
+
+    while (x > 25) {
+        print(x)
+        x = x - 1
+    }
+
+    for (int i = 0; i < 10; i = i + 1) {
+        print(i)
+        print(x + 1)
+        x = x + 1
+    }
+    
+    int q = 2 + 5
+    print(q)
+
+    int p = scan()
+    print(p)
+    return
+}

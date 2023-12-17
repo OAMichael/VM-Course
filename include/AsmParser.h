@@ -11,7 +11,7 @@
 
 namespace Common {
 
-class Parser {
+class AsmParser {
 private:
     VM::Decoder m_coder;
     uint64_t m_currFileline;

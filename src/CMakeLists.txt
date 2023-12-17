@@ -10,7 +10,7 @@ set(VM_SOURCES
 )
 
 set(ASM_2_BIN_SOURCES
-    Parser.cpp
+    AsmParser.cpp
     Asm2Bin.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/generated/Decoder.cpp
 )
