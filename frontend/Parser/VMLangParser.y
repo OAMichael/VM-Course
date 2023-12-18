@@ -57,6 +57,8 @@ int main(int argc, char **argv) {
 %}
 
 %token IntLiteral
+%token FloatLiteral
+%token StringLiteral
 %token Identifier
 %token Mul
 %token Div
@@ -87,6 +89,8 @@ int main(int argc, char **argv) {
 %token Comment
 %token Whitespace
 %token IntType
+%token FloatType
+%token StringType
 %token VoidType
 %token IfKeyword
 %token ElseKeyword
@@ -95,7 +99,12 @@ int main(int argc, char **argv) {
 %token FunctionKeyword
 %token ReturnKeyword
 %token PrintKeyword
+%token PrintfKeyword
+%token PrintsKeyword
 %token ScanKeyword
+%token ScanfKeyword
+%token ScansKeyword
+%token SqrtKeyword
 
 %%
 
@@ -120,44 +129,75 @@ Program:                        FunctionDeclaration {
 
 
 SimpleIntDeclaration:           IntType Identifier {
-                                    $$ = new SimpleIntDeclarationNode((char*)$2);
+                                    $$ = new SimpleVariableDeclarationNode((char*)$2, VM::BasicObjectType::INTEGER);
                                 }
 InitIntDeclaration:             IntType Identifier Assignment Expression {
-                                    $$ = new InitIntDeclarationNode((char*)$2, dynamic_cast<ExpressionNode *>($4));
+                                    $$ = new InitVariableDeclarationNode((char*)$2, VM::BasicObjectType::INTEGER, dynamic_cast<ExpressionNode *>($4));
                                 }
 ArrayIntDeclaration:            IntType Identifier LeftBracket IntLiteral RightBracket {
-                                    $$ = new ArrayIntDeclarationNode((char*)$2, atoi((char*)$4));
+                                    $$ = new ArrayVariableDeclarationNode((char*)$2, VM::BasicObjectType::INTEGER, atoi((char*)$4));
                                 }
 
+IntVariableDeclaration:         InitIntDeclaration {}
+                                | ArrayIntDeclaration {}
+                                | SimpleIntDeclaration {}
 
-IntVariableDeclaration:         InitIntDeclaration {
-                                    $$ = $1;
+
+
+
+SimpleFloatDeclaration:         FloatType Identifier {
+                                    $$ = new SimpleVariableDeclarationNode((char*)$2, VM::BasicObjectType::FLOATING);
                                 }
-                                | ArrayIntDeclaration {
-                                    $$ = $1;
+InitFloatDeclaration:           FloatType Identifier Assignment Expression {
+                                    $$ = new InitVariableDeclarationNode((char*)$2, VM::BasicObjectType::FLOATING, dynamic_cast<ExpressionNode *>($4));
                                 }
-                                | SimpleIntDeclaration {
-                                    $$ = $1;
+ArrayFloatDeclaration:          FloatType Identifier LeftBracket IntLiteral RightBracket {
+                                    $$ = new ArrayVariableDeclarationNode((char*)$2, VM::BasicObjectType::FLOATING, atoi((char*)$4));
                                 }
 
-IntValue:                       Identifier LeftBracket Expression RightBracket {
-                                    $$ = new IntValueNode((char*)$1, dynamic_cast<ExpressionNode *>($3));
+FloatVariableDeclaration:       InitFloatDeclaration {}
+                                | ArrayFloatDeclaration {}
+                                | SimpleFloatDeclaration {}
+
+
+
+
+InitStringDeclaration:          StringType Identifier Assignment Expression {
+                                    $$ = new InitVariableDeclarationNode((char*)$2, VM::BasicObjectType::STRING, dynamic_cast<ExpressionNode *>($4));
+                                }
+
+StringVariableDeclaration:      InitStringDeclaration {}
+
+
+
+
+SimpleVariableDeclaration:      SimpleIntDeclaration {}
+                                | SimpleFloatDeclaration {}
+
+VariableDeclaration:            IntVariableDeclaration {}
+                                | FloatVariableDeclaration {}
+                                | StringVariableDeclaration {}
+
+VariableValue:                  Identifier LeftBracket Expression RightBracket {
+                                    $$ = new VariableValueNode((char*)$1, dynamic_cast<ExpressionNode *>($3));
                                 }
                                 | Identifier {
-                                    $$ = new IntValueNode((char*)$1);
+                                    $$ = new VariableValueNode((char*)$1);
                                 }
 
 
 
 
 ReturnType:                     IntType {}
+                                | FloatType {}
+                                | StringType {}
                                 | VoidType {}
 
-FunctionArgsDeclarations:       FunctionArgsDeclarations Comma SimpleIntDeclaration {
-                                    codegenCtx.currentFuncArgs.push_back(dynamic_cast<SimpleIntDeclarationNode *>($3));
+FunctionArgsDeclarations:       FunctionArgsDeclarations Comma SimpleVariableDeclaration {
+                                    codegenCtx.currentFuncArgs.push_back(dynamic_cast<SimpleVariableDeclarationNode *>($3));
                                 }
-                                | SimpleIntDeclaration {
-                                    codegenCtx.currentFuncArgs.push_back(dynamic_cast<SimpleIntDeclarationNode *>($1));
+                                | SimpleVariableDeclaration {
+                                    codegenCtx.currentFuncArgs.push_back(dynamic_cast<SimpleVariableDeclarationNode *>($1));
                                 }
                                 | %empty {}
 
@@ -170,7 +210,22 @@ FunctionArgsExpressions:        FunctionArgsExpressions Comma Expression {
                                 | %empty {}
 
 FunctionDeclaration:            ReturnType FunctionKeyword Identifier LeftParent FunctionArgsDeclarations RightParent StatementsScope {
-                                    $$ = new FunctionDeclarationNode((char*)$3, codegenCtx.currentFuncArgs, dynamic_cast<StatementsScopeNode *>($7));
+                                    ReturnType returnType = ReturnType::RETURN_TYPE_INT;
+                                    std::string returnTypeStr = (char*)$1;
+                                    if (returnTypeStr == "int") {
+                                        returnType = ReturnType::RETURN_TYPE_INT;
+                                    }
+                                    else if (returnTypeStr == "float") {
+                                        returnType = ReturnType::RETURN_TYPE_FLOAT;
+                                    }
+                                    else if (returnTypeStr == "string") {
+                                        returnType = ReturnType::RETURN_TYPE_STRING;
+                                    }
+                                    else if (returnTypeStr == "void") {
+                                        returnType = ReturnType::RETURN_TYPE_VOID;
+                                    }
+
+                                    $$ = new FunctionDeclarationNode(returnType, (char*)$3, codegenCtx.currentFuncArgs, dynamic_cast<StatementsScopeNode *>($7));
                                     codegenCtx.currentFuncArgs.clear();
                                 }
 
@@ -201,8 +256,8 @@ FunctionCall:                   Identifier LeftParent FunctionArgsExpressions Ri
                                     codegenCtx.currentCalleeArgs.clear();
                                 }
 
-AssigmentStatement:             IntValue Assignment Expression {
-                                    $$ = new AssignmentStatement(dynamic_cast<IntValueNode *>($1), dynamic_cast<ExpressionNode *>($3));
+AssigmentStatement:             VariableValue Assignment Expression {
+                                    $$ = new AssignmentStatement(dynamic_cast<VariableValueNode *>($1), dynamic_cast<ExpressionNode *>($3));
                                 }
 
 ReturnStatement:                ReturnKeyword Expression {
@@ -213,47 +268,52 @@ ReturnStatement:                ReturnKeyword Expression {
                                 }
 
 PrintStatement:                 PrintKeyword LeftParent Expression RightParent {
-                                    $$ = new PrintStatementNode(dynamic_cast<ExpressionNode *>($3));
+                                    $$ = new PrintStatementNode(VM::BasicObjectType::INTEGER, dynamic_cast<ExpressionNode *>($3));
                                 }
 
 ScanStatement:                  ScanKeyword LeftParent RightParent {
-                                    $$ = new ScanStatementNode();
+                                    $$ = new ScanStatementNode(VM::BasicObjectType::INTEGER);
+                                }
+
+PrintfStatement:                PrintfKeyword LeftParent Expression RightParent {
+                                    $$ = new PrintStatementNode(VM::BasicObjectType::FLOATING, dynamic_cast<ExpressionNode *>($3));
+                                }
+
+ScanfStatement:                 ScanfKeyword LeftParent RightParent {
+                                    $$ = new ScanStatementNode(VM::BasicObjectType::FLOATING);
+                                }
+
+PrintsStatement:                PrintsKeyword LeftParent Expression RightParent {
+                                    $$ = new PrintStatementNode(VM::BasicObjectType::STRING, dynamic_cast<ExpressionNode *>($3));
+                                }
+
+ScansStatement:                 ScansKeyword LeftParent RightParent {
+                                    $$ = new ScanStatementNode(VM::BasicObjectType::STRING);
+                                }
+
+SqrtStatement:                  SqrtKeyword LeftParent Expression RightParent {
+                                    $$ = new SqrtStatementNode(dynamic_cast<ExpressionNode *>($3));
                                 }
 
 
-Statement:                      IntVariableDeclaration {
-                                    $$ = $1;
-                                }
-                                | AssigmentStatement {
-                                    $$ = $1;
-                                }
-                                | IfStatement {
-                                    $$ = $1;
-                                }
-                                | WhileLoopStatement {
-                                    $$ = $1;
-                                }
-                                | ForLoopStatement {
-                                    $$ = $1;
-                                }
-                                | PrintStatement {
-                                    $$ = $1;
-                                }
-                                | FunctionCall {
-                                    $$ = $1;
-                                }
-                                | ReturnStatement {
-                                    $$ = $1;
-                                }
-                                | ScanStatement {
-                                    $$ = $1;
-                                }
+Statement:                      VariableDeclaration {}
+                                | AssigmentStatement {}
+                                | IfStatement {}
+                                | WhileLoopStatement {}
+                                | ForLoopStatement {}
+                                | FunctionCall {}
+                                | ReturnStatement {}
+                                | PrintStatement {}
+                                | ScanStatement {}
+                                | PrintfStatement {}
+                                | ScanfStatement {}
+                                | PrintsStatement {}
+                                | ScansStatement {}
 
 StatementList:                  StatementList Statement {
                                     codegenCtx.scopeStatements.push_back($2);
                                 }
                                 | %empty {}
-
 
 StatementsScopeBegin:           LeftBrace {
                                     codegenCtx.scopeStatementsStack.push(codegenCtx.scopeStatements);
@@ -294,8 +354,14 @@ ExpressionOperation:            Less {}
 Primary:                        IntLiteral {
                                     $$ = new PrimaryNode(atoi((char*)$1));
                                 }
-                                | IntValue {
-                                    $$ = new PrimaryNode(dynamic_cast<IntValueNode *>($1));
+                                | FloatLiteral {
+                                    $$ = new PrimaryNode(std::stod((char*)$1));
+                                }
+                                | StringLiteral {
+                                    $$ = new PrimaryNode((char*)$1);
+                                }
+                                | VariableValue {
+                                    $$ = new PrimaryNode(dynamic_cast<VariableValueNode *>($1));
                                 }
                                 | FunctionCall {
                                     $$ = new PrimaryNode(dynamic_cast<FunctionCallNode *>($1));
@@ -303,7 +369,15 @@ Primary:                        IntLiteral {
                                 | ScanStatement {
                                     $$ = new PrimaryNode(dynamic_cast<ScanStatementNode *>($1));
                                 }
-
+                                | ScanfStatement {
+                                    $$ = new PrimaryNode(dynamic_cast<ScanStatementNode *>($1));
+                                }
+                                | ScansStatement {
+                                    $$ = new PrimaryNode(dynamic_cast<ScanStatementNode *>($1));
+                                }
+                                | SqrtStatement{
+                                    $$ = new PrimaryNode(dynamic_cast<SqrtStatementNode *>($1));
+                                }
 
 Factor:                         Primary {
                                     $$ = new FactorNode(dynamic_cast<PrimaryNode *>($1));
@@ -362,7 +436,6 @@ Simple:                         Summand {
                                     else if (operationStr == "^") {
                                         operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_BITWISE_XOR;
                                     }
-
                                     $$ = new SimpleNode(dynamic_cast<SimpleNode *>($1), dynamic_cast<SummandNode *>($3), operation);
                                 }
 
@@ -398,7 +471,7 @@ Expression:                     Simple {
                                     else if (operationStr == "||") {
                                         operation = ExpressionOperation::EXPRESSION_OPERATION_LOGIC_OR;
                                     }
-                                    
+
                                     $$ = new ExpressionNode(dynamic_cast<ExpressionNode *>($1), dynamic_cast<SimpleNode *>($3), operation);
                                 }
 

@@ -1,0 +1,26 @@
+void function main() {
+    float a = scanf()
+    float b = scanf()
+    float c = scanf()
+
+    float D = b * b - 4.0 * a * c
+
+    if (D < 0.0) {
+        return
+    }
+
+    if (D == 0.0) {
+        float x = (0.0 - b) / 2.0 / a
+        printf(x)
+    }
+    else {
+        float sqrtD = sqrt(D)
+        float x_1 = (0.0 - b - sqrtD) / 2.0 / a
+        float x_2 = (0.0 - b + sqrtD) / 2.0 / a
+
+        printf(x_1)
+        printf(x_2)
+    }
+
+    return
+}

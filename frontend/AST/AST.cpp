@@ -5,7 +5,7 @@ namespace AST {
 
 // ================================================================================
 
-void SimpleIntDeclarationNode::generateCode(CodeGenContext *ctx) {
+void SimpleVariableDeclarationNode::generateCode(CodeGenContext *ctx) {
     auto *currentFrame = ctx->currentFrame;
 
     uint32_t freeReg = ctx->allocateRegister();
@@ -14,25 +14,28 @@ void SimpleIntDeclarationNode::generateCode(CodeGenContext *ctx) {
         auto *currentScope = currentFrame->currentScope;
         currentScope->scopedIDs.insert(m_name);
         currentFrame->IDs_Regs.insert({m_name, freeReg});
+        currentFrame->identifierTypes.insert({m_name, m_objType});
     }
     else {
         // Global scope of data
         auto &globalData = ctx->globalData;
         globalData.IDs_Regs.insert({m_name, freeReg});
+        globalData.identifierTypes.insert({m_name, m_objType});
     }
 }
 
-std::string SimpleIntDeclarationNode::getName() const {
+std::string SimpleVariableDeclarationNode::getName() const {
     return m_name;
 }
 
-SimpleIntDeclarationNode::SimpleIntDeclarationNode(const std::string &name) {
+SimpleVariableDeclarationNode::SimpleVariableDeclarationNode(const std::string &name, VM::BasicObjectType objType) {
     m_name = name;
+    m_objType = objType;
 }
 
 // ================================================================================
 
-void InitIntDeclarationNode::generateCode(CodeGenContext *ctx) {
+void InitVariableDeclarationNode::generateCode(CodeGenContext *ctx) {
     auto *currentFrame = ctx->currentFrame;
     auto &program = ctx->program;
 
@@ -42,11 +45,13 @@ void InitIntDeclarationNode::generateCode(CodeGenContext *ctx) {
         auto *currentScope = currentFrame->currentScope;
         currentScope->scopedIDs.insert(m_name);
         currentFrame->IDs_Regs.insert({m_name, freeReg});
+        currentFrame->identifierTypes.insert({m_name, m_objType});
     }
     else {
         // Global scope of data
         auto &globalData = ctx->globalData;
         globalData.IDs_Regs.insert({m_name, freeReg});
+        globalData.identifierTypes.insert({m_name, m_objType});
     }
 
     m_expressionNode->generateCode(ctx);
@@ -62,18 +67,19 @@ void InitIntDeclarationNode::generateCode(CodeGenContext *ctx) {
     program.instructions.push_back(encInstr);
 }
 
-std::string InitIntDeclarationNode::getName() const {
+std::string InitVariableDeclarationNode::getName() const {
     return m_name;
 }
 
-InitIntDeclarationNode::InitIntDeclarationNode(const std::string &name, ExpressionNode *expressionNode) {
+InitVariableDeclarationNode::InitVariableDeclarationNode(const std::string &name, VM::BasicObjectType objType, ExpressionNode *expressionNode) {
     m_name = name;
+    m_objType = objType;
     m_expressionNode = expressionNode;
 }
 
 // ================================================================================
 
-void ArrayIntDeclarationNode::generateCode(CodeGenContext *ctx) {
+void ArrayVariableDeclarationNode::generateCode(CodeGenContext *ctx) {
     auto *currentFrame = ctx->currentFrame;
     auto &program = ctx->program;
 
@@ -83,11 +89,13 @@ void ArrayIntDeclarationNode::generateCode(CodeGenContext *ctx) {
         auto *currentScope = currentFrame->currentScope;
         currentScope->scopedIDs.insert(m_name);
         currentFrame->IDs_Regs.insert({m_name, freeReg});
+        currentFrame->identifierTypes.insert({m_name, m_objType});
     }
     else {
         // Global scope of data
         auto &globalData = ctx->globalData;
         globalData.IDs_Regs.insert({m_name, freeReg});
+        globalData.identifierTypes.insert({m_name, m_objType});
     }
 
     // Load size of array into accumulator first
@@ -117,7 +125,7 @@ void ArrayIntDeclarationNode::generateCode(CodeGenContext *ctx) {
         VM::DecodedInstruction decInstr;
         VM::EncodedInstruction encInstr;
 
-        decInstr.objType = VM::BasicObjectType::INTEGER;
+        decInstr.objType = m_objType;
         decInstr.opcode = VM::InstructionType::NEWARRAY;
 
         ctx->encodeInstruction(decInstr, encInstr);
@@ -136,16 +144,17 @@ void ArrayIntDeclarationNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
-std::string ArrayIntDeclarationNode::getName() const {
+std::string ArrayVariableDeclarationNode::getName() const {
     return m_name;
 }
 
-size_t ArrayIntDeclarationNode::getSize() const {
+size_t ArrayVariableDeclarationNode::getSize() const {
     return m_size;
 }
 
-ArrayIntDeclarationNode::ArrayIntDeclarationNode(const std::string &name, const size_t size) {
+ArrayVariableDeclarationNode::ArrayVariableDeclarationNode(const std::string &name, VM::BasicObjectType objType, const size_t size) {
     m_name = name;
+    m_objType = objType;
     m_size = size;
 }
 
@@ -168,7 +177,24 @@ void PrintStatementNode::generateCode(CodeGenContext *ctx) {
     {
         VM::DecodedInstruction decInstr;
         decInstr.opcode = VM::InstructionType::CALL_INTRINSIC;
-        decInstr.intrCode = VM::IntrinsicType::PRINT;
+
+        switch (m_objType) {
+            case VM::BasicObjectType::INTEGER: {
+                decInstr.intrCode = VM::IntrinsicType::PRINT;
+                break;
+            }
+            case VM::BasicObjectType::FLOATING: {
+                decInstr.intrCode = VM::IntrinsicType::PRINTF;
+                break;
+            }
+            case VM::BasicObjectType::STRING: {
+                decInstr.intrCode = VM::IntrinsicType::PRINTS;
+                break;
+            }
+            default: {
+                break;
+            }
+        }
 
         VM::EncodedInstruction encInstr;
         ctx->encodeInstruction(decInstr, encInstr);
@@ -176,7 +202,8 @@ void PrintStatementNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
-PrintStatementNode::PrintStatementNode(ExpressionNode *expressionNode) {
+PrintStatementNode::PrintStatementNode(VM::BasicObjectType objType, ExpressionNode *expressionNode) {
+    m_objType = objType;
     m_expressionNode = expressionNode;
 }
 
@@ -187,7 +214,24 @@ void ScanStatementNode::generateCode(CodeGenContext *ctx) {
     {
         VM::DecodedInstruction decInstr;
         decInstr.opcode = VM::InstructionType::CALL_INTRINSIC;
-        decInstr.intrCode = VM::IntrinsicType::SCAN;
+
+        switch (m_objType) {
+            case VM::BasicObjectType::INTEGER: {
+                decInstr.intrCode = VM::IntrinsicType::SCAN;
+                break;
+            }
+            case VM::BasicObjectType::FLOATING: {
+                decInstr.intrCode = VM::IntrinsicType::SCANF;
+                break;
+            }
+            case VM::BasicObjectType::STRING: {
+                decInstr.intrCode = VM::IntrinsicType::SCANS;
+                break;
+            }
+            default: {
+                break;
+            }
+        }
 
         VM::EncodedInstruction encInstr;
         ctx->encodeInstruction(decInstr, encInstr);
@@ -195,8 +239,43 @@ void ScanStatementNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
-ScanStatementNode::ScanStatementNode() {
+VM::BasicObjectType ScanStatementNode::getType() {
+    return m_objType;
+}
 
+ScanStatementNode::ScanStatementNode(VM::BasicObjectType objType) {
+    m_objType = objType;
+}
+
+// ================================================================================
+
+void SqrtStatementNode::generateCode(CodeGenContext *ctx) {
+    auto &program = ctx->program;
+
+    m_expressionNode->generateCode(ctx);
+    {
+        VM::DecodedInstruction decInstr;
+        VM::EncodedInstruction encInstr;
+
+        decInstr.r1 = m_expressionNode->getRegister();
+        decInstr.opcode = VM::InstructionType::LOAD_ACC;
+
+        ctx->encodeInstruction(decInstr, encInstr);
+        program.instructions.push_back(encInstr);
+    }
+    {
+        VM::DecodedInstruction decInstr;
+        VM::EncodedInstruction encInstr;
+
+        decInstr.opcode = VM::InstructionType::SQRT;
+
+        ctx->encodeInstruction(decInstr, encInstr);
+        program.instructions.push_back(encInstr);
+    }
+}
+
+SqrtStatementNode::SqrtStatementNode(ExpressionNode *expressionNode) {
+    m_expressionNode = expressionNode;
 }
 
 // ================================================================================
@@ -217,7 +296,7 @@ ProgramNode::ProgramNode() {
 
 // ================================================================================
 
-void IntValueNode::generateCode(CodeGenContext *ctx) {
+void VariableValueNode::generateCode(CodeGenContext *ctx) {
     auto *currentFrame = ctx->currentFrame;
     auto &globalData = ctx->globalData;
     auto &program = ctx->program;
@@ -295,7 +374,7 @@ void IntValueNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
-void IntValueNode::generateArrayIndex(CodeGenContext *ctx) {
+void VariableValueNode::generateArrayIndex(CodeGenContext *ctx) {
     auto *currentFrame = ctx->currentFrame;
     auto &globalData = ctx->globalData;
     auto &program = ctx->program;
@@ -363,19 +442,38 @@ void IntValueNode::generateArrayIndex(CodeGenContext *ctx) {
     }
 }
 
-uint32_t IntValueNode::getRegister() {
+uint32_t VariableValueNode::getRegister() {
     return m_registerToStore;
 }
 
-bool IntValueNode::isArray() {
+bool VariableValueNode::isArray() {
     return m_expressionNode;
 }
 
-IntValueNode::IntValueNode(const std::string &name) {
+VM::BasicObjectType VariableValueNode::getType(CodeGenContext *ctx) {
+    auto *currentFrame = ctx->currentFrame;
+
+    if (currentFrame) {
+        auto it = ctx->currentFrame->identifierTypes.find(m_name);
+        if (it == ctx->currentFrame->identifierTypes.end()) {
+            // Error, undeclared identifier
+        }
+        return it->second;
+    }
+    else {
+        auto it = ctx->globalData.identifierTypes.find(m_name);
+        if (it == ctx->globalData.identifierTypes.end()) {
+            // Error, undeclared identifier
+        }
+        return it->second;
+    }
+}
+
+VariableValueNode::VariableValueNode(const std::string &name) {
     m_name = name;
 }
 
-IntValueNode::IntValueNode(const std::string &name, ExpressionNode *expressionNode) {
+VariableValueNode::VariableValueNode(const std::string &name, ExpressionNode *expressionNode) {
     m_name = name;
     m_expressionNode = expressionNode;
 }
@@ -463,6 +561,27 @@ void FunctionCallNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+VM::BasicObjectType FunctionCallNode::getType(CodeGenContext *ctx) {
+    auto it = ctx->globalData.functionReturnTypes.find(m_name);
+    if (it == ctx->globalData.functionReturnTypes.end()) {
+        // Error, undeclared function
+    }
+    switch (it->second) {
+        case ReturnType::RETURN_TYPE_INT: {
+            return VM::BasicObjectType::INTEGER;
+        }
+        case ReturnType::RETURN_TYPE_FLOAT: {
+            return VM::BasicObjectType::FLOATING;
+        }
+        case ReturnType::RETURN_TYPE_STRING: {
+            return VM::BasicObjectType::STRING;
+        }
+        default: {
+            return VM::BasicObjectType::INTEGER;
+        }
+    }
+}
+
 FunctionCallNode::FunctionCallNode(const std::string &name, std::vector<ExpressionNode *> &arguments) {
     m_name = name;
     std::copy(arguments.begin(), arguments.end(), std::back_inserter(m_arguments));
@@ -471,7 +590,28 @@ FunctionCallNode::FunctionCallNode(const std::string &name, std::vector<Expressi
 // ================================================================================
 
 void PrimaryNode::generateCode(CodeGenContext *ctx) {
-    if (m_scanStatementNode) {
+    if (m_sqrtStatementNode) {
+        // Sqrt builtin function
+        m_sqrtStatementNode->generateCode(ctx);
+
+        auto *currentFrame = ctx->currentFrame;
+        auto &program = ctx->program;
+
+        uint32_t freeReg = ctx->allocateRegister();
+
+        VM::DecodedInstruction decInstr;
+        VM::EncodedInstruction encInstr;
+
+        decInstr.r1 = freeReg;
+        decInstr.opcode = VM::InstructionType::STORE_ACC;
+
+        ctx->encodeInstruction(decInstr, encInstr);
+        program.instructions.push_back(encInstr);
+
+        m_registerToStore = freeReg;
+        m_objType = VM::BasicObjectType::FLOATING;
+    }
+    else if (m_scanStatementNode) {
         // From stdin
         m_scanStatementNode->generateCode(ctx);
 
@@ -490,6 +630,7 @@ void PrimaryNode::generateCode(CodeGenContext *ctx) {
         program.instructions.push_back(encInstr);
 
         m_registerToStore = freeReg;
+        m_objType = m_scanStatementNode->getType();
     }
     else if (m_functionCallNode) {
         // From function return
@@ -510,11 +651,13 @@ void PrimaryNode::generateCode(CodeGenContext *ctx) {
         program.instructions.push_back(encInstr);
 
         m_registerToStore = freeReg;
+        m_objType = m_functionCallNode->getType(ctx);
     }
-    else if (m_intValueNode) {
+    else if (m_valueNode) {
         // From identifier
-        m_intValueNode->generateCode(ctx);
-        m_registerToStore = m_intValueNode->getRegister();
+        m_valueNode->generateCode(ctx);
+        m_registerToStore = m_valueNode->getRegister();
+        m_objType = m_valueNode->getType(ctx);
     }
     else {
         // From literal
@@ -529,8 +672,24 @@ void PrimaryNode::generateCode(CodeGenContext *ctx) {
         decInstr.opcode = VM::InstructionType::MVI;
 
         VM::Immediate constant{};
-        constant.type = VM::BasicObjectType::INTEGER;
-        constant.i_val = m_value;
+        constant.type = m_objType;
+        switch (m_objType) {
+            case VM::BasicObjectType::INTEGER: {
+                constant.i_val = m_intValue;
+                break;
+            }
+            case VM::BasicObjectType::FLOATING: {
+                constant.f_val = m_floatValue;
+                break;
+            }
+            case VM::BasicObjectType::STRING: {
+                // TODO
+                break;
+            }
+            default: {
+                break;
+            }
+        }
 
         if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
             decInstr.imm = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
@@ -548,29 +707,64 @@ void PrimaryNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
-int PrimaryNode::getValue() {
-    return m_value;
+int PrimaryNode::getIntValue() {
+    return m_intValue;
+}
+
+double PrimaryNode::getFloatValue() {
+    return m_floatValue;
+}
+
+std::string PrimaryNode::getStringValue() {
+    return m_stringValue;
 }
 
 uint32_t PrimaryNode::getRegister() {
     return m_registerToStore;
 }
 
-PrimaryNode::PrimaryNode(const int value) {
-    m_value = value;
+VM::BasicObjectType PrimaryNode::getType() {
+    return m_objType;
 }
 
-PrimaryNode::PrimaryNode(IntValueNode *intValueNode) {
-    m_intValueNode = intValueNode;
+PrimaryNode::PrimaryNode(const int value) {
+    m_intValue = value;
+    m_objType = VM::BasicObjectType::INTEGER;
+}
+
+PrimaryNode::PrimaryNode(const double value) {
+    m_floatValue = value;
+    m_objType = VM::BasicObjectType::FLOATING;
+}
+
+PrimaryNode::PrimaryNode(const std::string &value) {
+    m_stringValue = value;
+    m_objType = VM::BasicObjectType::STRING;
+}
+
+PrimaryNode::PrimaryNode(VariableValueNode *valueNode) {
+    m_valueNode = valueNode;
+    // Initialize integer
+    m_objType = VM::BasicObjectType::INTEGER;
 }
 
 PrimaryNode::PrimaryNode(FunctionCallNode *functionCallNode) {
     m_functionCallNode = functionCallNode;
+    // Initialize integer
+    m_objType = VM::BasicObjectType::INTEGER;
 }
 
 PrimaryNode::PrimaryNode(ScanStatementNode *scanStatementNode) {
     m_scanStatementNode = scanStatementNode;
+    // Initialize integer
+    m_objType = VM::BasicObjectType::INTEGER;
 }
+
+PrimaryNode::PrimaryNode(SqrtStatementNode *sqrtStatementNode) {
+    m_sqrtStatementNode = sqrtStatementNode;
+    m_objType = VM::BasicObjectType::FLOATING;
+}
+
 
 // ================================================================================
 
@@ -627,6 +821,10 @@ uint32_t FactorNode::getRegister() {
     return m_registerToStore;
 }
 
+VM::BasicObjectType FactorNode::getType() {
+    return m_primaryNode->getType();
+}
+
 FactorNode::FactorNode(PrimaryNode *primaryNode, bool primaryNot) {
     m_primaryNode = primaryNode;
     m_primaryNot = primaryNot;
@@ -662,13 +860,24 @@ void SummandNode::generateCode(CodeGenContext *ctx) {
             VM::EncodedInstruction encInstr;
             
             decInstr.r1 = m_factorNode->getRegister();
+            VM::BasicObjectType objType = m_factorNode->getType();
             switch (m_operation) {
                 case HighPriorityOperation::HIGH_PRIORITY_OPERATION_MUL: {
-                    decInstr.opcode = VM::InstructionType::MUL;
+                    if (objType == VM::BasicObjectType::INTEGER) {
+                        decInstr.opcode = VM::InstructionType::MUL;
+                    }
+                    if (objType == VM::BasicObjectType::FLOATING) {
+                        decInstr.opcode = VM::InstructionType::MULF;
+                    }
                     break;
                 }
                 case HighPriorityOperation::HIGH_PRIORITY_OPERATION_DIV: {
-                    decInstr.opcode = VM::InstructionType::DIV;
+                    if (objType == VM::BasicObjectType::INTEGER) {
+                        decInstr.opcode = VM::InstructionType::DIV;
+                    }
+                    if (objType == VM::BasicObjectType::FLOATING) {
+                        decInstr.opcode = VM::InstructionType::DIVF;
+                    }
                     break;
                 }
                 default: {
@@ -699,6 +908,10 @@ void SummandNode::generateCode(CodeGenContext *ctx) {
 
 uint32_t SummandNode::getRegister() {
     return m_registerToStore;
+}
+
+VM::BasicObjectType SummandNode::getType() {
+    return m_factorNode->getType();
 }
 
 SummandNode::SummandNode(FactorNode *factorNode) {
@@ -737,13 +950,24 @@ void SimpleNode::generateCode(CodeGenContext *ctx) {
             VM::EncodedInstruction encInstr;
             
             decInstr.r1 = m_summandNode->getRegister();
+            VM::BasicObjectType objType = m_summandNode->getType();
             switch (m_operation) {
                 case LowPriorityOperation::LOW_PRIORITY_OPERATION_ADD: {
-                    decInstr.opcode = VM::InstructionType::ADD;
+                    if (objType == VM::BasicObjectType::INTEGER) {
+                        decInstr.opcode = VM::InstructionType::ADD;
+                    }
+                    if (objType == VM::BasicObjectType::FLOATING) {
+                        decInstr.opcode = VM::InstructionType::ADDF;
+                    }
                     break;
                 }
                 case LowPriorityOperation::LOW_PRIORITY_OPERATION_SUB: {
-                    decInstr.opcode = VM::InstructionType::SUB;
+                    if (objType == VM::BasicObjectType::INTEGER) {
+                        decInstr.opcode = VM::InstructionType::SUB;
+                    }
+                    if (objType == VM::BasicObjectType::FLOATING) {
+                        decInstr.opcode = VM::InstructionType::SUBF;
+                    }
                     break;
                 }
                 case LowPriorityOperation::LOW_PRIORITY_OPERATION_SHIFT_LEFT: {
@@ -796,6 +1020,10 @@ uint32_t SimpleNode::getRegister() {
     return m_registerToStore;    
 }
 
+VM::BasicObjectType SimpleNode::getType() {
+    return m_summandNode->getType();
+}
+
 SimpleNode::SimpleNode(SummandNode *summandNode) {
     m_summandNode = summandNode;
 }
@@ -846,6 +1074,10 @@ uint32_t ExpressionNode::getSimpleNodeRegister() {
     return m_simpleNode->getRegister();
 }
 
+VM::BasicObjectType ExpressionNode::getType() {
+    return m_simpleNode->getType();
+}
+
 ExpressionNode::ExpressionNode(SimpleNode *simpleNode) {
     m_simpleNode = simpleNode;
 }
@@ -863,9 +1095,9 @@ void AssignmentStatement::generateCode(CodeGenContext *ctx) {
     auto &globalData = ctx->globalData;
     auto &program = ctx->program;
 
-    if (m_intValueNode->isArray()) {
+    if (m_valueNode->isArray()) {
         // Array
-        m_intValueNode->generateArrayIndex(ctx);
+        m_valueNode->generateArrayIndex(ctx);
         m_expressionNode->generateCode(ctx);
 
         uint32_t freeReg = ctx->allocateRegister();
@@ -914,14 +1146,14 @@ void AssignmentStatement::generateCode(CodeGenContext *ctx) {
         ctx->freeRegsiter(freeReg);
     }
     else {
-        m_intValueNode->generateCode(ctx);
+        m_valueNode->generateCode(ctx);
         m_expressionNode->generateCode(ctx);
 
         {
             VM::DecodedInstruction decInstr;
             VM::EncodedInstruction encInstr;
 
-            decInstr.r1 = m_intValueNode->getRegister();
+            decInstr.r1 = m_valueNode->getRegister();
             decInstr.r2 = m_expressionNode->getRegister();
             decInstr.opcode = VM::InstructionType::MV;
 
@@ -931,8 +1163,8 @@ void AssignmentStatement::generateCode(CodeGenContext *ctx) {
     }
 }
 
-AssignmentStatement::AssignmentStatement(IntValueNode *intValueNode, ExpressionNode *expressionNode) {
-    m_intValueNode = intValueNode;
+AssignmentStatement::AssignmentStatement(VariableValueNode *valueNode, ExpressionNode *expressionNode) {
+    m_valueNode = valueNode;
     m_expressionNode = expressionNode;
 }
 
@@ -985,8 +1217,9 @@ StatementsScopeNode::StatementsScopeNode(std::vector<ASTNode *> &scopeStatements
 
 void FunctionDeclarationNode::generateCode(CodeGenContext *ctx) {
     ctx->globalData.functions_PC.insert({m_name, ctx->globalData.pc});
+    ctx->globalData.functionReturnTypes.insert({m_name, m_returnType});
     if (m_name == "main") {
-         ctx->program.entryPoint = ctx->globalData.pc;   
+         ctx->program.entryPoint = ctx->globalData.pc;
     }
 
     ctx->currentFrame = new CompilerFrame();
@@ -1005,10 +1238,12 @@ void FunctionDeclarationNode::generateCode(CodeGenContext *ctx) {
     delete currentFrame;
 }
 
-FunctionDeclarationNode::FunctionDeclarationNode(const std::string &name, 
-                                                 std::vector<SimpleIntDeclarationNode *> &arguments,
+FunctionDeclarationNode::FunctionDeclarationNode(ReturnType returnType,
+                                                 const std::string &name,
+                                                 std::vector<SimpleVariableDeclarationNode *> &arguments,
                                                  StatementsScopeNode *body) 
 {
+    m_returnType = returnType;
     std::copy(arguments.begin(), arguments.end(), std::back_inserter(m_arguments));
     m_body = body;
     m_name = name;

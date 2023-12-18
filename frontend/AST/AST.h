@@ -43,12 +43,14 @@ enum ExpressionOperation {
 
 enum ReturnType {
     RETURN_TYPE_INT,
+    RETURN_TYPE_FLOAT,
+    RETURN_TYPE_STRING,
     RETURN_TYPE_VOID
 };
 
 
 class ASTNode;
-class SimpleIntDeclarationNode;
+class SimpleVariableDeclarationNode;
 class ExpressionNode;
 
 
@@ -60,12 +62,15 @@ struct CompilerScope {
 struct CompilerFrame {
     std::array<bool, VM::FRAME_REGISTER_COUNT> occupiedRegs = {};
     std::unordered_map<std::string, uint32_t> IDs_Regs;
+    std::unordered_map<std::string, VM::BasicObjectType> identifierTypes;
     CompilerScope *currentScope = nullptr;
 };
 
 struct GlobalData {
     std::array<bool, VM::FRAME_REGISTER_COUNT> occupiedRegs = {};
     std::unordered_map<std::string, uint32_t> IDs_Regs;
+    std::unordered_map<std::string, VM::BasicObjectType> identifierTypes;
+    std::unordered_map<std::string, ReturnType> functionReturnTypes;
     std::unordered_map<std::string, uint64_t> functions_PC;
     uint64_t pc = 0;
 };
@@ -76,7 +81,7 @@ struct CodeGenContext {
     CompilerFrame *currentFrame = nullptr;
     GlobalData globalData;
 
-    std::vector<SimpleIntDeclarationNode *> currentFuncArgs;
+    std::vector<SimpleVariableDeclarationNode *> currentFuncArgs;
     std::vector<ExpressionNode *> currentCalleeArgs;
     std::vector<ASTNode *> scopeStatements;
     std::stack<std::vector<ASTNode *>> scopeStatementsStack;
@@ -138,43 +143,46 @@ private:
 
 // ================================================================================
 
-class SimpleIntDeclarationNode : public ASTNode {
+class SimpleVariableDeclarationNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
     std::string getName() const;
 
-    SimpleIntDeclarationNode(const std::string &name);
+    SimpleVariableDeclarationNode(const std::string &name, VM::BasicObjectType objType);
 
 private:
     std::string m_name;
+    VM::BasicObjectType m_objType;
 };
 
 // ================================================================================
 
-class InitIntDeclarationNode : public ASTNode {
+class InitVariableDeclarationNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
     std::string getName() const;
 
-    InitIntDeclarationNode(const std::string &name, ExpressionNode *expressionNode);
+    InitVariableDeclarationNode(const std::string &name, VM::BasicObjectType objType, ExpressionNode *expressionNode);
 
 private:
     std::string m_name;
+    VM::BasicObjectType m_objType;
     ExpressionNode *m_expressionNode = nullptr;
 };
 
 // ================================================================================
 
-class ArrayIntDeclarationNode : public ASTNode {
+class ArrayVariableDeclarationNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
     std::string getName() const;
     size_t getSize() const;
 
-    ArrayIntDeclarationNode(const std::string &name, const size_t size);
+    ArrayVariableDeclarationNode(const std::string &name, VM::BasicObjectType objType, const size_t size);
 
 private:
     std::string m_name;
+    VM::BasicObjectType m_objType;
     size_t m_size = 0;
 };
 
@@ -183,10 +191,11 @@ private:
 class PrintStatementNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
-    PrintStatementNode(ExpressionNode *expressionNode);
+    PrintStatementNode(VM::BasicObjectType objType, ExpressionNode *expressionNode);
 
 private:
     std::string m_name;
+    VM::BasicObjectType m_objType;
     ExpressionNode *m_expressionNode = nullptr;
 };
 
@@ -195,10 +204,24 @@ private:
 class ScanStatementNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
-    ScanStatementNode();
+    VM::BasicObjectType getType();
+
+    ScanStatementNode(VM::BasicObjectType objType);
 
 private:
+    VM::BasicObjectType m_objType;
+};
 
+// ================================================================================
+
+class SqrtStatementNode : public ASTNode {
+public:
+    virtual void generateCode(CodeGenContext *ctx) override;
+
+    SqrtStatementNode(ExpressionNode *expressionNode);
+
+private:
+    ExpressionNode *m_expressionNode;
 };
 
 // ================================================================================
@@ -216,16 +239,17 @@ private:
 
 // ================================================================================
 
-class IntValueNode : public ASTNode {
+class VariableValueNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
     // Save address into accumulator
     void generateArrayIndex(CodeGenContext *ctx);
     uint32_t getRegister();
     bool isArray();
+    VM::BasicObjectType getType(CodeGenContext *ctx);
 
-    IntValueNode(const std::string &name);
-    IntValueNode(const std::string &name, ExpressionNode *expressionNode);
+    VariableValueNode(const std::string &name);
+    VariableValueNode(const std::string &name, ExpressionNode *expressionNode);
 
 private:
     uint32_t m_registerToStore;
@@ -238,6 +262,7 @@ private:
 class FunctionCallNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    VM::BasicObjectType getType(CodeGenContext *ctx);
 
     FunctionCallNode(const std::string &name, std::vector<ExpressionNode *> &arguments);
 
@@ -251,20 +276,31 @@ private:
 class PrimaryNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
-    int getValue();
+    int getIntValue();
+    double getFloatValue();
+    std::string getStringValue();
     uint32_t getRegister();
+    VM::BasicObjectType getType();
 
     PrimaryNode(const int value);
-    PrimaryNode(IntValueNode *intValueNode);
+    PrimaryNode(const double value);
+    PrimaryNode(const std::string &value);
+    PrimaryNode(VariableValueNode *valueNode);
     PrimaryNode(FunctionCallNode *functionCallNode);
     PrimaryNode(ScanStatementNode *scanStatementNode);
+    PrimaryNode(SqrtStatementNode *sqrtStatementNode);
 
 private:
-    int m_value;
+    int m_intValue;
+    double m_floatValue;
+    std::string m_stringValue;
+    VM::BasicObjectType m_objType;
+
     uint32_t m_registerToStore;
-    IntValueNode *m_intValueNode = nullptr;
+    VariableValueNode *m_valueNode = nullptr;
     FunctionCallNode *m_functionCallNode = nullptr;
     ScanStatementNode *m_scanStatementNode = nullptr;
+    SqrtStatementNode *m_sqrtStatementNode = nullptr;
 };
 
 // ================================================================================
@@ -273,6 +309,7 @@ class FactorNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
     uint32_t getRegister();
+    VM::BasicObjectType getType();
 
     FactorNode(PrimaryNode *primaryNode, bool primaryNot = false);
     FactorNode(ExpressionNode *expressionNode);
@@ -290,6 +327,7 @@ class SummandNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
     uint32_t getRegister();
+    VM::BasicObjectType getType();
 
     SummandNode(FactorNode *factorNode);
     SummandNode(SummandNode *summandNode, FactorNode *factorNode, HighPriorityOperation operation);
@@ -307,6 +345,7 @@ class SimpleNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
     uint32_t getRegister();
+    VM::BasicObjectType getType();
 
     SimpleNode(SummandNode *summandNode);
     SimpleNode(SimpleNode *simpleNode, SummandNode *summandNode, LowPriorityOperation operation);
@@ -326,6 +365,7 @@ public:
     uint32_t getRegister();
     ExpressionOperation getOperation();
     uint32_t getSimpleNodeRegister();
+    VM::BasicObjectType getType();
 
     ExpressionNode(SimpleNode *simpleNode);
     ExpressionNode(ExpressionNode *expressionNode, SimpleNode *simpleNode, ExpressionOperation operation);
@@ -343,10 +383,10 @@ class AssignmentStatement : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
 
-    AssignmentStatement(IntValueNode *intValueNode, ExpressionNode *expressionNode);
+    AssignmentStatement(VariableValueNode *valueNode, ExpressionNode *expressionNode);
 
 private:
-    IntValueNode *m_intValueNode = nullptr;
+    VariableValueNode *m_valueNode = nullptr;
     ExpressionNode *m_expressionNode = nullptr;
 };
 
@@ -380,12 +420,14 @@ class FunctionDeclarationNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
 
-    FunctionDeclarationNode(const std::string &name,
-                            std::vector<SimpleIntDeclarationNode *> &arguments,
+    FunctionDeclarationNode(ReturnType returnType,
+                            const std::string &name,
+                            std::vector<SimpleVariableDeclarationNode *> &arguments,
                             StatementsScopeNode *body);
 
 private:
-    std::vector<SimpleIntDeclarationNode *> m_arguments;
+    ReturnType m_returnType = ReturnType::RETURN_TYPE_INT;
+    std::vector<SimpleVariableDeclarationNode *> m_arguments;
     StatementsScopeNode *m_body = nullptr;
     std::string m_name;
 };

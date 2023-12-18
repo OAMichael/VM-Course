@@ -374,8 +374,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
-#define YY_NUM_RULES 42
-#define YY_END_OF_BUFFER 43
+#define YY_NUM_RULES 51
+#define YY_END_OF_BUFFER 52
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -383,17 +383,21 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static const flex_int16_t yy_accept[88] =
+static const flex_int16_t yy_accept[115] =
     {   0,
-        0,    0,   43,   41,    1,    1,   41,   30,   35,   36,
-       22,   24,   40,   25,   23,   13,   13,   39,   27,   29,
-       28,   14,   33,   34,   32,   14,   14,   14,   14,   14,
-       14,   14,   14,   37,   31,   38,   19,   20,   13,    0,
-       13,   13,   15,   17,   26,   18,   16,   14,   14,   14,
-       14,   14,    5,   14,   14,   14,   14,   14,   14,   21,
-        0,    2,   14,    7,   14,    3,   14,   14,   14,   14,
-       14,    6,   14,   14,   14,   12,    4,   14,   14,   11,
-       14,    8,   14,    9,   14,   10,    0
+        0,    0,   52,   50,    1,    1,   50,   50,   39,   44,
+       45,   31,   33,   49,   34,   32,   20,   20,   48,   36,
+       38,   37,   23,   42,   43,   41,   23,   23,   23,   23,
+       23,   23,   23,   23,   46,   40,   47,   28,    0,   22,
+        0,   29,    0,   20,    0,    0,    0,   20,   20,   24,
+       26,   35,   27,   25,   23,   23,   23,   23,   23,   23,
+        7,   23,   23,   23,   23,   23,   23,   23,   23,   30,
+        0,    2,   21,   21,   20,   20,   23,   23,    9,   23,
+        3,   23,   23,   23,   23,   23,   23,   23,    8,   23,
+       23,   23,   23,   16,   19,   23,    6,   23,    4,   23,
+
+       13,   23,   17,   18,   23,   10,   23,   14,   15,   11,
+        5,   23,   12,    0
     } ;
 
 static const YY_CHAR yy_ec[256] =
@@ -401,17 +405,17 @@ static const YY_CHAR yy_ec[256] =
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    2,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    2,    4,    1,    1,    1,    1,    5,    1,    6,
-        7,    8,    9,   10,   11,    1,   12,   13,   14,   14,
-       14,   14,   14,   14,   14,   14,   14,    1,   15,   16,
-       17,   18,    1,    1,   19,   19,   19,   19,   19,   19,
-       19,   19,   19,   19,   19,   19,   19,   19,   19,   19,
-       19,   19,   19,   19,   19,   19,   19,   19,   19,   19,
-       20,    1,   21,   22,   19,    1,   23,   19,   24,   25,
+        1,    2,    4,    5,    1,    1,    1,    6,    1,    7,
+        8,    9,   10,   11,   12,    1,   13,   14,   15,   15,
+       15,   15,   15,   15,   15,   15,   15,    1,   16,   17,
+       18,   19,    1,    1,   20,   20,   20,   20,   20,   20,
+       20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
+       20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
+       21,   22,   23,   24,   20,    1,   25,   20,   26,   27,
 
-       26,   27,   19,   28,   29,   19,   19,   30,   19,   31,
-       32,   33,   19,   34,   35,   36,   37,   38,   39,   19,
-       19,   19,   40,   41,   42,    1,    1,    1,    1,    1,
+       28,   29,   30,   31,   32,   20,   20,   33,   20,   34,
+       35,   36,   37,   38,   39,   40,   41,   42,   43,   20,
+       20,   20,   44,   45,   46,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -428,105 +432,139 @@ static const YY_CHAR yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static const YY_CHAR yy_meta[43] =
+static const YY_CHAR yy_meta[47] =
     {   0,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    2,    2,    1,    1,    1,    1,    2,    1,
-        1,    1,    2,    2,    2,    2,    2,    2,    2,    2,
-        2,    2,    2,    2,    2,    2,    2,    2,    2,    1,
-        1,    1
+        1,    1,    2,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    3,    3,    1,    1,    1,    1,    3,
+        1,    1,    1,    1,    3,    3,    3,    3,    3,    3,
+        3,    3,    3,    3,    3,    3,    3,    3,    3,    3,
+        3,    3,    3,    1,    1,    1
     } ;
 
-static const flex_int16_t yy_base[91] =
+static const flex_int16_t yy_base[120] =
     {   0,
-        0,    0,  178,  183,  183,  183,  140,  142,  183,  183,
-      183,  183,  183,  110,  100,  183,   30,  183,   29,   94,
-       30,   36,  183,  183,  183,   38,   40,   42,   44,   48,
-       46,   34,   47,  183,   68,  183,  183,  183,   50,   84,
-       67,   69,  183,  183,  183,  183,  183,    0,   53,   54,
-       60,   68,   69,   71,   74,   77,   83,   88,   89,  183,
-       73,  183,   95,   96,  101,  102,  103,   56,  104,  111,
-      110,  112,  117,  118,  124,  119,  125,  133,  134,  135,
-      140,  141,  137,  138,  146,  149,  183,   65,  180,   63
+        0,    0,  152,  302,  302,  302,  132,   42,  140,  302,
+      302,  302,  302,  302,   34,  127,   36,   38,  302,   37,
+      117,   38,   44,  302,  302,  302,   46,   48,   51,   53,
+       56,   60,   58,   63,  302,   88,  302,  302,   77,  302,
+       95,  302,   73,   81,   89,   87,   89,   91,   93,  302,
+      302,  302,  302,  302,    0,   95,   97,   99,  101,  103,
+      105,  107,  109,  111,  113,  115,  117,  128,  130,  302,
+       87,  302,  134,  142,  144,  149,  151,  153,  155,  157,
+      159,  161,  166,  170,  172,  174,  176,  178,  182,  184,
+      186,  194,  199,  201,  203,  205,  207,  213,  217,  221,
+
+      228,  230,  232,  234,  236,  240,  244,  246,  248,  254,
+      256,  258,  260,  302,  292,  295,   73,  298,   66
     } ;
 
-static const flex_int16_t yy_def[91] =
+static const flex_int16_t yy_def[120] =
     {   0,
-       87,    1,   87,   87,   87,   87,   87,   87,   87,   87,
-       87,   87,   87,   87,   87,   87,   87,   87,   87,   87,
-       87,   88,   87,   87,   87,   88,   88,   88,   88,   88,
-       88,   27,   27,   87,   87,   87,   87,   87,   87,   89,
-       87,   87,   87,   87,   87,   87,   87,   90,   27,   27,
-       27,   28,   28,   28,   28,   28,   28,   28,   28,   87,
-       89,   87,   28,   28,   28,   28,   28,   27,   28,   28,
-       28,   28,   28,   28,   28,   28,   28,   28,   28,   28,
-       28,   28,   27,   27,   28,   28,    0,   87,   87,   87
+      114,    1,  114,  114,  114,  114,  114,  115,  114,  114,
+      114,  114,  114,  114,  114,  114,  116,  116,  114,  114,
+      114,  114,  117,  114,  114,  114,  117,  117,  117,  117,
+      117,  117,  117,  117,  114,  114,  114,  114,  115,  114,
+      115,  114,  116,  116,  118,  114,  116,  116,  116,  114,
+      114,  114,  114,  114,  119,  117,  117,  117,  117,  117,
+      117,  117,  117,  117,  117,  117,  117,  117,  117,  114,
+      118,  114,  114,  116,  116,  116,  117,  117,  117,  117,
+      117,  117,  117,  117,  117,  117,  117,  117,  117,  117,
+      117,  117,  117,  117,  117,  117,  117,  117,  117,  117,
+
+      117,  117,  117,  117,  117,  117,  117,  117,  117,  117,
+      117,  117,  117,    0,  114,  114,  114,  114,  114
     } ;
 
-static const flex_int16_t yy_nxt[226] =
+static const flex_int16_t yy_nxt[349] =
     {   0,
         4,    5,    6,    7,    8,    9,   10,   11,   12,   13,
        14,   15,   16,   17,   18,   19,   20,   21,   22,   23,
-       24,   25,   22,   22,   22,   26,   27,   22,   28,   22,
-       22,   22,   29,   30,   31,   22,   22,   32,   33,   34,
-       35,   36,   41,   42,   43,   44,   46,   47,   48,   48,
-       48,   48,   48,   48,   48,   48,   48,   48,   48,   48,
-       48,   48,   41,   42,   48,   58,   49,   50,   53,   57,
-       49,   51,   54,   56,   59,   62,   52,   55,   49,   41,
-       41,   41,   42,   49,   49,   49,   62,   49,   63,   49,
-       49,   49,   75,   64,   49,   49,   49,   49,   65,   49,
+       24,    4,   25,   26,   23,   23,   23,   27,   28,   23,
+       23,   29,   23,   23,   23,   30,   23,   31,   32,   23,
+       23,   33,   34,   35,   36,   37,   40,   43,   44,   47,
+       47,   48,   49,   50,   51,   53,   54,   55,   55,   55,
+       55,   55,   55,   41,   55,   55,   55,   55,   55,   55,
+       55,   55,   55,   55,   55,   56,   55,   55,   57,   61,
+       58,   40,   59,   64,   62,   65,   47,   47,   60,   72,
+       63,   72,   68,   69,   48,   49,   66,  114,   41,   67,
 
-       49,   49,   67,   49,   49,   69,   66,   49,   60,   49,
-       45,   40,   68,   49,   49,   49,   70,   71,   49,   49,
-       72,   49,   49,   39,   73,   49,   49,   49,   49,   49,
-       49,   49,   49,   74,   76,   77,   49,   49,   49,   78,
-       49,   49,   49,   49,   49,   49,   38,   49,   49,   49,
-       49,   49,   79,   80,   49,   49,   37,   81,   82,   49,
-       49,   49,   83,   49,   49,   49,   49,   49,   85,   49,
-       84,   49,   49,   49,   49,   49,   86,   87,   87,   49,
-       61,   61,    3,   87,   87,   87,   87,   87,   87,   87,
-       87,   87,   87,   87,   87,   87,   87,   87,   87,   87,
+       73,   73,   74,   74,   75,   75,   75,   76,   55,   55,
+       55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
+       55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
+       55,   55,   70,   78,   52,   77,   80,   84,   79,   45,
+       82,   55,   55,   55,   55,   42,   81,   73,   73,   38,
+       83,  114,   85,  114,   86,   74,   74,   75,   75,   87,
+      114,   88,   75,   76,   55,   55,   55,   55,   55,   55,
+       55,   55,   55,   55,   55,   55,  114,   90,   89,   55,
+       55,  114,   91,   55,   55,   55,   55,   55,   55,   55,
+       55,   55,   55,  114,   92,   55,   55,   55,   55,   55,
 
-       87,   87,   87,   87,   87,   87,   87,   87,   87,   87,
-       87,   87,   87,   87,   87,   87,   87,   87,   87,   87,
-       87,   87,   87,   87,   87
+       55,  114,   97,   94,  114,   96,   93,   55,   55,  114,
+       98,   95,   55,   55,   55,   55,   55,   55,   55,   55,
+       55,   55,  114,   99,  114,  100,   55,   55,  114,  103,
+       55,   55,  114,  101,   55,   55,  102,  114,  105,  104,
+      106,   55,   55,   55,   55,   55,   55,   55,   55,   55,
+       55,  114,  107,   55,   55,  114,  108,   55,   55,   55,
+       55,   55,   55,  110,  114,  111,  109,   55,   55,   55,
+       55,   55,   55,   55,   55,  114,  114,  114,  112,  114,
+      114,  114,  114,  114,  114,  114,  114,  114,  114,  114,
+      114,  113,   39,   39,   39,   46,  114,   46,   71,   71,
+
+       71,    3,  114,  114,  114,  114,  114,  114,  114,  114,
+      114,  114,  114,  114,  114,  114,  114,  114,  114,  114,
+      114,  114,  114,  114,  114,  114,  114,  114,  114,  114,
+      114,  114,  114,  114,  114,  114,  114,  114,  114,  114,
+      114,  114,  114,  114,  114,  114,  114,  114
     } ;
 
-static const flex_int16_t yy_chk[226] =
+static const flex_int16_t yy_chk[349] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,   17,   17,   19,   19,   21,   21,   22,   22,
-       26,   26,   27,   27,   28,   28,   29,   29,   31,   31,
-       30,   30,   39,   39,   90,   32,   88,   26,   28,   31,
-       32,   27,   28,   30,   33,   61,   27,   29,   33,   41,
-       41,   42,   42,   33,   49,   50,   40,   68,   50,   49,
-       50,   51,   68,   51,   52,   53,   51,   54,   52,   53,
+        1,    1,    1,    1,    1,    1,    8,   15,   15,   17,
+       17,   18,   18,   20,   20,   22,   22,   23,   23,   27,
+       27,   28,   28,    8,   29,   29,   30,   30,  119,   31,
+       31,   33,   33,   32,   32,  117,   34,   34,   27,   29,
+       28,   39,   28,   31,   29,   32,   43,   43,   28,   71,
+       30,   45,   33,   34,   44,   44,   32,   41,   39,   32,
 
-       55,   54,   55,   56,   55,   57,   54,   56,   35,   57,
-       20,   15,   56,   57,   58,   59,   58,   59,   58,   59,
-       63,   63,   64,   14,   65,   63,   64,   65,   66,   67,
-       69,   65,   66,   67,   69,   70,   71,   70,   72,   71,
-       71,   70,   72,   73,   74,   76,    8,   73,   74,   76,
-       75,   77,   73,   74,   75,   77,    7,   75,   78,   78,
-       79,   80,   79,   78,   79,   80,   81,   82,   83,   84,
-       81,   82,   85,   83,   84,   86,   85,    3,    0,   86,
-       89,   89,   87,   87,   87,   87,   87,   87,   87,   87,
-       87,   87,   87,   87,   87,   87,   87,   87,   87,   87,
+       46,   46,   47,   47,   48,   48,   49,   49,   56,   56,
+       57,   57,   58,   58,   59,   59,   60,   60,   61,   61,
+       62,   62,   63,   63,   64,   64,   65,   65,   66,   66,
+       67,   67,   36,   58,   21,   57,   60,   65,   59,   16,
+       63,   68,   68,   69,   69,    9,   62,   73,   73,    7,
+       64,    3,   66,    0,   67,   74,   74,   75,   75,   68,
+        0,   69,   76,   76,   77,   77,   78,   78,   79,   79,
+       80,   80,   81,   81,   82,   82,    0,   78,   77,   83,
+       83,    0,   80,   84,   84,   85,   85,   86,   86,   87,
+       87,   88,   88,    0,   82,   89,   89,   90,   90,   91,
 
-       87,   87,   87,   87,   87,   87,   87,   87,   87,   87,
-       87,   87,   87,   87,   87,   87,   87,   87,   87,   87,
-       87,   87,   87,   87,   87
+       91,    0,   87,   84,    0,   86,   83,   92,   92,    0,
+       88,   85,   93,   93,   94,   94,   95,   95,   96,   96,
+       97,   97,    0,   90,    0,   91,   98,   98,    0,   94,
+       99,   99,    0,   92,  100,  100,   93,    0,   96,   94,
+       98,  101,  101,  102,  102,  103,  103,  104,  104,  105,
+      105,    0,  100,  106,  106,    0,  101,  107,  107,  108,
+      108,  109,  109,  102,    0,  105,  101,  110,  110,  111,
+      111,  112,  112,  113,  113,    0,    0,    0,  107,    0,
+        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+        0,  112,  115,  115,  115,  116,    0,  116,  118,  118,
+
+      118,  114,  114,  114,  114,  114,  114,  114,  114,  114,
+      114,  114,  114,  114,  114,  114,  114,  114,  114,  114,
+      114,  114,  114,  114,  114,  114,  114,  114,  114,  114,
+      114,  114,  114,  114,  114,  114,  114,  114,  114,  114,
+      114,  114,  114,  114,  114,  114,  114,  114
     } ;
 
 /* Table of booleans, true if rule could match eol. */
-static const flex_int32_t yy_rule_can_match_eol[43] =
+static const flex_int32_t yy_rule_can_match_eol[52] =
     {   0,
 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0,     };
+    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     };
 
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
@@ -551,8 +589,8 @@ char *yytext;
 
 extern "C" int yylex();
 
-#line 555 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.cpp"
-#line 556 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.cpp"
+#line 593 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.cpp"
+#line 594 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.cpp"
 
 #define INITIAL 0
 
@@ -769,10 +807,10 @@ YY_DECL
 		}
 
 	{
-#line 62 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 71 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 
 
-#line 776 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.cpp"
+#line 814 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -799,13 +837,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 88 )
+				if ( yy_current_state >= 115 )
 					yy_c = yy_meta[yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 183 );
+		while ( yy_base[yy_current_state] != 302 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -842,18 +880,18 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 64 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 73 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 
 	YY_BREAK
 case 2:
 /* rule 2 can match eol */
 YY_RULE_SETUP
-#line 65 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 74 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 68 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 77 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("IntType %s\n", yytext);
   yylval = strdup(yytext);
@@ -862,350 +900,432 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 74 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 83 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+{
+  printf("FloatType %s\n", yytext);
+  yylval = strdup(yytext);
+  return FloatType;
+}
+	YY_BREAK
+case 5:
+YY_RULE_SETUP
+#line 89 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+{
+  printf("StringType %s\n", yytext);
+  yylval = strdup(yytext);
+  return StringType;
+}
+	YY_BREAK
+case 6:
+YY_RULE_SETUP
+#line 95 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("VoidType %s\n", yytext);
   yylval = strdup(yytext);
   return VoidType;
 }
 	YY_BREAK
-case 5:
+case 7:
 YY_RULE_SETUP
-#line 80 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 101 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("IfKeyword %s\n", yytext);
   yylval = strdup(yytext);
   return IfKeyword;
 }
 	YY_BREAK
-case 6:
+case 8:
 YY_RULE_SETUP
-#line 86 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 107 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("ElseKeyword %s\n", yytext);
   yylval = strdup(yytext);
   return ElseKeyword;
 }
 	YY_BREAK
-case 7:
+case 9:
 YY_RULE_SETUP
-#line 92 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 113 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("ForKeyword %s\n", yytext);
   yylval = strdup(yytext);
   return ForKeyword;
 }
 	YY_BREAK
-case 8:
+case 10:
 YY_RULE_SETUP
-#line 98 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 119 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("WhileKeyword %s\n", yytext);
   yylval = strdup(yytext);
   return WhileKeyword;
 }
 	YY_BREAK
-case 9:
+case 11:
 YY_RULE_SETUP
-#line 104 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 125 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("ReturnKeyword %s\n", yytext);
   yylval = strdup(yytext);
   return ReturnKeyword;
 }
 	YY_BREAK
-case 10:
+case 12:
 YY_RULE_SETUP
-#line 110 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 131 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("FunctionKeyword %s\n", yytext);
   yylval = strdup(yytext);
   return FunctionKeyword;
 }
 	YY_BREAK
-case 11:
+case 13:
 YY_RULE_SETUP
-#line 116 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 137 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("PrintKeyword %s\n", yytext);
   yylval = strdup(yytext);
   return PrintKeyword;
 }
 	YY_BREAK
-case 12:
+case 14:
 YY_RULE_SETUP
-#line 122 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 143 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+{
+  printf("PrintfKeyword %s\n", yytext);
+  yylval = strdup(yytext);
+  return PrintfKeyword;
+}
+	YY_BREAK
+case 15:
+YY_RULE_SETUP
+#line 149 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+{
+  printf("PrintsKeyword %s\n", yytext);
+  yylval = strdup(yytext);
+  return PrintsKeyword;
+}
+	YY_BREAK
+case 16:
+YY_RULE_SETUP
+#line 155 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("ScanKeyword %s\n", yytext);
   yylval = strdup(yytext);
   return ScanKeyword;
 }
 	YY_BREAK
-case 13:
+case 17:
 YY_RULE_SETUP
-#line 128 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 161 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+{
+  printf("ScanfKeyword %s\n", yytext);
+  yylval = strdup(yytext);
+  return ScanfKeyword;
+}
+	YY_BREAK
+case 18:
+YY_RULE_SETUP
+#line 167 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+{
+  printf("ScansKeyword %s\n", yytext);
+  yylval = strdup(yytext);
+  return ScansKeyword;
+}
+	YY_BREAK
+case 19:
+YY_RULE_SETUP
+#line 173 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+{
+  printf("SqrtKeyword %s\n", yytext);
+  yylval = strdup(yytext);
+  return SqrtKeyword;
+}
+	YY_BREAK
+case 20:
+YY_RULE_SETUP
+#line 179 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("IntLiteral %s\n", yytext);
   yylval = strdup(yytext);
   return IntLiteral;
 }
 	YY_BREAK
-case 14:
+case 21:
 YY_RULE_SETUP
-#line 134 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 185 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+{
+  printf("FloatLiteral %s\n", yytext);
+  yylval = strdup(yytext);
+  return FloatLiteral;
+}
+	YY_BREAK
+case 22:
+/* rule 22 can match eol */
+YY_RULE_SETUP
+#line 191 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+{
+  printf("StringLiteral %s\n", yytext);
+  yylval = strdup(yytext);
+  return StringLiteral;
+}
+	YY_BREAK
+case 23:
+YY_RULE_SETUP
+#line 197 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Identifier %s\n", yytext);
   yylval = strdup(yytext);
   return Identifier;
 }
 	YY_BREAK
-case 15:
+case 24:
 YY_RULE_SETUP
-#line 140 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 203 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("ShiftLeft %s\n", yytext);
   yylval = strdup(yytext);
   return ShiftLeft;
 }
 	YY_BREAK
-case 16:
+case 25:
 YY_RULE_SETUP
-#line 146 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 209 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("ShiftRight %s\n", yytext);
   yylval = strdup(yytext);
   return ShiftRight;
 }
 	YY_BREAK
-case 17:
+case 26:
 YY_RULE_SETUP
-#line 152 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 215 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("LessOrEq %s\n", yytext);
   yylval = strdup(yytext);
   return LessOrEq;
 }
 	YY_BREAK
-case 18:
+case 27:
 YY_RULE_SETUP
-#line 158 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 221 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("GreaterOrEq %s\n", yytext);
   yylval = strdup(yytext);
   return GreaterOrEq;
 }
 	YY_BREAK
-case 19:
+case 28:
 YY_RULE_SETUP
-#line 164 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 227 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("NotEqual %s\n", yytext);
   yylval = strdup(yytext);
   return NotEqual;
 }
 	YY_BREAK
-case 20:
+case 29:
 YY_RULE_SETUP
-#line 170 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 233 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("LogicAnd %s\n", yytext);
   yylval = strdup(yytext);
   return LogicAnd;
 }
 	YY_BREAK
-case 21:
+case 30:
 YY_RULE_SETUP
-#line 176 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 239 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("LogicOr %s\n", yytext);
   yylval = strdup(yytext);
   return LogicOr;
 }
 	YY_BREAK
-case 22:
+case 31:
 YY_RULE_SETUP
-#line 182 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 245 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Mul %s\n", yytext);
   yylval = strdup(yytext);
   return Mul;
 }
 	YY_BREAK
-case 23:
+case 32:
 YY_RULE_SETUP
-#line 188 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 251 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Div %s\n", yytext);
   yylval = strdup(yytext);
   return Div;
 }
 	YY_BREAK
-case 24:
+case 33:
 YY_RULE_SETUP
-#line 194 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 257 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Add %s\n", yytext);
   yylval = strdup(yytext);
   return Add;
 }
 	YY_BREAK
-case 25:
+case 34:
 YY_RULE_SETUP
-#line 200 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 263 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Sub %s\n", yytext);
   yylval = strdup(yytext);
   return Sub;
 }
 	YY_BREAK
-case 26:
+case 35:
 YY_RULE_SETUP
-#line 206 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 269 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Equal %s\n", yytext);
   yylval = strdup(yytext);
   return Equal;
 }
 	YY_BREAK
-case 27:
+case 36:
 YY_RULE_SETUP
-#line 212 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 275 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Less %s\n", yytext);
   yylval = strdup(yytext);
   return Less;
 }
 	YY_BREAK
-case 28:
+case 37:
 YY_RULE_SETUP
-#line 218 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 281 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Greater %s\n", yytext);
   yylval = strdup(yytext);
   return Greater;
 }
 	YY_BREAK
-case 29:
+case 38:
 YY_RULE_SETUP
-#line 224 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 287 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Assignment %s\n", yytext);
   yylval = strdup(yytext);
   return Assignment;
 }
 	YY_BREAK
-case 30:
+case 39:
 YY_RULE_SETUP
-#line 230 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 293 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("BitwiseAnd %s\n", yytext);
   yylval = strdup(yytext);
   return BitwiseAnd;
 }
 	YY_BREAK
-case 31:
+case 40:
 YY_RULE_SETUP
-#line 236 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 299 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("BitwiseOr %s\n", yytext);
   yylval = strdup(yytext);
   return BitwiseOr;
 }
 	YY_BREAK
-case 32:
+case 41:
 YY_RULE_SETUP
-#line 242 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 305 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("BitwiseXor %s\n", yytext);
   yylval = strdup(yytext);
   return BitwiseXor;
 }
 	YY_BREAK
-case 33:
+case 42:
 YY_RULE_SETUP
-#line 248 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 311 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("LeftBracket %s\n", yytext);
   yylval = strdup(yytext);
   return LeftBracket;
 }
 	YY_BREAK
-case 34:
+case 43:
 YY_RULE_SETUP
-#line 254 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 317 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("RightBracket %s\n", yytext);
   yylval = strdup(yytext);
   return RightBracket;
 }
 	YY_BREAK
-case 35:
+case 44:
 YY_RULE_SETUP
-#line 260 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 323 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("LeftParent %s\n", yytext);
   yylval = strdup(yytext);
   return LeftParent;
 }
 	YY_BREAK
-case 36:
+case 45:
 YY_RULE_SETUP
-#line 266 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 329 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("RightParent %s\n", yytext);
   yylval = strdup(yytext);
   return RightParent;
 }
 	YY_BREAK
-case 37:
+case 46:
 YY_RULE_SETUP
-#line 272 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 335 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("LeftBrace %s\n", yytext);
   yylval = strdup(yytext);
   return LeftBrace;
 }
 	YY_BREAK
-case 38:
+case 47:
 YY_RULE_SETUP
-#line 278 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 341 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("RightBrace %s\n", yytext);
   yylval = strdup(yytext);
   return RightBrace;
 }
 	YY_BREAK
-case 39:
+case 48:
 YY_RULE_SETUP
-#line 284 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 347 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Semicolon %s\n", yytext);
   yylval = strdup(yytext);
   return Semicolon;
 }
 	YY_BREAK
-case 40:
+case 49:
 YY_RULE_SETUP
-#line 290 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 353 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   printf("Comma %s\n", yytext);
   yylval = strdup(yytext);
   return Comma;
 }
 	YY_BREAK
-case 41:
+case 50:
 YY_RULE_SETUP
-#line 296 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 359 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 {
   return *yytext;
 }
 	YY_BREAK
-case 42:
+case 51:
 YY_RULE_SETUP
-#line 300 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 363 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 ECHO;
 	YY_BREAK
-#line 1209 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.cpp"
+#line 1329 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1502,7 +1622,7 @@ static int yy_get_next_buffer (void)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 88 )
+			if ( yy_current_state >= 115 )
 				yy_c = yy_meta[yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
@@ -1530,11 +1650,11 @@ static int yy_get_next_buffer (void)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 88 )
+		if ( yy_current_state >= 115 )
 			yy_c = yy_meta[yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
-	yy_is_jam = (yy_current_state == 87);
+	yy_is_jam = (yy_current_state == 114);
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
@@ -2222,5 +2342,5 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 300 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
+#line 363 "/home/michael/Desktop/MIPT/VirtualMachine/frontend/Lexer/VMLangLexer.lex"
 

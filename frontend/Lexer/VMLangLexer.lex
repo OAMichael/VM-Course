@@ -12,6 +12,8 @@ extern "C" int yylex();
 %option noyywrap
 
 IntLiteral                  [-]?[1-9]+[0-9]*|[0]
+FloatLiteral                [-]?[0-9]+.[0-9]+
+StringLiteral               \"(\\.|[^"\\])*\"
 
 Identifier                  [A-Za-z_]+[A-Za-z_0-9]*
 
@@ -48,6 +50,8 @@ Comment                     [/][/].*\n
 Whitespace                  [ \t\r\n]
 
 IntType                     [i][n][t]
+FloatType                   [f][l][o][a][t]
+StringType                  [s][t][r][i][n][g]
 VoidType                    [v][o][i][d]
 
 IfKeyword                   [i][f]
@@ -58,6 +62,11 @@ FunctionKeyword             [f][u][n][c][t][i][o][n]
 ReturnKeyword               [r][e][t][u][r][n]
 PrintKeyword                [p][r][i][n][t]
 ScanKeyword                 [s][c][a][n]
+PrintfKeyword               [p][r][i][n][t][f]
+ScanfKeyword                [s][c][a][n][f]
+PrintsKeyword               [p][r][i][n][t][s]
+ScansKeyword                [s][c][a][n][s]
+SqrtKeyword                 [s][q][r][t]
 
 %%
 
@@ -69,6 +78,18 @@ ScanKeyword                 [s][c][a][n]
   printf("IntType %s\n", yytext);
   yylval = strdup(yytext);
   return IntType;
+}
+
+{FloatType} {
+  printf("FloatType %s\n", yytext);
+  yylval = strdup(yytext);
+  return FloatType;
+}
+
+{StringType} {
+  printf("StringType %s\n", yytext);
+  yylval = strdup(yytext);
+  return StringType;
 }
 
 {VoidType} {
@@ -119,16 +140,58 @@ ScanKeyword                 [s][c][a][n]
   return PrintKeyword;
 }
 
+{PrintfKeyword} {
+  printf("PrintfKeyword %s\n", yytext);
+  yylval = strdup(yytext);
+  return PrintfKeyword;
+}
+
+{PrintsKeyword} {
+  printf("PrintsKeyword %s\n", yytext);
+  yylval = strdup(yytext);
+  return PrintsKeyword;
+}
+
 {ScanKeyword} {
   printf("ScanKeyword %s\n", yytext);
   yylval = strdup(yytext);
   return ScanKeyword;
 }
 
+{ScanfKeyword} {
+  printf("ScanfKeyword %s\n", yytext);
+  yylval = strdup(yytext);
+  return ScanfKeyword;
+}
+
+{ScansKeyword} {
+  printf("ScansKeyword %s\n", yytext);
+  yylval = strdup(yytext);
+  return ScansKeyword;
+}
+
+{SqrtKeyword} {
+  printf("SqrtKeyword %s\n", yytext);
+  yylval = strdup(yytext);
+  return SqrtKeyword;
+}
+
 {IntLiteral} {
   printf("IntLiteral %s\n", yytext);
   yylval = strdup(yytext);
   return IntLiteral;
+}
+
+{FloatLiteral} {
+  printf("FloatLiteral %s\n", yytext);
+  yylval = strdup(yytext);
+  return FloatLiteral;
+}
+
+{StringLiteral} {
+  printf("StringLiteral %s\n", yytext);
+  yylval = strdup(yytext);
+  return StringLiteral;
 }
 
 {Identifier} {
