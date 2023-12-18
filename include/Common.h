@@ -125,6 +125,32 @@ struct ProgramHeader {
     return true;
 }
 
+[[maybe_unused]] static void replaceEscapeSeq(std::string& str, const std::string& search, const std::string& replace) {
+    size_t index = 0;
+    while (true) {
+        index = str.find(search, index);
+        if (index == std::string::npos)
+            break;
+
+        str.replace(index, search.length(), replace);
+        index += replace.length();
+    }
+}
+
+[[maybe_unused]] static void replaceAllEscapeSeq(std::string& str) {
+    replaceEscapeSeq(str, "\\'",  "\'");
+    replaceEscapeSeq(str, "\\\"", "\"");
+    replaceEscapeSeq(str, "\\?",  "\?");
+    replaceEscapeSeq(str, "\\\\", "\\");
+    replaceEscapeSeq(str, "\\a",  "\a");
+    replaceEscapeSeq(str, "\\b",  "\b");
+    replaceEscapeSeq(str, "\\f",  "\f");
+    replaceEscapeSeq(str, "\\n",  "\n");
+    replaceEscapeSeq(str, "\\r",  "\r");
+    replaceEscapeSeq(str, "\\t",  "\t");
+    replaceEscapeSeq(str, "\\v",  "\v");
+}
+
 }   // Common
 
 

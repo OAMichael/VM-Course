@@ -129,6 +129,39 @@ struct CodeGenContext {
             globalData.occupiedRegs[reg] = false;
         }
     }
+
+    VM::ImmediateIndex insertStringIntoPool(const std::string &str) {
+        static std::unordered_map<std::string, uint64_t> stringsPtrCache;
+
+        VM::Immediate constant{};
+        constant.type = VM::BasicObjectType::STRING;
+
+        if (auto it = stringsPtrCache.find(str); it != stringsPtrCache.end()) {
+            constant.i_val = it->second;
+        }
+        else {
+            uint64_t strPtr = program.strings.size();
+            uint32_t strSize = static_cast<uint32_t>(str.length());
+            stringsPtrCache[str] = strPtr;
+
+            program.strings.resize(strPtr + sizeof(uint32_t) + strSize);
+            std::memcpy(program.strings.data() + strPtr, &strSize, sizeof(uint32_t));
+            std::memcpy(program.strings.data() + strPtr + sizeof(uint32_t), str.data(), strSize);
+
+            constant.p_str = strPtr;
+        }
+
+        VM::ImmediateIndex strIdx;
+        if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
+            strIdx = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
+        }
+        else {
+            strIdx = static_cast<VM::ImmediateIndex>(program.constants.size());
+            program.constants.push_back(constant);
+        }
+
+        return strIdx;
+    }
 };
 
 
@@ -163,6 +196,7 @@ public:
     std::string getName() const;
 
     InitVariableDeclarationNode(const std::string &name, VM::BasicObjectType objType, ExpressionNode *expressionNode);
+    ~InitVariableDeclarationNode();
 
 private:
     std::string m_name;
@@ -191,7 +225,9 @@ private:
 class PrintStatementNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+
     PrintStatementNode(VM::BasicObjectType objType, ExpressionNode *expressionNode);
+    ~PrintStatementNode();
 
 private:
     std::string m_name;
@@ -219,6 +255,7 @@ public:
     virtual void generateCode(CodeGenContext *ctx) override;
 
     SqrtStatementNode(ExpressionNode *expressionNode);
+    ~SqrtStatementNode();
 
 private:
     ExpressionNode *m_expressionNode;
@@ -232,6 +269,7 @@ public:
     void insertNode(ASTNode *node);
 
     ProgramNode();
+    ~ProgramNode();
 
 private:
     std::vector<ASTNode *> m_statements_functions;
@@ -250,6 +288,7 @@ public:
 
     VariableValueNode(const std::string &name);
     VariableValueNode(const std::string &name, ExpressionNode *expressionNode);
+    ~VariableValueNode();
 
 private:
     uint32_t m_registerToStore;
@@ -265,6 +304,7 @@ public:
     VM::BasicObjectType getType(CodeGenContext *ctx);
 
     FunctionCallNode(const std::string &name, std::vector<ExpressionNode *> &arguments);
+    ~FunctionCallNode();
 
 private:
     std::vector<ExpressionNode *> m_arguments;
@@ -289,6 +329,7 @@ public:
     PrimaryNode(FunctionCallNode *functionCallNode);
     PrimaryNode(ScanStatementNode *scanStatementNode);
     PrimaryNode(SqrtStatementNode *sqrtStatementNode);
+    ~PrimaryNode();
 
 private:
     int m_intValue;
@@ -313,6 +354,7 @@ public:
 
     FactorNode(PrimaryNode *primaryNode, bool primaryNot = false);
     FactorNode(ExpressionNode *expressionNode);
+    ~FactorNode();
 
 private:
     uint32_t m_registerToStore;
@@ -331,6 +373,7 @@ public:
 
     SummandNode(FactorNode *factorNode);
     SummandNode(SummandNode *summandNode, FactorNode *factorNode, HighPriorityOperation operation);
+    ~SummandNode();
 
 private:
     uint32_t m_registerToStore;
@@ -349,6 +392,7 @@ public:
 
     SimpleNode(SummandNode *summandNode);
     SimpleNode(SimpleNode *simpleNode, SummandNode *summandNode, LowPriorityOperation operation);
+    ~SimpleNode();
 
 private:
     uint32_t m_registerToStore;
@@ -369,6 +413,7 @@ public:
 
     ExpressionNode(SimpleNode *simpleNode);
     ExpressionNode(ExpressionNode *expressionNode, SimpleNode *simpleNode, ExpressionOperation operation);
+    ~ExpressionNode();
 
 private:
     uint32_t m_registerToStore;
@@ -384,6 +429,7 @@ public:
     virtual void generateCode(CodeGenContext *ctx) override;
 
     AssignmentStatement(VariableValueNode *valueNode, ExpressionNode *expressionNode);
+    ~AssignmentStatement();
 
 private:
     VariableValueNode *m_valueNode = nullptr;
@@ -397,6 +443,7 @@ public:
     virtual void generateCode(CodeGenContext *ctx) override;
 
     ReturnStatementNode(ExpressionNode *expressionNode = nullptr);
+    ~ReturnStatementNode();
 
 private:
     ExpressionNode *m_expressionNode = nullptr;
@@ -409,6 +456,7 @@ public:
     virtual void generateCode(CodeGenContext *ctx) override;
 
     StatementsScopeNode(std::vector<ASTNode *> &scopeStatements);
+    ~StatementsScopeNode();
 
 private:
     std::vector<ASTNode *> m_scopeStatements;
@@ -425,6 +473,8 @@ public:
                             std::vector<SimpleVariableDeclarationNode *> &arguments,
                             StatementsScopeNode *body);
 
+    ~FunctionDeclarationNode();
+
 private:
     ReturnType m_returnType = ReturnType::RETURN_TYPE_INT;
     std::vector<SimpleVariableDeclarationNode *> m_arguments;
@@ -439,6 +489,7 @@ public:
     virtual void generateCode(CodeGenContext *ctx) override;
 
     IfStatementNode(ExpressionNode *expressionNode, StatementsScopeNode *trueBody, StatementsScopeNode *falseBody = nullptr);
+    ~IfStatementNode();
 
 private:
     ExpressionNode *m_expressionNode = nullptr;
@@ -453,6 +504,7 @@ public:
     virtual void generateCode(CodeGenContext *ctx) override;
 
     WhileLoopStatementNode(ExpressionNode *expressionNode, StatementsScopeNode *body);
+    ~WhileLoopStatementNode();
 
 private:
     ExpressionNode *m_expressionNode = nullptr;
@@ -469,6 +521,8 @@ public:
                          ExpressionNode *expressionNode,
                          StatementsScopeNode *body,
                          ASTNode *postLoopStatement);
+    
+    ~ForLoopStatementNode();
 
 private:
     ASTNode *m_preLoopStatement = nullptr;

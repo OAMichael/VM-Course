@@ -1,23 +1,31 @@
 void function main() {
+    prints("Enter a: ")
     float a = scanf()
+
+    prints("Enter b: ")
     float b = scanf()
+
+    prints("Enter c: ")
     float c = scanf()
 
     float D = b * b - 4.0 * a * c
 
     if (D < 0.0) {
+        prints("No roots\n")
         return
     }
 
     if (D == 0.0) {
-        float x = (0.0 - b) / 2.0 / a
+        float x = b / (-2.0 * a)
+        prints("One root:\n")
         printf(x)
     }
     else {
         float sqrtD = sqrt(D)
-        float x_1 = (0.0 - b - sqrtD) / 2.0 / a
-        float x_2 = (0.0 - b + sqrtD) / 2.0 / a
+        float x_1 = (b + sqrtD) / (-2.0 * a)
+        float x_2 = (b - sqrtD) / (-2.0 * a)
 
+        prints("Two roots:\n")
         printf(x_1)
         printf(x_2)
     }

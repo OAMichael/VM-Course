@@ -31,6 +31,7 @@ int main(int argc, char **argv) {
 
     yyparse();
     rootNode->generateCode(&codegenCtx);
+    delete rootNode;
 
     std::cout << "\n\nGenerated program:" << std::endl;
     for (auto instr : codegenCtx.program.instructions) {

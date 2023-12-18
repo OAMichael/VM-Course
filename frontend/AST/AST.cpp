@@ -77,6 +77,10 @@ InitVariableDeclarationNode::InitVariableDeclarationNode(const std::string &name
     m_expressionNode = expressionNode;
 }
 
+InitVariableDeclarationNode::~InitVariableDeclarationNode() {
+    delete m_expressionNode;
+}
+
 // ================================================================================
 
 void ArrayVariableDeclarationNode::generateCode(CodeGenContext *ctx) {
@@ -207,6 +211,10 @@ PrintStatementNode::PrintStatementNode(VM::BasicObjectType objType, ExpressionNo
     m_expressionNode = expressionNode;
 }
 
+PrintStatementNode::~PrintStatementNode() {
+    delete m_expressionNode;
+}
+
 // ================================================================================
 
 void ScanStatementNode::generateCode(CodeGenContext *ctx) {
@@ -278,6 +286,10 @@ SqrtStatementNode::SqrtStatementNode(ExpressionNode *expressionNode) {
     m_expressionNode = expressionNode;
 }
 
+SqrtStatementNode::~SqrtStatementNode() {
+    delete m_expressionNode;
+}
+
 // ================================================================================
 
 void ProgramNode::generateCode(CodeGenContext *ctx) {
@@ -292,6 +304,13 @@ void ProgramNode::insertNode(ASTNode *node) {
 
 ProgramNode::ProgramNode() {
 
+}
+
+ProgramNode::~ProgramNode() {
+    for (auto node : m_statements_functions) {
+        delete node;
+    }
+    m_statements_functions.clear();
 }
 
 // ================================================================================
@@ -478,6 +497,10 @@ VariableValueNode::VariableValueNode(const std::string &name, ExpressionNode *ex
     m_expressionNode = expressionNode;
 }
 
+VariableValueNode::~VariableValueNode() {
+    delete m_expressionNode;
+}
+
 // ================================================================================
 
 void FunctionCallNode::generateCode(CodeGenContext *ctx) {
@@ -587,6 +610,13 @@ FunctionCallNode::FunctionCallNode(const std::string &name, std::vector<Expressi
     std::copy(arguments.begin(), arguments.end(), std::back_inserter(m_arguments));
 }
 
+FunctionCallNode::~FunctionCallNode() {
+    for (auto node : m_arguments) {
+        delete node;
+    }
+    m_arguments.clear();
+}
+
 // ================================================================================
 
 void PrimaryNode::generateCode(CodeGenContext *ctx) {
@@ -666,43 +696,62 @@ void PrimaryNode::generateCode(CodeGenContext *ctx) {
         
         uint32_t freeReg = ctx->allocateRegister();
 
-        VM::DecodedInstruction decInstr;
+        if (m_objType == VM::BasicObjectType::STRING) {
+            {
+                VM::DecodedInstruction decInstr;
+                VM::EncodedInstruction encInstr;
 
-        decInstr.r1 = freeReg;
-        decInstr.opcode = VM::InstructionType::MVI;
+                decInstr.opcode = VM::InstructionType::LOAD_ACCI;
+                decInstr.imm = ctx->insertStringIntoPool(m_stringValue);
 
-        VM::Immediate constant{};
-        constant.type = m_objType;
-        switch (m_objType) {
-            case VM::BasicObjectType::INTEGER: {
-                constant.i_val = m_intValue;
-                break;
+                ctx->encodeInstruction(decInstr, encInstr);
+                program.instructions.push_back(encInstr);
             }
-            case VM::BasicObjectType::FLOATING: {
-                constant.f_val = m_floatValue;
-                break;
-            }
-            case VM::BasicObjectType::STRING: {
-                // TODO
-                break;
-            }
-            default: {
-                break;
-            }
-        }
+            {
+                VM::DecodedInstruction decInstr;
+                VM::EncodedInstruction encInstr;
 
-        if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
-            decInstr.imm = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
+                decInstr.opcode = VM::InstructionType::STORE_ACC;
+                decInstr.r1 = freeReg;
+
+                ctx->encodeInstruction(decInstr, encInstr);
+                program.instructions.push_back(encInstr);
+            }
         }
         else {
-            decInstr.imm = static_cast<VM::ImmediateIndex>(program.constants.size());
-            program.constants.push_back(constant);
+            VM::DecodedInstruction decInstr;
+            VM::EncodedInstruction encInstr;
+
+            decInstr.r1 = freeReg;
+            decInstr.opcode = VM::InstructionType::MVI;
+
+            VM::Immediate constant{};
+            constant.type = m_objType;
+            switch (m_objType) {
+                case VM::BasicObjectType::INTEGER: {
+                    constant.i_val = m_intValue;
+                    break;
+                }
+                case VM::BasicObjectType::FLOATING: {
+                    constant.f_val = m_floatValue;
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+
+            if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
+                decInstr.imm = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
+            }
+            else {
+                decInstr.imm = static_cast<VM::ImmediateIndex>(program.constants.size());
+                program.constants.push_back(constant);
+            }
+
+            ctx->encodeInstruction(decInstr, encInstr);
+            program.instructions.push_back(encInstr);
         }
-
-        VM::EncodedInstruction encInstr;
-        ctx->encodeInstruction(decInstr, encInstr);
-        program.instructions.push_back(encInstr);
-
         m_registerToStore = freeReg;
     }
 }
@@ -739,6 +788,8 @@ PrimaryNode::PrimaryNode(const double value) {
 
 PrimaryNode::PrimaryNode(const std::string &value) {
     m_stringValue = value;
+    Common::replaceAllEscapeSeq(m_stringValue);
+    m_stringValue = m_stringValue.substr(1, m_stringValue.length() - 2);
     m_objType = VM::BasicObjectType::STRING;
 }
 
@@ -765,6 +816,12 @@ PrimaryNode::PrimaryNode(SqrtStatementNode *sqrtStatementNode) {
     m_objType = VM::BasicObjectType::FLOATING;
 }
 
+PrimaryNode::~PrimaryNode() {
+    delete m_valueNode;
+    delete m_functionCallNode;
+    delete m_scanStatementNode;
+    delete m_sqrtStatementNode;
+}
 
 // ================================================================================
 
@@ -822,7 +879,10 @@ uint32_t FactorNode::getRegister() {
 }
 
 VM::BasicObjectType FactorNode::getType() {
-    return m_primaryNode->getType();
+    if (m_primaryNode) {
+        return m_primaryNode->getType();
+    }
+    return m_expressionNode->getType();
 }
 
 FactorNode::FactorNode(PrimaryNode *primaryNode, bool primaryNot) {
@@ -832,6 +892,11 @@ FactorNode::FactorNode(PrimaryNode *primaryNode, bool primaryNot) {
 
 FactorNode::FactorNode(ExpressionNode *expressionNode) {
     m_expressionNode = expressionNode;
+}
+
+FactorNode::~FactorNode() {
+    delete m_primaryNode;
+    delete m_expressionNode;
 }
 
 // ================================================================================
@@ -922,6 +987,11 @@ SummandNode::SummandNode(SummandNode *summandNode, FactorNode *factorNode, HighP
     m_summandNode = summandNode;
     m_factorNode = factorNode;
     m_operation = operation;
+}
+
+SummandNode::~SummandNode() {
+    delete m_factorNode;
+    delete m_summandNode;
 }
 
 // ================================================================================
@@ -1034,6 +1104,11 @@ SimpleNode::SimpleNode(SimpleNode *simpleNode, SummandNode *summandNode, LowPrio
     m_operation = operation;
 }
 
+SimpleNode::~SimpleNode() {
+    delete m_summandNode;
+    delete m_simpleNode;
+}
+
 // ================================================================================
 
 void ExpressionNode::generateCode(CodeGenContext *ctx) {
@@ -1086,6 +1161,11 @@ ExpressionNode::ExpressionNode(ExpressionNode *expressionNode, SimpleNode *simpl
     m_expressionNode = expressionNode;
     m_simpleNode = simpleNode;
     m_opeation = operation;
+}
+
+ExpressionNode::~ExpressionNode() {
+    delete m_simpleNode;
+    delete m_expressionNode;
 }
 
 // ================================================================================
@@ -1168,6 +1248,11 @@ AssignmentStatement::AssignmentStatement(VariableValueNode *valueNode, Expressio
     m_expressionNode = expressionNode;
 }
 
+AssignmentStatement::~AssignmentStatement() {
+    delete m_valueNode;
+    delete m_expressionNode;
+}
+
 // ================================================================================
 
 void ReturnStatementNode::generateCode(CodeGenContext *ctx) {
@@ -1201,6 +1286,10 @@ ReturnStatementNode::ReturnStatementNode(ExpressionNode *expressionNode) {
     m_expressionNode = expressionNode;
 }
 
+ReturnStatementNode::~ReturnStatementNode() {
+    delete m_expressionNode;
+}
+
 // ================================================================================
 
 void StatementsScopeNode::generateCode(CodeGenContext *ctx) {
@@ -1211,6 +1300,13 @@ void StatementsScopeNode::generateCode(CodeGenContext *ctx) {
 
 StatementsScopeNode::StatementsScopeNode(std::vector<ASTNode *> &scopeStatements) {
     std::copy(scopeStatements.begin(), scopeStatements.end(), std::back_inserter(m_scopeStatements));
+}
+
+StatementsScopeNode::~StatementsScopeNode() {
+    for (auto node : m_scopeStatements) {
+        delete node;
+    }
+    m_scopeStatements.clear();
 }
 
 // ================================================================================
@@ -1234,6 +1330,15 @@ void FunctionDeclarationNode::generateCode(CodeGenContext *ctx) {
 
     m_body->generateCode(ctx);
 
+    for (auto &id : currentFrame->currentScope->scopedIDs) {
+        auto it = currentFrame->IDs_Regs.find(id);
+        if (it != currentFrame->IDs_Regs.end()) {
+            currentFrame->identifierTypes.erase(currentFrame->identifierTypes.find(id));
+            currentFrame->IDs_Regs.erase(it);
+            ctx->freeRegsiter(it->second);
+        }
+    }
+
     delete currentFrame->currentScope;
     delete currentFrame;
 }
@@ -1247,6 +1352,15 @@ FunctionDeclarationNode::FunctionDeclarationNode(ReturnType returnType,
     std::copy(arguments.begin(), arguments.end(), std::back_inserter(m_arguments));
     m_body = body;
     m_name = name;
+}
+
+FunctionDeclarationNode::~FunctionDeclarationNode() {
+    for (auto node : m_arguments) {
+        delete node;
+    }
+    m_arguments.clear();
+
+    delete m_body;
 }
 
 // ================================================================================
@@ -1336,6 +1450,15 @@ void IfStatementNode::generateCode(CodeGenContext *ctx) {
         program.instructions[branchInstructionIndex] = encInstr;
     }
 
+    for (auto &id : currentFrame->currentScope->scopedIDs) {
+        auto it = currentFrame->IDs_Regs.find(id);
+        if (it != currentFrame->IDs_Regs.end()) {
+            currentFrame->identifierTypes.erase(currentFrame->identifierTypes.find(id));
+            currentFrame->IDs_Regs.erase(it);
+            ctx->freeRegsiter(it->second);
+        }
+    }
+
     currentFrame->currentScope = outerScope;
     delete trueScope;
 
@@ -1369,6 +1492,15 @@ void IfStatementNode::generateCode(CodeGenContext *ctx) {
             program.instructions[jumpInstructionIndex] = encInstr;
         }
 
+        for (auto &id : currentFrame->currentScope->scopedIDs) {
+            auto it = currentFrame->IDs_Regs.find(id);
+            if (it != currentFrame->IDs_Regs.end()) {
+                currentFrame->identifierTypes.erase(currentFrame->identifierTypes.find(id));
+                currentFrame->IDs_Regs.erase(it);
+                ctx->freeRegsiter(it->second);
+            }
+        }
+
         currentFrame->currentScope = outerScope;
         delete falseScope;
     }
@@ -1378,6 +1510,12 @@ IfStatementNode::IfStatementNode(ExpressionNode *expressionNode, StatementsScope
     m_expressionNode = expressionNode;
     m_trueBody = trueBody;
     m_falseBody = falseBody;
+}
+
+IfStatementNode::~IfStatementNode() {
+    delete m_expressionNode;
+    delete m_trueBody;
+    delete m_falseBody;
 }
 
 // ================================================================================
@@ -1480,6 +1618,15 @@ void WhileLoopStatementNode::generateCode(CodeGenContext *ctx)  {
         program.instructions[branchInstructionIndex] = encInstr;
     }
 
+    for (auto &id : currentFrame->currentScope->scopedIDs) {
+        auto it = currentFrame->IDs_Regs.find(id);
+        if (it != currentFrame->IDs_Regs.end()) {
+            currentFrame->identifierTypes.erase(currentFrame->identifierTypes.find(id));
+            currentFrame->IDs_Regs.erase(it);
+            ctx->freeRegsiter(it->second);
+        }
+    }
+
     currentFrame->currentScope = outerScope;
     delete bodyScope;
 }
@@ -1487,6 +1634,11 @@ void WhileLoopStatementNode::generateCode(CodeGenContext *ctx)  {
 WhileLoopStatementNode::WhileLoopStatementNode(ExpressionNode *expressionNode, StatementsScopeNode *body) {
     m_expressionNode = expressionNode;
     m_body = body;
+}
+
+WhileLoopStatementNode::~WhileLoopStatementNode() {
+    delete m_expressionNode;
+    delete m_body;
 }
 
 // ================================================================================
@@ -1594,6 +1746,15 @@ void ForLoopStatementNode::generateCode(CodeGenContext *ctx) {
         program.instructions[branchInstructionIndex] = encInstr;
     }
 
+    for (auto &id : currentFrame->currentScope->scopedIDs) {
+        auto it = currentFrame->IDs_Regs.find(id);
+        if (it != currentFrame->IDs_Regs.end()) {
+            currentFrame->identifierTypes.erase(currentFrame->identifierTypes.find(id));
+            currentFrame->IDs_Regs.erase(it);
+            ctx->freeRegsiter(it->second);
+        }
+    }
+
     currentFrame->currentScope = outerScope;
     delete bodyScope;
 }
@@ -1607,6 +1768,13 @@ ForLoopStatementNode::ForLoopStatementNode(ASTNode *preLoopStatement,
     m_expressionNode = expressionNode;
     m_body = body;
     m_postLoopStatement = postLoopStatement;
+}
+
+ForLoopStatementNode::~ForLoopStatementNode() {
+    delete m_preLoopStatement;
+    delete m_expressionNode;
+    delete m_body;
+    delete m_postLoopStatement;
 }
 
 
