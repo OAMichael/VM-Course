@@ -1,0 +1,5 @@
+void function main() {
+    string str = "Hello world!\n"
+    prints(str)
+    return
+}

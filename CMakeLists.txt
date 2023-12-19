@@ -29,4 +29,5 @@ add_compile_options(${COMPILE_OPTIONS})
 
 add_subdirectory(src)
 add_subdirectory(vm)
+add_subdirectory(frontend)
 add_subdirectory(tests)

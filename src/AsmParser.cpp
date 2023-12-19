@@ -3,39 +3,12 @@
 #include <fstream>
 #include <algorithm>
 
-#include "Parser.h"
+#include "AsmParser.h"
 
 
 namespace Common {
 
 static constexpr const char* FUNCTION_KEYWORD = "FUNC";
-
-
-static inline void replaceEscapeSeq(std::string& str, const std::string& search, const std::string& replace) {
-    size_t index = 0;
-    while (true) {
-        index = str.find(search, index);
-        if (index == std::string::npos)
-            break;
-
-        str.replace(index, search.length(), replace);
-        index += replace.length();
-    }
-}
-
-static inline void replaceAllEscapeSeq(std::string& str) {
-    replaceEscapeSeq(str, "\\'",  "\'");
-    replaceEscapeSeq(str, "\\\"", "\"");
-    replaceEscapeSeq(str, "\\?",  "\?");
-    replaceEscapeSeq(str, "\\\\", "\\");
-    replaceEscapeSeq(str, "\\a",  "\a");
-    replaceEscapeSeq(str, "\\b",  "\b");
-    replaceEscapeSeq(str, "\\f",  "\f");
-    replaceEscapeSeq(str, "\\n",  "\n");
-    replaceEscapeSeq(str, "\\r",  "\r");
-    replaceEscapeSeq(str, "\\t",  "\t");
-    replaceEscapeSeq(str, "\\v",  "\v");
-}
 
 static inline void tokenizeString(const std::string& str, const std::string& delimeter, std::vector<std::string>& tokens) {
     if (str.empty()) {
@@ -134,7 +107,7 @@ static inline VM::BasicObjectType getOperandBasicType(const std::string& operand
 
 
 
-bool Parser::removeExtraSpacesAndComments(std::string& line) const {
+bool AsmParser::removeExtraSpacesAndComments(std::string& line) const {
     line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
     if (line.empty())
         return false;
@@ -161,13 +134,13 @@ bool Parser::removeExtraSpacesAndComments(std::string& line) const {
 }
 
 
-bool Parser::parseOpcodeAndOperands(const std::string& origLine, std::vector<std::string>& tokens) const {
+bool AsmParser::parseOpcodeAndOperands(const std::string& origLine, std::vector<std::string>& tokens) const {
 
     size_t quotIdx = origLine.find_first_of('\"');
     // There is possibly a line
     if (quotIdx != origLine.npos) {
         std::string immediateLine = origLine.substr(quotIdx);
-        replaceAllEscapeSeq(immediateLine);
+        Common::replaceAllEscapeSeq(immediateLine);
         if (immediateLine.length() < 2 || immediateLine.front() != '\"' || immediateLine.back() != '\"') {
             return false;
         }
@@ -188,7 +161,7 @@ bool Parser::parseOpcodeAndOperands(const std::string& origLine, std::vector<std
 
 
 
-bool Parser::parseIfSimpleLabel(const std::string& line, std::vector<std::string>& tokens) const {
+bool AsmParser::parseIfSimpleLabel(const std::string& line, std::vector<std::string>& tokens) const {
 
     tokenizeString(line, " \t", tokens);
 
@@ -211,7 +184,7 @@ bool Parser::parseIfSimpleLabel(const std::string& line, std::vector<std::string
 }
 
 
-bool Parser::parseIfFunctionLabel(const std::string& line, std::vector<std::string>& tokens) const {
+bool AsmParser::parseIfFunctionLabel(const std::string& line, std::vector<std::string>& tokens) const {
 
     tokenizeString(line, " \t", tokens);
 
@@ -244,7 +217,7 @@ bool Parser::parseIfFunctionLabel(const std::string& line, std::vector<std::stri
 }
 
 
-bool Parser::parseAsmProgram(const std::string& filename, Common::Program& program) {
+bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& program) {
 
     m_currFileline = 0;
 

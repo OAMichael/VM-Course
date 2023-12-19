@@ -1,0 +1,14 @@
+
+
+void function main() {
+    
+    float x = 10.0
+    printf(x)
+
+    float z = sqrt(x)
+    printf(z)
+
+    int y = 1
+    print(y)
+    return
+}

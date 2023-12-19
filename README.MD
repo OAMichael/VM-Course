@@ -275,9 +275,15 @@ Successfully translated the program: ../../asm/tests/arithmetic.asm
 
 - NEG
 
-    Negate value of `accumulator` and store result into `accumulator`
+    Negate integer value of `accumulator` and store result into `accumulator`
 
-    `acc` &larr; `-acc`
+    `acc.i_val` &larr; `-acc.i_val`
+
+- NEGF
+
+    Negate floating point value of `accumulator` and store result into `accumulator`
+
+    `acc.f_val` &larr; `-acc.f_val`
 
 - SIN
 
@@ -351,28 +357,51 @@ Successfully translated the program: ../../asm/tests/arithmetic.asm
 
 - BGE
 
-    Branch if value of `accumulator` greater or equal than value of `r1`
+    Branch if integer value of `accumulator` greater or equal than value of `r1`
 
-    `pc` &larr; `acc >= r1 ? pc + imm : pc`
+    `pc` &larr; `acc.i_val >= r1.i_val ? pc + imm : pc`
 
 - BGT
 
-    Branch if value of `accumulator` greater than value of `r1`
+    Branch if integer value of `accumulator` greater than value of `r1`
 
-    `pc` &larr; `acc > r1 ? pc + imm : pc`
+    `pc` &larr; `acc.i_val > r1.i_val ? pc + imm : pc`
 
 - BLE
 
-    Branch if value of `accumulator` less or equal than value of `r1`
+    Branch if integer value of `accumulator` less or equal than value of `r1`
 
-    `pc` &larr; `acc <= r1 ? pc + imm : pc`
+    `pc` &larr; `acc.i_val <= r1.i_val ? pc + imm : pc`
 
 - BLT
 
-    Branch if value of `accumulator` less than value of `r1`
+    Branch if integer value of `accumulator` less than value of `r1`
 
-    `pc` &larr; `acc < r1 ? pc + imm : pc`
+    `pc` &larr; `acc.i_val < r1.i_val ? pc + imm : pc`
 
+- BGEF
+
+    Branch if floating point value of `accumulator` greater or equal than value of `r1`
+
+    `pc` &larr; `acc.f_val >= r1.f_val ? pc + imm : pc`
+
+- BGTF
+
+    Branch if floating point value of `accumulator` greater than value of `r1`
+
+    `pc` &larr; `acc.f_val > r1.f_val ? pc + imm : pc`
+
+- BLEF
+
+    Branch if floating point value of `accumulator` less or equal than value of `r1`
+
+    `pc` &larr; `acc.f_val <= r1.f_val ? pc + imm : pc`
+
+- BLTF
+
+    Branch if floating point value of `accumulator` less than value of `r1`
+
+    `pc` &larr; `acc.f_val < r1.f_val ? pc + imm : pc`
 
 ### Type N
 ![Type N layout](Pictures/TypeN.png)
@@ -486,3 +515,52 @@ Successfully translated the program: ../../asm/tests/arithmetic.asm
     Allocate new array of objects of `objType` of size `acc.i_val` at arena and store its address into `accumulator`
 
     `acc` &larr; `new objType[acc.i_val]`
+
+
+
+## Frontend for Virtual Machine
+
+#### High-level languange is very similar to C style, except there are no so much semilocons and one have to explicitly define function by `function` keyword. Here is quick example:
+```c
+void function main() {
+    prints("Enter a: ")
+    float a = scanf()
+
+    prints("Enter b: ")
+    float b = scanf()
+
+    prints("Enter c: ")
+    float c = scanf()
+
+    float D = b * b - 4.0 * a * c
+
+    if (D < 0.0) {
+        prints("No roots\n")
+        return
+    }
+
+    if (D == 0.0) {
+        float x = -b / (2.0 * a)
+        prints("One root:\n")
+        printf(x)
+    }
+    else {
+        float sqrtD = sqrt(D)
+        float x_1 = (-b - sqrtD) / (2.0 * a)
+        float x_2 = (-b + sqrtD) / (2.0 * a)
+
+        prints("Two roots:\n")
+        printf(x_1)
+        printf(x_2)
+    }
+
+    return
+}
+```
+
+#### There are two version of Frontend: `VMFrontend` and `VMCustomFrontend`. First one using Flex & Bison. One can use it like this being in folder build/frontend:
+```
+cat ../../frontend/Tests/squareEq.lang | ./VMFrontend squareEq
+```
+
+#### Second version of frontend is without Flex & Bison. But it does not work properly by now (Lexer is working and Parser buggy). Should not use it by now
