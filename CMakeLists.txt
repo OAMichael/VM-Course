@@ -16,6 +16,10 @@ set(COMPILE_OPTIONS
 	-Wlogical-op
 )
 
+if(NOT WIN32)
+    set(WIN32 0)
+endif()
+
 include(./cmake/codeGeneration.cmake)
 
 set(gtest_force_shared_crt on)

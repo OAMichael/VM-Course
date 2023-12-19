@@ -24,10 +24,7 @@ function(gen_file)
 		${ARGN}
     )
     set(DEPENDS_LIST ${ARG_TEMPLATE} ${ARG_ISA_FILE})
-	add_custom_command(
-        OUTPUT ${ARG_OUTPUT}
-        COMMENT "Generate file for ${ARG_TEMPLATE}"
+	execute_process(
         COMMAND ${Python3_EXECUTABLE} -m cogapp -D isa_file=${ARG_ISA_FILE} -o ${ARG_OUTPUT} ${ARG_TEMPLATE} 
-        DEPENDS ${DEPENDS_LIST}
     )
 endfunction()

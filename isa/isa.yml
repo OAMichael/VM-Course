@@ -280,7 +280,31 @@ instructions:
     type: alloca
     comment: acc.*_val <- alloc(size = acc.i_val*sizeof(objType))
     implAcc: readWrite
-
+  $50:
+    name: negf
+    type: nothing
+    comment: acc.*_val <- -acc.*_val
+    implAcc: readWrite
+  $51:
+    name: bgef
+    type: regAndImm
+    comment: "pc <- acc.f_val >= r1.f_val ? pc + imm : pc"
+    implAcc: readWrite
+  $52:
+    name: bgtf
+    type: regAndImm
+    comment: "pc <- acc.f_val > r1.f_val ? pc + imm : pc"
+    implAcc: readWrite
+  $53:
+    name: blef
+    type: regAndImm
+    comment: "pc <- acc.f_val <= r1.f_val ? pc + imm : pc"
+    implAcc: readWrite
+  $54:
+    name: bltf
+    type: regAndImm
+    comment: "pc <- acc.f_val < r1.f_val ? pc + imm : pc"
+    implAcc: readWrite
 intrinsics:
   $1:
     name: scan

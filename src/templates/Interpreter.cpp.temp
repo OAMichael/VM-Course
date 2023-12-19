@@ -432,7 +432,7 @@ inline void Interpreter::exec_blt (const DecodedInstruction &instr) {
         Immediate imm = loadConstant(instr.imm);
         m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
     }
-}        
+}
 inline void Interpreter::exec_call (const DecodedInstruction &instr) {
     Immediate imm = loadConstant(instr.imm);
 
@@ -491,6 +491,32 @@ inline void Interpreter::exec_newarray (const DecodedInstruction &instr) {
         }
     }
 }
-
+inline void Interpreter::exec_negf ([[maybe_unused]] const DecodedInstruction &instr) {
+    accumulator.f_val = -accumulator.f_val;
+}
+inline void Interpreter::exec_bgef (const DecodedInstruction &instr) {
+    if (accumulator.f_val >= regfile[instr.r1].f_val) {
+        Immediate imm = loadConstant(instr.imm);
+        m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
+    }
+}
+inline void Interpreter::exec_bgtf (const DecodedInstruction &instr) {
+    if (accumulator.f_val > regfile[instr.r1].f_val) {
+        Immediate imm = loadConstant(instr.imm);
+        m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
+    }
+}
+inline void Interpreter::exec_blef (const DecodedInstruction &instr) {
+    if (accumulator.f_val <= regfile[instr.r1].f_val) {
+        Immediate imm = loadConstant(instr.imm);
+        m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
+    }
+}
+inline void Interpreter::exec_bltf (const DecodedInstruction &instr) {
+    if (accumulator.f_val < regfile[instr.r1].f_val) {
+        Immediate imm = loadConstant(instr.imm);
+        m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
+    }
+}        
 }
 #endif
