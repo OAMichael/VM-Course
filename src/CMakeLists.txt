@@ -41,3 +41,15 @@ foreach(TEMPL ${TEMPLATES})
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/${OUTPUT_NAME_TEMPL}
     )
 endforeach()
+
+set(ASM_FILES
+    ${PROJECT_SOURCE_DIR}/asm/main.asm
+)
+
+foreach(SOURCE_ASM ${ASM_FILES})
+    get_filename_component(TARGET_NAME ${SOURCE_ASM} NAME_WE)
+    add_custom_target(generate_asm_${TARGET_NAME}
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/Asm2Bin$<IF:${WIN32},.exe,> ${SOURCE_ASM}
+    )
+    add_dependencies(generate_asm_${TARGET_NAME} Asm2Bin)
+endforeach()
