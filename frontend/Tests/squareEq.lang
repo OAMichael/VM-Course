@@ -16,14 +16,14 @@ void function main() {
     }
 
     if (D == 0.0) {
-        float x = b / (-2.0 * a)
+        float x = -b / (2.0 * a)
         prints("One root:\n")
         printf(x)
     }
     else {
         float sqrtD = sqrt(D)
-        float x_1 = (b + sqrtD) / (-2.0 * a)
-        float x_2 = (b - sqrtD) / (-2.0 * a)
+        float x_1 = (-b - sqrtD) / (2.0 * a)
+        float x_2 = (-b + sqrtD) / (2.0 * a)
 
         prints("Two roots:\n")
         printf(x_1)

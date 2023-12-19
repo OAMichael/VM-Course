@@ -854,7 +854,12 @@ void FactorNode::generateCode(CodeGenContext *ctx) {
                 VM::DecodedInstruction decInstr;
                 VM::EncodedInstruction encInstr;
 
-                decInstr.opcode = VM::InstructionType::NEG;
+                if (m_primaryNode->getType() == VM::BasicObjectType::INTEGER) {
+                    decInstr.opcode = VM::InstructionType::NEG;
+                }
+                if (m_primaryNode->getType() == VM::BasicObjectType::FLOATING) {
+                    decInstr.opcode = VM::InstructionType::NEGF;
+                }
 
                 ctx->encodeInstruction(decInstr, encInstr);
                 program.instructions.push_back(encInstr);
@@ -1406,19 +1411,39 @@ void IfStatementNode::generateCode(CodeGenContext *ctx) {
         switch (operation) {
             // Inverse operations
             case ExpressionOperation::EXPRESSION_OPERATION_LESS: {
-                decInstr.opcode = VM::InstructionType::BGE;
+                if (m_expressionNode->getType() == VM::BasicObjectType::INTEGER) {
+                    decInstr.opcode = VM::InstructionType::BGE;
+                }
+                if (m_expressionNode->getType() == VM::BasicObjectType::FLOATING) {
+                    decInstr.opcode = VM::InstructionType::BGEF;
+                }
                 break;
             }
             case ExpressionOperation::EXPRESSION_OPERATION_LESS_OR_EQ: {
-                decInstr.opcode = VM::InstructionType::BGT;
+                if (m_expressionNode->getType() == VM::BasicObjectType::INTEGER) {
+                    decInstr.opcode = VM::InstructionType::BGT;
+                }
+                if (m_expressionNode->getType() == VM::BasicObjectType::FLOATING) {
+                    decInstr.opcode = VM::InstructionType::BGTF;
+                }
                 break;
             }
             case ExpressionOperation::EXPRESSION_OPERATION_GREATER: {
-                decInstr.opcode = VM::InstructionType::BLE;
+                if (m_expressionNode->getType() == VM::BasicObjectType::INTEGER) {
+                    decInstr.opcode = VM::InstructionType::BLE;
+                }
+                if (m_expressionNode->getType() == VM::BasicObjectType::FLOATING) {
+                    decInstr.opcode = VM::InstructionType::BLEF;
+                }
                 break;
             }
             case ExpressionOperation::EXPRESSION_OPERATION_GREATER_OR_EQ: {
-                decInstr.opcode = VM::InstructionType::BLT;
+                if (m_expressionNode->getType() == VM::BasicObjectType::INTEGER) {
+                    decInstr.opcode = VM::InstructionType::BLT;
+                }
+                if (m_expressionNode->getType() == VM::BasicObjectType::FLOATING) {
+                    decInstr.opcode = VM::InstructionType::BLTF;
+                }
                 break;
             }
             case ExpressionOperation::EXPRESSION_OPERATION_EQUAL: {
