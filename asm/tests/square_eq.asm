@@ -17,7 +17,7 @@ FUNC MAIN: 0
 
     MVI x6, 0.0             ; 0 in x6
 
-    BLT x6, EXIT           ; D < 0
+    BLTF x6, EXIT           ; D < 0
 
     BEQ x6, ONE_ROOT        ; D == 0
 

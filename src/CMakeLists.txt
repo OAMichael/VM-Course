@@ -24,8 +24,6 @@ target_include_directories(${LIB_NAME} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${ASM_2_BIN} PUBLIC ../include)
 target_include_directories(${ASM_2_BIN} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
-add_custom_target(generate_all)
-
 set(TEMPLATES 
     ${CMAKE_CURRENT_SOURCE_DIR}/templates/Instruction_enum.h.temp
     ${CMAKE_CURRENT_SOURCE_DIR}/templates/Executors.h.temp
@@ -42,10 +40,4 @@ foreach(TEMPL ${TEMPLATES})
         ISA_FILE ${PROJECT_SOURCE_DIR}/isa/isa.yml
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/${OUTPUT_NAME_TEMPL}
     )
-
-    add_custom_target(${TARGET_NAME}_gen DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/generated/${OUTPUT_NAME_TEMPL})
-    add_dependencies(generate_all ${TARGET_NAME}_gen)
 endforeach()
-
-add_dependencies(${LIB_NAME} generate_all)
-add_dependencies(${ASM_2_BIN} Decoder_gen Instruction_enum_gen)
