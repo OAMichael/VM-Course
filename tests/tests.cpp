@@ -191,6 +191,28 @@ TEST(InstructionTest, strfuncTest)
     ASSERT_EQ(size2, 4);
 }
 
+TEST(InstructionTest, recursionTest)
+{
+    Common::Program test;
+    deserializeProgram("../asm/tests/recursion.prog", test);
+
+    VM::VirtualMachine vm;
+    vm.loadProgram(test);
+
+    VM_Tests::CinRedefiner in;
+    VM_Tests::CoutRedefiner out;
+    in.changeOnMy();
+    out.changeOnMy();
+
+    in.get() << 5 << "\n";
+    ASSERT_TRUE(vm.run());
+    auto ss_out = out.returnBack();
+
+    uint64_t fact;
+    ss_out >> fact;
+    ASSERT_EQ(fact, 120);
+}
+
 int main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
