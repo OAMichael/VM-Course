@@ -81,6 +81,21 @@ static const std::unordered_map<std::string, IntrinsicType> intrinsicsNameOpcode
 
 };
 
+static const std::unordered_map<IntrinsicType, std::string> intrinsicsOpcodeName = {
+    {IntrinsicType::INVALID, "INVALID"},
+
+    /* [[[cog
+    cog.msg("Instruction_enum.h: generate intrinsic opcode names")
+
+    for idx, intr in enumerate(data['intrinsics'].values()):
+        name = '\"' + intr['name'].upper() + '\"'
+        cog.outl(f"{{IntrinsicType::{intr['name'].upper():<10}, {name:<20} }}{',' if (idx != intr_size - 1) else ''}")
+    ]]] */
+
+    // [[[end]]]
+
+};
+
 static const std::unordered_map<InstructionType, std::string> instructionsOpcodeName = {
     { InstructionType::INSTRUCTION_INVALID, "INSTRUCTION_INVALID" },
 

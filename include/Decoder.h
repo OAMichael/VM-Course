@@ -35,6 +35,7 @@ private:
 public:
     void decodeInstruction(const EncodedInstruction &encInstr, DecodedInstruction &decInstr) const;
     void encodeInstruction(const DecodedInstruction &decInstr, EncodedInstruction &encInstr) const;
+    void printInstruction(const DecodedInstruction &decInstr) const;
 };
 
 }   // VM

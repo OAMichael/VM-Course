@@ -24,6 +24,16 @@ void SimpleVariableDeclarationNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void SimpleVariableDeclarationNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+    printf("SimpleVariableDeclarationNode: (name = %s) (type = %s)\n", m_name.c_str(), m_objType == VM::BasicObjectType::INTEGER ? "int" :
+                                                                                       m_objType == VM::BasicObjectType::FLOATING ? "float" :
+                                                                                       m_objType == VM::BasicObjectType::STRING ? "string" :
+                                                                                       "unknown");
+}
+
 std::string SimpleVariableDeclarationNode::getName() const {
     return m_name;
 }
@@ -65,6 +75,17 @@ void InitVariableDeclarationNode::generateCode(CodeGenContext *ctx) {
 
     ctx->encodeInstruction(decInstr, encInstr);
     program.instructions.push_back(encInstr);
+}
+
+void InitVariableDeclarationNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+    printf("InitVariableDeclarationNode: (name = %s) (type = %s) (ExpressionNode)\n", m_name.c_str(), m_objType == VM::BasicObjectType::INTEGER ? "int" :
+                                                                                                      m_objType == VM::BasicObjectType::FLOATING ? "float" :
+                                                                                                      m_objType == VM::BasicObjectType::STRING ? "string" :
+                                                                                                      "unknown");
+    m_expressionNode->print(printLevel + 1);
 }
 
 std::string InitVariableDeclarationNode::getName() const {
@@ -148,6 +169,16 @@ void ArrayVariableDeclarationNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void ArrayVariableDeclarationNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+    printf("ArrayVariableDeclarationNode: (name = %s) (type = %s) (size = %ld)\n", m_name.c_str(), m_objType == VM::BasicObjectType::INTEGER ? "int" :
+                                                                                                   m_objType == VM::BasicObjectType::FLOATING ? "float" :
+                                                                                                   m_objType == VM::BasicObjectType::STRING ? "string" :
+                                                                                                   "unknown", m_size);
+}
+
 std::string ArrayVariableDeclarationNode::getName() const {
     return m_name;
 }
@@ -206,6 +237,17 @@ void PrintStatementNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void PrintStatementNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+    printf("PrintStatementNode: (type = %s) (ExpressionNode)\n", m_objType == VM::BasicObjectType::INTEGER ? "int" :
+                                                                 m_objType == VM::BasicObjectType::FLOATING ? "float" :
+                                                                 m_objType == VM::BasicObjectType::STRING ? "string" :
+                                                                 "unknown");
+    m_expressionNode->print(printLevel + 1);
+}
+
 PrintStatementNode::PrintStatementNode(VM::BasicObjectType objType, ExpressionNode *expressionNode) {
     m_objType = objType;
     m_expressionNode = expressionNode;
@@ -247,6 +289,16 @@ void ScanStatementNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void ScanStatementNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+    printf("ScanStatementNode: (type = %s)\n", m_objType == VM::BasicObjectType::INTEGER ? "int" :
+                                               m_objType == VM::BasicObjectType::FLOATING ? "float" :
+                                               m_objType == VM::BasicObjectType::STRING ? "string" :
+                                               "unknown");
+}
+
 VM::BasicObjectType ScanStatementNode::getType() {
     return m_objType;
 }
@@ -282,6 +334,14 @@ void SqrtStatementNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void SqrtStatementNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+    printf("SqrtStatementNode: (ExpressionNode)\n");
+    m_expressionNode->print(printLevel + 1);
+}
+
 SqrtStatementNode::SqrtStatementNode(ExpressionNode *expressionNode) {
     m_expressionNode = expressionNode;
 }
@@ -298,8 +358,19 @@ void ProgramNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void ProgramNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("ProgramNode: (children)\n");
+    for (auto child : m_statements_functions) {
+        child->print(printLevel + 1);
+    }
+}
+
 void ProgramNode::insertNode(ASTNode *node) {
-    m_statements_functions.push_back(node);
+    m_statements_functions.insert(m_statements_functions.begin(), node);
 }
 
 ProgramNode::ProgramNode() {
@@ -390,6 +461,20 @@ void VariableValueNode::generateCode(CodeGenContext *ctx) {
             }
             m_registerToStore = globalIt->second;
         }
+    }
+}
+
+void VariableValueNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+    printf("VariableValueNode: (name = %s) ", m_name.c_str());
+    if (m_expressionNode) {
+        printf("(ExpressionNode)\n");
+        m_expressionNode->print(printLevel + 1);
+    }
+    else {
+        putchar('\n');
     }
 }
 
@@ -584,6 +669,16 @@ void FunctionCallNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void FunctionCallNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+    printf("FunctionCallNode: (name = %s) (args)\n", m_name.c_str());
+    for (auto node : m_arguments) {
+        node->print(printLevel + 1);
+    }
+}
+
 VM::BasicObjectType FunctionCallNode::getType(CodeGenContext *ctx) {
     auto it = ctx->globalData.functionReturnTypes.find(m_name);
     if (it == ctx->globalData.functionReturnTypes.end()) {
@@ -756,6 +851,39 @@ void PrimaryNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void PrimaryNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("PrimaryNode: ");
+    if (m_valueNode) {
+        printf("(VariableValueNode)\n");
+        m_valueNode->print(printLevel + 1);
+    }
+    else if (m_functionCallNode) {
+        printf("(FunctionCallNode)\n");
+        m_functionCallNode->print(printLevel + 1);
+    }
+    else if (m_scanStatementNode) {
+        printf("(ScanStatementNode)\n");
+        m_scanStatementNode->print(printLevel + 1);
+    }
+    else if (m_sqrtStatementNode) {
+        printf("(SqrtStatementNode)\n");
+        m_sqrtStatementNode->print(printLevel + 1);
+    }
+    else if (m_objType == VM::BasicObjectType::INTEGER) {
+        printf("(type = int) (value = %d)\n", m_intValue);
+    }
+    else if (m_objType == VM::BasicObjectType::FLOATING) {
+        printf("(type = float) (value = %lf)\n", m_floatValue);
+    }
+    else if (m_objType == VM::BasicObjectType::STRING) {
+        printf("(type = string) (value = \"%s\")\n", m_stringValue.c_str());
+    }
+}
+
 int PrimaryNode::getIntValue() {
     return m_intValue;
 }
@@ -836,7 +964,7 @@ void FactorNode::generateCode(CodeGenContext *ctx) {
         
         m_primaryNode->generateCode(ctx);
         m_registerToStore = m_primaryNode->getRegister();
-        
+
         if (m_primaryNot) {
             // Negate
             uint32_t freeReg = ctx->allocateRegister();
@@ -879,6 +1007,24 @@ void FactorNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void FactorNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+    printf("FactorNode: ");
+    if (m_primaryNode) {
+        if (m_primaryNot) {
+            printf("(Not) ");
+        }
+        printf("(PrimaryNode)\n");
+        m_primaryNode->print(printLevel + 1);
+    }
+    else if (m_expressionNode) {
+        printf("(ExpressionNode)\n");
+        m_expressionNode->print(printLevel + 1);
+    }
+}
+
 uint32_t FactorNode::getRegister() {
     return m_registerToStore;
 }
@@ -907,19 +1053,19 @@ FactorNode::~FactorNode() {
 // ================================================================================
 
 void SummandNode::generateCode(CodeGenContext *ctx) {
+    m_factorNode->generateCode(ctx);
+
     if (m_summandNode) {
-        auto &program = ctx->program;
-        
         m_summandNode->generateCode(ctx);
-        m_factorNode->generateCode(ctx);
-        
+
+        auto &program = ctx->program;
         uint32_t freeReg = ctx->allocateRegister();
 
         {
             VM::DecodedInstruction decInstr;
             VM::EncodedInstruction encInstr;
 
-            decInstr.r1 = m_summandNode->getRegister();
+            decInstr.r1 = m_factorNode->getRegister();
             decInstr.opcode = VM::InstructionType::LOAD_ACC;
 
             ctx->encodeInstruction(decInstr, encInstr);
@@ -929,7 +1075,7 @@ void SummandNode::generateCode(CodeGenContext *ctx) {
             VM::DecodedInstruction decInstr;
             VM::EncodedInstruction encInstr;
             
-            decInstr.r1 = m_factorNode->getRegister();
+            decInstr.r1 = m_summandNode->getRegister();
             VM::BasicObjectType objType = m_factorNode->getType();
             switch (m_operation) {
                 case HighPriorityOperation::HIGH_PRIORITY_OPERATION_MUL: {
@@ -971,8 +1117,24 @@ void SummandNode::generateCode(CodeGenContext *ctx) {
         m_registerToStore = freeReg;
     }
     else {
-        m_factorNode->generateCode(ctx);
         m_registerToStore = m_factorNode->getRegister();
+    }
+}
+
+void SummandNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("SummandNode: (FactorNode) ");
+    if (m_summandNode) {
+        printf("(operation = %d) (SummandNode)\n", m_operation);
+        m_factorNode->print(printLevel + 1);
+        m_summandNode->print(printLevel + 1);
+    }
+    else {
+        putchar('\n');
+        m_factorNode->print(printLevel + 1);
     }
 }
 
@@ -988,9 +1150,9 @@ SummandNode::SummandNode(FactorNode *factorNode) {
     m_factorNode = factorNode;
 }
 
-SummandNode::SummandNode(SummandNode *summandNode, FactorNode *factorNode, HighPriorityOperation operation) {
-    m_summandNode = summandNode;
+SummandNode::SummandNode(FactorNode *factorNode, SummandNode *summandNode, HighPriorityOperation operation) {
     m_factorNode = factorNode;
+    m_summandNode = summandNode;
     m_operation = operation;
 }
 
@@ -1002,19 +1164,19 @@ SummandNode::~SummandNode() {
 // ================================================================================
 
 void SimpleNode::generateCode(CodeGenContext *ctx) {
-    if (m_simpleNode) {
-        auto &program = ctx->program;
+    m_summandNode->generateCode(ctx);
 
+    if (m_simpleNode) {
         m_simpleNode->generateCode(ctx);        
-        m_summandNode->generateCode(ctx);
-        
+
+        auto &program = ctx->program;
         uint32_t freeReg = ctx->allocateRegister();
 
         {
             VM::DecodedInstruction decInstr;
             VM::EncodedInstruction encInstr;
 
-            decInstr.r1 = m_simpleNode->getRegister();
+            decInstr.r1 = m_summandNode->getRegister();
             decInstr.opcode = VM::InstructionType::LOAD_ACC;
 
             ctx->encodeInstruction(decInstr, encInstr);
@@ -1024,7 +1186,7 @@ void SimpleNode::generateCode(CodeGenContext *ctx) {
             VM::DecodedInstruction decInstr;
             VM::EncodedInstruction encInstr;
             
-            decInstr.r1 = m_summandNode->getRegister();
+            decInstr.r1 = m_simpleNode->getRegister();
             VM::BasicObjectType objType = m_summandNode->getType();
             switch (m_operation) {
                 case LowPriorityOperation::LOW_PRIORITY_OPERATION_ADD: {
@@ -1086,8 +1248,24 @@ void SimpleNode::generateCode(CodeGenContext *ctx) {
         m_registerToStore = freeReg;
     }
     else {
-        m_summandNode->generateCode(ctx);
         m_registerToStore = m_summandNode->getRegister();
+    }
+}
+
+void SimpleNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("SimpleNode: (SummandNode) ");
+    if (m_simpleNode) {
+        printf("(operation = %d) (SimpleNode)\n", m_operation);
+        m_summandNode->print(printLevel + 1);
+        m_simpleNode->print(printLevel + 1);
+    }
+    else {
+        putchar('\n');
+        m_summandNode->print(printLevel + 1);
     }
 }
 
@@ -1103,9 +1281,9 @@ SimpleNode::SimpleNode(SummandNode *summandNode) {
     m_summandNode = summandNode;
 }
 
-SimpleNode::SimpleNode(SimpleNode *simpleNode, SummandNode *summandNode, LowPriorityOperation operation) {
-    m_simpleNode = simpleNode;
+SimpleNode::SimpleNode(SummandNode *summandNode, SimpleNode *simpleNode, LowPriorityOperation operation) {
     m_summandNode = summandNode;
+    m_simpleNode = simpleNode;
     m_operation = operation;
 }
 
@@ -1117,28 +1295,40 @@ SimpleNode::~SimpleNode() {
 // ================================================================================
 
 void ExpressionNode::generateCode(CodeGenContext *ctx) {
-    if (m_expressionNode) {
-        auto &program = ctx->program;
-    
-        m_expressionNode->generateCode(ctx);
-        m_simpleNode->generateCode(ctx);
+    m_simpleNode->generateCode(ctx);
+    m_registerToStore = m_simpleNode->getRegister();
 
+    if (m_expressionNode) {
+        m_expressionNode->generateCode(ctx);
+
+        auto &program = ctx->program;
         {
             VM::DecodedInstruction decInstr;
             VM::EncodedInstruction encInstr;
 
-            decInstr.r1 = m_expressionNode->getRegister();
+            decInstr.r1 = m_simpleNode->getRegister();
             decInstr.opcode = VM::InstructionType::LOAD_ACC;
 
             ctx->encodeInstruction(decInstr, encInstr);
             program.instructions.push_back(encInstr);
         }
+    }
+}
 
-        m_registerToStore = m_simpleNode->getRegister();
+void ExpressionNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("ExpressionNode: (SimpleNode) ");
+    if (m_expressionNode) {
+        printf("(operation = %d) (ExpressionNode)\n", m_opeation);
+        m_simpleNode->print(printLevel + 1);
+        m_expressionNode->print(printLevel + 1);
     }
     else {
-        m_simpleNode->generateCode(ctx);
-        m_registerToStore = m_simpleNode->getRegister();
+        putchar('\n');
+        m_simpleNode->print(printLevel + 1);
     }
 }
 
@@ -1154,6 +1344,10 @@ uint32_t ExpressionNode::getSimpleNodeRegister() {
     return m_simpleNode->getRegister();
 }
 
+uint32_t ExpressionNode::getExpressionNodeRegister() {
+    return m_expressionNode->getRegister();
+}
+
 VM::BasicObjectType ExpressionNode::getType() {
     return m_simpleNode->getType();
 }
@@ -1162,9 +1356,9 @@ ExpressionNode::ExpressionNode(SimpleNode *simpleNode) {
     m_simpleNode = simpleNode;
 }
 
-ExpressionNode::ExpressionNode(ExpressionNode *expressionNode, SimpleNode *simpleNode, ExpressionOperation operation) {
-    m_expressionNode = expressionNode;
+ExpressionNode::ExpressionNode(SimpleNode *simpleNode, ExpressionNode *expressionNode, ExpressionOperation operation) {
     m_simpleNode = simpleNode;
+    m_expressionNode = expressionNode;
     m_opeation = operation;
 }
 
@@ -1248,6 +1442,16 @@ void AssignmentStatement::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void AssignmentStatement::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("AssignmentStatement: (VariableValueNode) (ExpressionNode)\n");
+    m_valueNode->print(printLevel + 1);
+    m_expressionNode->print(printLevel + 1);
+}
+
 AssignmentStatement::AssignmentStatement(VariableValueNode *valueNode, ExpressionNode *expressionNode) {
     m_valueNode = valueNode;
     m_expressionNode = expressionNode;
@@ -1287,6 +1491,21 @@ void ReturnStatementNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void ReturnStatementNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("ReturnStatementNode: ");
+    if (m_expressionNode) {
+        printf("(ExpressionNode)\n");
+        m_expressionNode->print(printLevel + 1);
+    }
+    else {
+        putchar('\n');
+    }
+}
+
 ReturnStatementNode::ReturnStatementNode(ExpressionNode *expressionNode) {
     m_expressionNode = expressionNode;
 }
@@ -1300,6 +1519,17 @@ ReturnStatementNode::~ReturnStatementNode() {
 void StatementsScopeNode::generateCode(CodeGenContext *ctx) {
     for (int i = 0; i < m_scopeStatements.size(); ++i) {
         m_scopeStatements[i]->generateCode(ctx);
+    }
+}
+
+void StatementsScopeNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("StatementsScopeNode: (statements)\n");
+    for (auto node : m_scopeStatements) {
+        node->print(printLevel + 1);
     }
 }
 
@@ -1346,6 +1576,18 @@ void FunctionDeclarationNode::generateCode(CodeGenContext *ctx) {
 
     delete currentFrame->currentScope;
     delete currentFrame;
+}
+
+void FunctionDeclarationNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("FunctionDeclarationNode: (returnType = %d) (name = %s) (args) (body)\n", m_returnType, m_name.c_str());
+    for (auto node : m_arguments) {
+        node->print(printLevel + 1);
+    }
+    m_body->print(printLevel + 1);
 }
 
 FunctionDeclarationNode::FunctionDeclarationNode(ReturnType returnType,
@@ -1405,7 +1647,7 @@ void IfStatementNode::generateCode(CodeGenContext *ctx) {
         VM::DecodedInstruction decInstr;
         VM::EncodedInstruction encInstr;
 
-        decInstr.r1 = m_expressionNode->getSimpleNodeRegister();
+        decInstr.r1 = m_expressionNode->getExpressionNodeRegister();
 
         ExpressionOperation operation = m_expressionNode->getOperation();
         switch (operation) {
@@ -1531,6 +1773,25 @@ void IfStatementNode::generateCode(CodeGenContext *ctx) {
     }
 }
 
+void IfStatementNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("IfStatementNode: (ExpressionNode) (true StatementsScopeNode) ");
+    if (m_falseBody) {
+        printf("(false StatementsScopeNode)\n");
+        m_expressionNode->print(printLevel + 1);
+        m_trueBody->print(printLevel + 1);
+        m_falseBody->print(printLevel + 1);
+    }
+    else {
+        putchar('\n');
+        m_expressionNode->print(printLevel + 1);
+        m_trueBody->print(printLevel + 1);
+    }
+}
+
 IfStatementNode::IfStatementNode(ExpressionNode *expressionNode, StatementsScopeNode *trueBody, StatementsScopeNode *falseBody) {
     m_expressionNode = expressionNode;
     m_trueBody = trueBody;
@@ -1593,7 +1854,7 @@ void WhileLoopStatementNode::generateCode(CodeGenContext *ctx)  {
         VM::DecodedInstruction decInstr;
         VM::EncodedInstruction encInstr;
 
-        decInstr.r1 = m_expressionNode->getSimpleNodeRegister();
+        decInstr.r1 = m_expressionNode->getExpressionNodeRegister();
 
         ExpressionOperation operation = m_expressionNode->getOperation();
         switch (operation) {
@@ -1654,6 +1915,16 @@ void WhileLoopStatementNode::generateCode(CodeGenContext *ctx)  {
 
     currentFrame->currentScope = outerScope;
     delete bodyScope;
+}
+
+void WhileLoopStatementNode::print(size_t printLevel)  {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("WhileLoopStatementNode: (ExpressionNode) (StatementsScopeNode)\n");
+    m_expressionNode->print(printLevel + 1);
+    m_body->print(printLevel + 1);
 }
 
 WhileLoopStatementNode::WhileLoopStatementNode(ExpressionNode *expressionNode, StatementsScopeNode *body) {
@@ -1721,7 +1992,7 @@ void ForLoopStatementNode::generateCode(CodeGenContext *ctx) {
         VM::DecodedInstruction decInstr;
         VM::EncodedInstruction encInstr;
 
-        decInstr.r1 = m_expressionNode->getSimpleNodeRegister();
+        decInstr.r1 = m_expressionNode->getExpressionNodeRegister();
 
         ExpressionOperation operation = m_expressionNode->getOperation();
         switch (operation) {
@@ -1782,6 +2053,18 @@ void ForLoopStatementNode::generateCode(CodeGenContext *ctx) {
 
     currentFrame->currentScope = outerScope;
     delete bodyScope;
+}
+
+void ForLoopStatementNode::print(size_t printLevel) {
+    for (int i = 0; i < printLevel; ++i) {
+        printf("  ");
+    }
+
+    printf("ForLoopStatementNode: (pre loop statement) (ExpressionNode) (StatementsScopeNode) (post loop statement)\n");
+    m_preLoopStatement->print(printLevel + 1);
+    m_expressionNode->print(printLevel + 1);
+    m_body->print(printLevel + 1);
+    m_postLoopStatement->print(printLevel + 1);
 }
 
 ForLoopStatementNode::ForLoopStatementNode(ASTNode *preLoopStatement,

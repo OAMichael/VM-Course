@@ -1,6 +1,8 @@
 %{
 
 #include <iostream>
+#include <vector>
+
 #include "AST.h"
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
@@ -9,6 +11,7 @@ using namespace AST;
 
 #define YYSTYPE ASTNode *
 
+extern FILE *yyin;
 extern "C" {
     int yyparse();
     int yylex();
@@ -22,25 +25,44 @@ extern "C" {
 
 ProgramNode *rootNode = new ProgramNode();
 CodeGenContext codegenCtx;
+std::vector<std::string> tokens;
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        printf("Usage: %s <filename>\n", argv[0]);
+        printf("Usage: %s <filename> [-v]\n", argv[0]);
         return 0;
     }
 
-    yyparse();
-    rootNode->generateCode(&codegenCtx);
-    delete rootNode;
+    bool verbose = false;
+    if (argc > 2 && std::string(argv[2]) == "-v") {
+        verbose = true;
+    }
 
-    std::cout << "\n\nGenerated program:" << std::endl;
-    for (auto instr : codegenCtx.program.instructions) {
-        VM::DecodedInstruction decInstr;
-        codegenCtx.builder.decodeInstruction(instr, decInstr);
-        if (auto it = VM::instructionsOpcodeName.find(decInstr.opcode); it != VM::instructionsOpcodeName.cend()) {
-            std::cout << it->second << " " << (int)decInstr.r1 << " " << (int)decInstr.r2 << std::endl;
+    yyin = fopen(argv[1], "r");
+    yyparse();
+
+    rootNode->generateCode(&codegenCtx);
+
+    if (verbose) {
+        std::cout << "Parsed tokens:" << std::endl;
+        for (size_t i = 0; i < tokens.size(); ++i) {
+            std::cout << "   " <<  tokens[i] << std::endl;
+        }
+
+        std::cout << "\n\nBuilt AST:" << std::endl;
+        rootNode->print(0);
+
+        std::cout << "\n\nGenerated program:" << std::endl;
+        for (auto instr : codegenCtx.program.instructions) {
+            VM::DecodedInstruction decInstr;
+            codegenCtx.builder.decodeInstruction(instr, decInstr);
+            std::cout << "   ";
+            codegenCtx.builder.printInstruction(decInstr);
+            std::cout << std::endl;
         }
     }
+
+    delete rootNode;
 
     std::string outFilename = argv[1];
     size_t lastIndex = outFilename.find_last_of(".");
@@ -118,13 +140,12 @@ Program:                        FunctionDeclaration {
                                 | Statement {
                                     rootNode->insertNode($1);
                                 }
-                                | Program FunctionDeclaration {
-                                    rootNode->insertNode($2);
+                                | FunctionDeclaration Program {
+                                    rootNode->insertNode($1);
                                 }
-                                | Program Statement {
-                                    rootNode->insertNode($2);
+                                | Statement Program {
+                                    rootNode->insertNode($1);
                                 }
-                                | %empty {}
 
 
 
@@ -194,19 +215,19 @@ ReturnType:                     IntType {}
                                 | StringType {}
                                 | VoidType {}
 
-FunctionArgsDeclarations:       FunctionArgsDeclarations Comma SimpleVariableDeclaration {
-                                    codegenCtx.currentFuncArgs.push_back(dynamic_cast<SimpleVariableDeclarationNode *>($3));
+FunctionArgsDeclarations:       SimpleVariableDeclaration Comma FunctionArgsDeclarations {
+                                    codegenCtx.currentFuncArgs.insert(codegenCtx.currentFuncArgs.begin(), dynamic_cast<SimpleVariableDeclarationNode *>($1));
                                 }
                                 | SimpleVariableDeclaration {
-                                    codegenCtx.currentFuncArgs.push_back(dynamic_cast<SimpleVariableDeclarationNode *>($1));
+                                    codegenCtx.currentFuncArgs.insert(codegenCtx.currentFuncArgs.begin(), dynamic_cast<SimpleVariableDeclarationNode *>($1));
                                 }
                                 | %empty {}
 
-FunctionArgsExpressions:        FunctionArgsExpressions Comma Expression {
-                                    codegenCtx.currentCalleeArgs.push_back(dynamic_cast<ExpressionNode *>($3));
+FunctionArgsExpressions:        Expression Comma FunctionArgsExpressions {
+                                    codegenCtx.currentCalleeArgs.insert(codegenCtx.currentCalleeArgs.begin(), dynamic_cast<ExpressionNode *>($1));
                                 }
                                 | Expression {
-                                    codegenCtx.currentCalleeArgs.push_back(dynamic_cast<ExpressionNode *>($1));
+                                    codegenCtx.currentCalleeArgs.insert(codegenCtx.currentCalleeArgs.begin(), dynamic_cast<ExpressionNode *>($1));
                                 }
                                 | %empty {}
 
@@ -311,8 +332,8 @@ Statement:                      VariableDeclaration {}
                                 | PrintsStatement {}
                                 | ScansStatement {}
 
-StatementList:                  StatementList Statement {
-                                    codegenCtx.scopeStatements.push_back($2);
+StatementList:                  Statement StatementList {
+                                    codegenCtx.scopeStatements.insert(codegenCtx.scopeStatements.begin(), $1);
                                 }
                                 | %empty {}
 
@@ -394,7 +415,7 @@ Factor:                         Primary {
 Summand:                        Factor {
                                     $$ = new SummandNode(dynamic_cast<FactorNode *>($1));
                                 }
-                                | Summand HighPriorityOperation Factor {
+                                | Factor HighPriorityOperation Summand {
                                     HighPriorityOperation operation = HighPriorityOperation::HIGH_PRIORITY_OPERATION_NONE;
 
                                     std::string operationStr = (char*)$2;
@@ -405,14 +426,14 @@ Summand:                        Factor {
                                         operation = HighPriorityOperation::HIGH_PRIORITY_OPERATION_DIV;
                                     }
 
-                                    $$ = new SummandNode(dynamic_cast<SummandNode *>($1), dynamic_cast<FactorNode *>($3), operation);
+                                    $$ = new SummandNode(dynamic_cast<FactorNode *>($1), dynamic_cast<SummandNode *>($3), operation);
                                 }
 
 
 Simple:                         Summand {
                                     $$ = new SimpleNode(dynamic_cast<SummandNode *>($1));
                                 }
-                                | Simple LowPriorityOperation Summand {
+                                | Summand LowPriorityOperation Simple {
                                     LowPriorityOperation operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_NONE;
 
                                     std::string operationStr = (char*)$2;
@@ -437,14 +458,15 @@ Simple:                         Summand {
                                     else if (operationStr == "^") {
                                         operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_BITWISE_XOR;
                                     }
-                                    $$ = new SimpleNode(dynamic_cast<SimpleNode *>($1), dynamic_cast<SummandNode *>($3), operation);
+
+                                    $$ = new SimpleNode(dynamic_cast<SummandNode *>($1), dynamic_cast<SimpleNode *>($3), operation);
                                 }
 
 
 Expression:                     Simple {
                                     $$ = new ExpressionNode(dynamic_cast<SimpleNode *>($1));
                                 }
-                                | Expression ExpressionOperation Simple {
+                                | Simple ExpressionOperation Expression {
                                     ExpressionOperation operation = ExpressionOperation::EXPRESSION_OPERATION_NONE;
                                     
                                     std::string operationStr = (char*)$2;
@@ -473,7 +495,7 @@ Expression:                     Simple {
                                         operation = ExpressionOperation::EXPRESSION_OPERATION_LOGIC_OR;
                                     }
 
-                                    $$ = new ExpressionNode(dynamic_cast<ExpressionNode *>($1), dynamic_cast<SimpleNode *>($3), operation);
+                                    $$ = new ExpressionNode(dynamic_cast<SimpleNode *>($1), dynamic_cast<ExpressionNode *>($3), operation);
                                 }
 
 %%

@@ -8,8 +8,13 @@
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <filename>" << std::endl;
+        std::cout << "Usage: " << argv[0] << " <filename> [-v]" << std::endl;
         return 0;
+    }
+
+    bool verbose = false;
+    if (argc > 2 && std::string(argv[2]) == "-v") {
+        verbose = true;
     }
 
     std::ifstream inFile(argv[1]);
@@ -21,7 +26,7 @@ int main(int argc, char **argv) {
     Frontend::VMParser parser;
 
     AST::ProgramNode *rootNode = new AST::ProgramNode();
-    AST::CodeGenContext codegenCtx;
+    AST::CodeGenContext codegenCtx = {};
     std::vector<Frontend::Token> tokens;
 
 
@@ -30,29 +35,35 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    for (size_t i = 0; i < tokens.size(); ++i) {
-        if (tokens[i].type > -1) {
-            std::cout << Frontend::tokenNames[tokens[i].type] << " " << tokens[i].value << std::endl;
-        }
-    }
-
     if (!parser.parse(tokens, rootNode, &codegenCtx)) {
         std::cerr << "Error occured while parsing" << std::endl;
         return 2;
     }
-    
+
     rootNode->generateCode(&codegenCtx);
 
-    delete rootNode;
+    if (verbose) {
+        std::cout << "Parsed tokens:" << std::endl;
+        for (size_t i = 0; i < tokens.size(); ++i) {
+            if (tokens[i].type > -1) {
+                std::cout << "   " <<  Frontend::tokenNames[tokens[i].type] << " " << tokens[i].value << std::endl;
+            }
+        }
 
-    std::cout << "\n\nGenerated program:" << std::endl;
-    for (auto instr : codegenCtx.program.instructions) {
-        VM::DecodedInstruction decInstr;
-        codegenCtx.builder.decodeInstruction(instr, decInstr);
-        if (auto it = VM::instructionsOpcodeName.find(decInstr.opcode); it != VM::instructionsOpcodeName.cend()) {
-            std::cout << it->second << " " << (int)decInstr.r1 << " " << (int)decInstr.r2 << std::endl;
+        std::cout << "\n\nBuilt AST:" << std::endl;
+        rootNode->print(0);
+
+        std::cout << "\n\nGenerated program:" << std::endl;
+        for (auto instr : codegenCtx.program.instructions) {
+            VM::DecodedInstruction decInstr;
+            codegenCtx.builder.decodeInstruction(instr, decInstr);
+            std::cout << "   ";
+            codegenCtx.builder.printInstruction(decInstr);
+            std::cout << std::endl;
         }
     }
+
+    delete rootNode;
 
     std::string outFilename = argv[1];
     size_t lastIndex = outFilename.find_last_of(".");

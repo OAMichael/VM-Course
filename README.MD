@@ -560,7 +560,15 @@ void function main() {
 
 #### There are two version of Frontend: `VMFrontend` and `VMCustomFrontend`. First one using Flex & Bison. One can use it like this being in folder build/frontend:
 ```
-cat ../../frontend/Tests/squareEq.lang | ./VMFrontend squareEq
+./VMFrontend ../../frontend/Tests/squareEq.lang
 ```
 
-#### Second version of frontend is without Flex & Bison. But it does not work properly by now (Lexer is working and Parser buggy). Should not use it by now
+#### Second version of frontend is self-written lexer + Recursive Descent parser. Its usage is the same:
+```
+./VMCustomFrontend ../../frontend/Tests/squareEq.lang
+```
+
+#### One can append extra `-v` (verbose) flag for both frontends to view parsed tokens, built AST and generated program
+```
+./VMCustomFrontend ../../frontend/Tests/squareEq.lang -v
+```

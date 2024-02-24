@@ -1,0 +1,13 @@
+
+int function sum(int a, int b) {
+    print(a)
+    print(b)
+    return a + b
+}
+
+void function main() {
+    int x = 2
+    int z = 3 + sum(x, 1)
+    print(z)
+    return
+}

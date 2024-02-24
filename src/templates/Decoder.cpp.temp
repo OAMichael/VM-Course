@@ -1,5 +1,6 @@
 #include "Decoder.h"
 #include <iostream>
+
 namespace {
 
 /* [[[cog
@@ -100,5 +101,63 @@ void Decoder::encodeInstruction(const DecodedInstruction& decInstr, EncodedInstr
     }
 }
 
+
+void Decoder::printInstruction(const DecodedInstruction& decInstr) const {
+    std::string instrName = "unknown";
+    auto it = instructionsOpcodeName.find(decInstr.opcode);
+    if (it != instructionsOpcodeName.cend()) {
+        instrName = it->second;
+    }
+    auto currWidth = std::cout.width();
+    std::cout.width(14);
+
+    switch(decInstr.opcode) {
+        /* [[[cog
+        cog.msg("Decoder.cpp: generate print instr")
+
+        for type, params in types.items():
+            for instr in instr_refer_to_types[type]:
+                cog.outl(f'case InstructionType::{instr["name"].upper()}:')
+            cog.outl('{')
+            if type == 'onlyReg':
+                cog.outl('\tstd::cout << std::left << instrName << "  r" << (int)decInstr.r1;')
+            elif type == 'onlyImm':
+                cog.outl('\tstd::cout << std::left << instrName << "  " << (int)decInstr.imm;')
+            elif type == 'nothing':
+                cog.outl('\tstd::cout << std::left << instrName;')
+            elif type == 'twoRegs':
+                cog.outl('\tstd::cout << std::left << instrName << "  r" << (int)decInstr.r1 << ", r" << (int)decInstr.r2;')
+            elif type == 'regAndImm':
+                cog.outl('\tstd::cout << std::left << instrName << "  r" << (int)decInstr.r1 << ", " << (int)decInstr.imm;')
+            elif type == 'callType':
+                cog.outl('\tstd::cout << std::left << instrName << "  " << (int)decInstr.imm << ", " << (int)decInstr.numArgs;')
+            elif type == 'alloca':
+                cog.outl('\tstd::string objType = decInstr.objType == VM::BasicObjectType::INTEGER ? "INTEGER" :')
+                cog.outl('\t                      decInstr.objType == VM::BasicObjectType::FLOATING ? "FLOATING" :')
+                cog.outl('\t                      decInstr.objType == VM::BasicObjectType::STRING ? "STRING" :')
+                cog.outl('\t                      "unknown";')
+                cog.outl('\tstd::cout << std::left << instrName << "  " << objType;')
+            elif type == 'intrinsic':
+                cog.outl('\tstd::string intrType = "unknown";')
+                cog.outl('\tauto it = intrinsicsOpcodeName.find(decInstr.intrCode);')
+                cog.outl('\tif (it != intrinsicsOpcodeName.cend()) {')
+                cog.outl('\t\tintrType = it->second;')
+                cog.outl('\t}')
+                cog.outl('\tstd::cout << std::left << instrName << "  " << intrType;')
+
+            cog.outl('\tbreak;')
+            cog.outl('}')
+
+        cog.outl('default: {')
+        cog.outl('\tstd::cout << "Unknown instruction";')
+        cog.outl('\tbreak;')
+        cog.outl('}')
+        ]]] */
+
+        // [[[end]]]
+    }
+
+    std::cout.width(currWidth);
+}
 
 }   // VM

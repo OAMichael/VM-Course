@@ -15,41 +15,23 @@ bool VMParser::parse(const std::vector<Token> &tokens, AST::ProgramNode *rootNod
 }
 
 bool VMParser::getProgram() {
-    size_t currentToken_1 = m_currentTokenIdx;
-    // if (getProgram()) {
-    //     size_t currentToken_2 = m_currentTokenIdx;
-    //     ASTNode *tmp = getFunctionDeclaration();
-    //     if (tmp) {
-    //         m_rootNode->insertNode(tmp);
-    //         return true;
-    //     }
-
-    //     m_currentTokenIdx = currentToken_2;
-    //     tmp = getStatement();
-    //     if (tmp) {
-    //         m_rootNode->insertNode(tmp);
-    //         return true;
-    //     }
-    // }
-
-    m_currentTokenIdx = currentToken_1;
-
     ASTNode *tmp = getFunctionDeclaration();
     if (tmp) {
+        getProgram();
         m_rootNode->insertNode(tmp);
         return true;
     }
-
-    m_currentTokenIdx = currentToken_1;
-
-    tmp = getStatement();
-    if (tmp) {
-        m_rootNode->insertNode(tmp);
-        return true;
+    else {
+        tmp = getStatement();
+        if (tmp) {
+            getProgram();
+            m_rootNode->insertNode(tmp);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
-
-    m_currentTokenIdx = currentToken_1;
-    return true;
 }
 
 
@@ -98,7 +80,6 @@ ASTNode *VMParser::getInitIntDeclaration() {
         m_currentTokenIdx = currentToken_1;
         return nullptr;
     }
-    ++m_currentTokenIdx;
     
     return new InitVariableDeclarationNode(id, VM::BasicObjectType::INTEGER, dynamic_cast<ExpressionNode *>(tmp));
 }
@@ -207,7 +188,6 @@ ASTNode *VMParser::getInitFloatDeclaration() {
         m_currentTokenIdx = currentToken_1;
         return nullptr;
     }
-    ++m_currentTokenIdx;
     
     return new InitVariableDeclarationNode(id, VM::BasicObjectType::FLOATING, dynamic_cast<ExpressionNode *>(tmp));
 }
@@ -297,7 +277,6 @@ ASTNode *VMParser::getInitStringDeclaration() {
         m_currentTokenIdx = currentToken_1;
         return nullptr;
     }
-    ++m_currentTokenIdx;
     
     return new InitVariableDeclarationNode(id, VM::BasicObjectType::STRING, dynamic_cast<ExpressionNode *>(tmp));
 }
@@ -360,13 +339,13 @@ ASTNode *VMParser::getVariableValue() {
     if (m_tokens[m_currentTokenIdx].type != TokenType::LeftBracket) {
         return new VariableValueNode(id);
     }
+    ++m_currentTokenIdx;
 
     ASTNode *tmp = getExpression();
     if (!tmp) {
         m_currentTokenIdx = currentToken_1;
         return nullptr;
     }
-    ++m_currentTokenIdx;
 
     if (m_tokens[m_currentTokenIdx].type != TokenType::RightBracket) {
         m_currentTokenIdx = currentToken_1;
@@ -412,61 +391,29 @@ std::string VMParser::getReturnType() {
 
 
 bool VMParser::getFunctionArgsDeclarations() {
-    size_t currentToken_1 = m_currentTokenIdx;
-    
     ASTNode *tmp = getSimpleVariableDeclaration();
     if (tmp) {
-        m_codegenCtx->currentFuncArgs.push_back(dynamic_cast<SimpleVariableDeclarationNode *>(tmp));
-        return true;
+        size_t currentToken_1 = m_currentTokenIdx;
+        if (m_tokens[m_currentTokenIdx].type == TokenType::Comma) {
+            ++m_currentTokenIdx;
+            getFunctionArgsDeclarations();
+        }
+        m_codegenCtx->currentFuncArgs.insert(m_codegenCtx->currentFuncArgs.begin(), dynamic_cast<SimpleVariableDeclarationNode *>(tmp));
     }
-
-    // if (getFunctionArgsDeclarations()) {
-    //     if (m_tokens[m_currentTokenIdx].type != TokenType::Comma) {
-    //         m_currentTokenIdx = currentToken_1;
-    //         return false;
-    //     }
-    //     ++m_currentTokenIdx;
-
-    //     ASTNode *tmp = getSimpleVariableDeclaration();
-    //     if (!tmp) {
-    //         m_currentTokenIdx = currentToken_1;
-    //         return false;
-    //     }
-
-    //     m_codegenCtx->currentFuncArgs.push_back(dynamic_cast<SimpleVariableDeclarationNode *>(tmp));
-    //     return true;
-    // }
-
     return true;
 }
 
 
 bool VMParser::getFunctionArgsExpressions() {
-    size_t currentToken_1 = m_currentTokenIdx;
-
     ASTNode *tmp = getExpression();
     if (tmp) {
-        m_codegenCtx->currentCalleeArgs.push_back(dynamic_cast<ExpressionNode *>(tmp));
-        return true;
+        size_t currentToken_1 = m_currentTokenIdx;
+        if (m_tokens[m_currentTokenIdx].type == TokenType::Comma) {
+            ++m_currentTokenIdx;
+            getFunctionArgsExpressions();
+        }
+        m_codegenCtx->currentCalleeArgs.insert(m_codegenCtx->currentCalleeArgs.begin(), dynamic_cast<ExpressionNode *>(tmp));
     }
-
-    // if (getFunctionArgsExpressions()) {
-    //     if (m_tokens[m_currentTokenIdx].type != TokenType::Comma) {
-    //         m_currentTokenIdx = currentToken_1;
-    //         return false;
-    //     }
-    //     ++m_currentTokenIdx;
-
-    //     ASTNode *tmp = getExpression();
-    //     if (!tmp) {
-    //         m_currentTokenIdx = currentToken_1;
-    //         return false;
-    //     }
-
-    //     m_codegenCtx->currentCalleeArgs.push_back(dynamic_cast<ExpressionNode *>(tmp));
-    //     return true;
-    // }
-
     return true;
 }
 
@@ -1037,13 +984,9 @@ ASTNode *VMParser::getStatement() {
 bool VMParser::getStatementList() {
     ASTNode *tmp = getStatement();
     if (tmp) {
-        if (!getStatementList()) {
-            return false;
-        }
-
-        m_codegenCtx->scopeStatements.push_back(tmp);
+        getStatementList();
+        m_codegenCtx->scopeStatements.insert(m_codegenCtx->scopeStatements.begin(), tmp);
     }
-
     return true;
 }
 
@@ -1065,18 +1008,15 @@ bool VMParser::getStatementsScopeBegin() {
 
 
 ASTNode *VMParser::getStatementsScope() {
-    size_t currentToken_1 = m_currentTokenIdx;
-
     if (!getStatementsScopeBegin()) {
-        m_currentTokenIdx = currentToken_1;
         return nullptr;
     }
 
     if (!getStatementList()) {
-        m_currentTokenIdx = currentToken_1;
         return nullptr;
     }
 
+    size_t currentToken_1 = m_currentTokenIdx;
     if (m_tokens[m_currentTokenIdx].type != TokenType::RightBrace) {
         m_currentTokenIdx = currentToken_1;
         return nullptr;
@@ -1108,7 +1048,7 @@ Token VMParser::getHighPriorityOperation() {
     }
 
     Token ret;
-    ret.type = Unknown;
+    ret.type = TokenType::Unknown;
     return ret;
 }
 
@@ -1159,7 +1099,7 @@ Token VMParser::getLowPriorityOperation() {
     }
 
     Token ret;
-    ret.type = Unknown;
+    ret.type = TokenType::Unknown;
     return ret;
 }
 
@@ -1216,20 +1156,20 @@ Token VMParser::getExpressionOperation() {
     }
 
     Token ret;
-    ret.type = Unknown;
+    ret.type = TokenType::Unknown;
     return ret;
 }
 
 
 ASTNode *VMParser::getPrimary() {
-    ASTNode *tmp = getVariableValue();
-    if (tmp) {
-        return new PrimaryNode(dynamic_cast<VariableValueNode *>(tmp));
-    }
-
-    tmp = getFunctionCall();
+    ASTNode *tmp = getFunctionCall();
     if (tmp) {
         return new PrimaryNode(dynamic_cast<FunctionCallNode *>(tmp));
+    }
+
+    tmp = getVariableValue();
+    if (tmp) {
+        return new PrimaryNode(dynamic_cast<VariableValueNode *>(tmp));
     }
 
     tmp = getScanStatement();
@@ -1320,166 +1260,161 @@ ASTNode *VMParser::getFactor() {
 ASTNode *VMParser::getSummand() {
     ASTNode *factorNode = getFactor();
     if (factorNode) {
-        new SummandNode(dynamic_cast<FactorNode *>(factorNode));
-    }
-
-    // TODO : resolve left recursion :(((
-    return nullptr;
-
-    ASTNode *summandNode = getSummand();
-    if (!summandNode) {
-        return nullptr;
-    }
-
-    Token tokenOperation = getHighPriorityOperation();
-    if (tokenOperation.type = TokenType::Unknown) {
-        return nullptr;
-    }
-
-    factorNode = getFactor();
-    if (!factorNode) {
-        return nullptr;
-    }
-
-    HighPriorityOperation operation = HighPriorityOperation::HIGH_PRIORITY_OPERATION_NONE;
-    switch (tokenOperation.type) {
-        case TokenType::Mul: {
-            operation = HighPriorityOperation::HIGH_PRIORITY_OPERATION_MUL;
-            break;
+        size_t currentToken_1 = m_currentTokenIdx;
+        Token tokenOperation = getHighPriorityOperation();
+        if (tokenOperation.type == TokenType::Unknown) {
+            m_currentTokenIdx = currentToken_1;
+            return new SummandNode(dynamic_cast<FactorNode *>(factorNode));
         }
-        case TokenType::Div: {
-            operation = HighPriorityOperation::HIGH_PRIORITY_OPERATION_DIV;
-            break;
-        }
-        default: {
-            operation = HighPriorityOperation::HIGH_PRIORITY_OPERATION_NONE;
-            break;
+        else {
+            ASTNode *summandNode = getSummand();
+            if (!summandNode) {
+                return nullptr;
+            }
+
+            HighPriorityOperation operation = HighPriorityOperation::HIGH_PRIORITY_OPERATION_NONE;
+            switch (tokenOperation.type) {
+                case TokenType::Mul: {
+                    operation = HighPriorityOperation::HIGH_PRIORITY_OPERATION_MUL;
+                    break;
+                }
+                case TokenType::Div: {
+                    operation = HighPriorityOperation::HIGH_PRIORITY_OPERATION_DIV;
+                    break;
+                }
+                default: {
+                    operation = HighPriorityOperation::HIGH_PRIORITY_OPERATION_NONE;
+                    break;
+                }
+            }
+            return new SummandNode(dynamic_cast<FactorNode *>(factorNode), dynamic_cast<SummandNode *>(summandNode), operation);
         }
     }
-
-    return new SummandNode(dynamic_cast<SummandNode *>(summandNode), dynamic_cast<FactorNode *>(factorNode), operation);
+    else {
+        return nullptr;
+    }
 }
 
 
 ASTNode *VMParser::getSimple() {
     ASTNode *summandNode = getSummand();
     if (summandNode) {
-        new SimpleNode(dynamic_cast<SummandNode *>(summandNode));
+        size_t currentToken_1 = m_currentTokenIdx;
+        Token tokenOperation = getLowPriorityOperation();
+        if (tokenOperation.type == TokenType::Unknown) {
+            m_currentTokenIdx = currentToken_1;
+            return new SimpleNode(dynamic_cast<SummandNode *>(summandNode));
+        }
+        else {
+            ASTNode *simpleNode = getSimple();
+            if (!simpleNode) {
+                return nullptr;
+            }
+
+            LowPriorityOperation operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_NONE;
+            switch (tokenOperation.type) {
+                case TokenType::Add: {
+                    operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_ADD;
+                    break;
+                }
+                case TokenType::Sub: {
+                    operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_SUB;
+                    break;
+                }
+                case TokenType::ShiftLeft: {
+                    operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_SHIFT_LEFT;
+                    break;
+                }
+                case TokenType::ShiftRight: {
+                    operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_SHIFT_RIGHT;
+                    break;
+                }
+                case TokenType::BitwiseAnd: {
+                    operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_BITWISE_AND;
+                    break;
+                }
+                case TokenType::BitwiseOr: {
+                    operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_BITWISE_OR;
+                    break;
+                }
+                case TokenType::BitwiseXor: {
+                    operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_BITWISE_XOR;
+                    break;
+                }
+                default: {
+                    operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_NONE;
+                    break;
+                }
+            }
+            return new SimpleNode(dynamic_cast<SummandNode *>(summandNode), dynamic_cast<SimpleNode *>(simpleNode), operation);
+        }
     }
-
-    // TODO : resolve left recursion :(((
-    return nullptr;
-
-    ASTNode *simpleNode = getSimple();
-    if (!simpleNode) {
+    else {
         return nullptr;
     }
-
-    Token tokenOperation = getLowPriorityOperation();
-    if (tokenOperation.type = TokenType::Unknown) {
-        return nullptr;
-    }
-
-    LowPriorityOperation operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_NONE;
-    switch (tokenOperation.type) {
-        case TokenType::Add: {
-            operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_ADD;
-            break;
-        }
-        case TokenType::Sub: {
-            operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_SUB;
-            break;
-        }
-        case TokenType::ShiftLeft: {
-            operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_SHIFT_LEFT;
-            break;
-        }
-        case TokenType::ShiftRight: {
-            operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_SHIFT_RIGHT;
-            break;
-        }
-        case TokenType::BitwiseAnd: {
-            operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_BITWISE_AND;
-            break;
-        }
-        case TokenType::BitwiseOr: {
-            operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_BITWISE_OR;
-            break;
-        }
-        case TokenType::BitwiseXor: {
-            operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_BITWISE_XOR;
-            break;
-        }
-        default: {
-            operation = LowPriorityOperation::LOW_PRIORITY_OPERATION_NONE;
-            break;
-        }
-    }
-
-    return new SimpleNode(dynamic_cast<SimpleNode *>(simpleNode), dynamic_cast<SummandNode *>(summandNode), operation);
 }
 
 
 ASTNode *VMParser::getExpression() {
     ASTNode *simpleNode = getSimple();
     if (simpleNode) {
-        return new ExpressionNode(dynamic_cast<SimpleNode *>(simpleNode));
+        size_t currentToken_1 = m_currentTokenIdx;
+        Token tokenOperation = getExpressionOperation();
+        if (tokenOperation.type == TokenType::Unknown) {
+            m_currentTokenIdx = currentToken_1;
+            return new ExpressionNode(dynamic_cast<SimpleNode *>(simpleNode));
+        }
+        else {
+            ASTNode *expressionNode = getExpression();
+            if (!expressionNode) {
+                return nullptr;
+            }
+
+            ExpressionOperation operation = ExpressionOperation::EXPRESSION_OPERATION_NONE;
+            switch (tokenOperation.type) {
+                case TokenType::Less: {
+                    operation = ExpressionOperation::EXPRESSION_OPERATION_LESS;
+                    break;
+                }
+                case TokenType::LessOrEq: {
+                    operation = ExpressionOperation::EXPRESSION_OPERATION_LESS_OR_EQ;
+                    break;
+                }
+                case TokenType::Greater: {
+                    operation = ExpressionOperation::EXPRESSION_OPERATION_GREATER;
+                    break;
+                }
+                case TokenType::GreaterOrEq: {
+                    operation = ExpressionOperation::EXPRESSION_OPERATION_GREATER_OR_EQ;
+                    break;
+                }
+                case TokenType::Equal: {
+                    operation = ExpressionOperation::EXPRESSION_OPERATION_EQUAL;
+                    break;
+                }
+                case TokenType::NotEqual: {
+                    operation = ExpressionOperation::EXPRESSION_OPERATION_NOT_EQUAL;
+                    break;
+                }
+                case TokenType::LogicAnd: {
+                    operation = ExpressionOperation::EXPRESSION_OPERATION_LOGIC_AND;
+                    break;
+                }
+                case TokenType::LogicOr: {
+                    operation = ExpressionOperation::EXPRESSION_OPERATION_LOGIC_OR;
+                    break;
+                }
+                default: {
+                    operation = ExpressionOperation::EXPRESSION_OPERATION_NONE;
+                    break;
+                }
+            }
+            return new ExpressionNode(dynamic_cast<SimpleNode *>(simpleNode), dynamic_cast<ExpressionNode *>(expressionNode), operation);
+        }
     }
-
-    // TODO : resolve left recursion :(((
-    return nullptr;
-
-    ASTNode *expressionNode = getExpression();
-    if (!expressionNode) {
+    else {
         return nullptr;
     }
-
-    Token tokenOperation = getExpressionOperation();
-    if (tokenOperation.type = TokenType::Unknown) {
-        return nullptr;
-    }
-
-    ExpressionOperation operation = ExpressionOperation::EXPRESSION_OPERATION_NONE;
-    switch (tokenOperation.type) {
-        case TokenType::Less: {
-            operation = ExpressionOperation::EXPRESSION_OPERATION_LESS;
-            break;
-        }
-        case TokenType::LessOrEq: {
-            operation = ExpressionOperation::EXPRESSION_OPERATION_LESS_OR_EQ;
-            break;
-        }
-        case TokenType::Greater: {
-            operation = ExpressionOperation::EXPRESSION_OPERATION_GREATER;
-            break;
-        }
-        case TokenType::GreaterOrEq: {
-            operation = ExpressionOperation::EXPRESSION_OPERATION_GREATER_OR_EQ;
-            break;
-        }
-        case TokenType::Equal: {
-            operation = ExpressionOperation::EXPRESSION_OPERATION_EQUAL;
-            break;
-        }
-        case TokenType::NotEqual: {
-            operation = ExpressionOperation::EXPRESSION_OPERATION_NOT_EQUAL;
-            break;
-        }
-        case TokenType::LogicAnd: {
-            operation = ExpressionOperation::EXPRESSION_OPERATION_LOGIC_AND;
-            break;
-        }
-        case TokenType::LogicOr: {
-            operation = ExpressionOperation::EXPRESSION_OPERATION_LOGIC_OR;
-            break;
-        }
-        default: {
-            operation = ExpressionOperation::EXPRESSION_OPERATION_NONE;
-            break;
-        }
-    }
-
-    return new ExpressionNode(dynamic_cast<ExpressionNode *>(expressionNode), dynamic_cast<SimpleNode *>(simpleNode), operation);
 }
 
 }

@@ -107,7 +107,7 @@ bool VMLexer::lex(const std::string &input, std::vector<Token> &outTokens) {
         }
 
         if ((*m_currentChar == '/') && (*(m_currentChar + 1) == '/')) {
-            while ((m_currentChar != m_programEnd) || (*m_currentChar != '\n')) {
+            while ((m_currentChar != m_programEnd) && (*m_currentChar != '\n')) {
                 ++m_currentChar;
             }
             continue;
@@ -378,7 +378,6 @@ bool VMLexer::lex(const std::string &input, std::vector<Token> &outTokens) {
                     }
                     else {
                         outTokens.push_back({TokenType::Sub, minus});
-                        m_currentChar += 1;
                         continue;                        
                     }
                 }

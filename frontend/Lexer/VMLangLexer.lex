@@ -2,9 +2,13 @@
 
 #define YYSTYPE void *
 
+#include <vector>
+#include <string>
+
 #include "VMLangParser.hpp"
 
 extern "C" int yylex();
+extern std::vector<std::string> tokens;
 
 %}
 
@@ -75,283 +79,283 @@ SqrtKeyword                 [s][q][r][t]
 
 
 {IntType} {
-  printf("IntType %s\n", yytext);
+  tokens.push_back(std::string("IntType ") + yytext);
   yylval = strdup(yytext);
   return IntType;
 }
 
 {FloatType} {
-  printf("FloatType %s\n", yytext);
+  tokens.push_back(std::string("FloatType ") + yytext);
   yylval = strdup(yytext);
   return FloatType;
 }
 
 {StringType} {
-  printf("StringType %s\n", yytext);
+  tokens.push_back(std::string("StringType ") + yytext);
   yylval = strdup(yytext);
   return StringType;
 }
 
 {VoidType} {
-  printf("VoidType %s\n", yytext);
+  tokens.push_back(std::string("VoidType ") + yytext);
   yylval = strdup(yytext);
   return VoidType;
 }
 
 {IfKeyword} {
-  printf("IfKeyword %s\n", yytext);
+  tokens.push_back(std::string("IfKeyword ") + yytext);
   yylval = strdup(yytext);
   return IfKeyword;
 }
 
 {ElseKeyword} {
-  printf("ElseKeyword %s\n", yytext);
+  tokens.push_back(std::string("ElseKeyword ") + yytext);
   yylval = strdup(yytext);
   return ElseKeyword;
 }
 
 {ForKeyword} {
-  printf("ForKeyword %s\n", yytext);
+  tokens.push_back(std::string("ForKeyword ") + yytext);
   yylval = strdup(yytext);
   return ForKeyword;
 }
 
 {WhileKeyword} {
-  printf("WhileKeyword %s\n", yytext);
+  tokens.push_back(std::string("WhileKeyword ") + yytext);
   yylval = strdup(yytext);
   return WhileKeyword;
 }
 
 {ReturnKeyword} {
-  printf("ReturnKeyword %s\n", yytext);
+  tokens.push_back(std::string("ReturnKeyword ") + yytext);
   yylval = strdup(yytext);
   return ReturnKeyword;
 }
 
 {FunctionKeyword} {
-  printf("FunctionKeyword %s\n", yytext);
+  tokens.push_back(std::string("FunctionKeyword ") + yytext);
   yylval = strdup(yytext);
   return FunctionKeyword;
 }
 
 {PrintKeyword} {
-  printf("PrintKeyword %s\n", yytext);
+  tokens.push_back(std::string("PrintKeyword ") + yytext);
   yylval = strdup(yytext);
   return PrintKeyword;
 }
 
 {PrintfKeyword} {
-  printf("PrintfKeyword %s\n", yytext);
+  tokens.push_back(std::string("PrintfKeyword ") + yytext);
   yylval = strdup(yytext);
   return PrintfKeyword;
 }
 
 {PrintsKeyword} {
-  printf("PrintsKeyword %s\n", yytext);
+  tokens.push_back(std::string("PrintsKeyword ") + yytext);
   yylval = strdup(yytext);
   return PrintsKeyword;
 }
 
 {ScanKeyword} {
-  printf("ScanKeyword %s\n", yytext);
+  tokens.push_back(std::string("ScanKeyword ") + yytext);
   yylval = strdup(yytext);
   return ScanKeyword;
 }
 
 {ScanfKeyword} {
-  printf("ScanfKeyword %s\n", yytext);
+  tokens.push_back(std::string("ScanfKeyword ") + yytext);
   yylval = strdup(yytext);
   return ScanfKeyword;
 }
 
 {ScansKeyword} {
-  printf("ScansKeyword %s\n", yytext);
+  tokens.push_back(std::string("ScansKeyword ") + yytext);
   yylval = strdup(yytext);
   return ScansKeyword;
 }
 
 {SqrtKeyword} {
-  printf("SqrtKeyword %s\n", yytext);
+  tokens.push_back(std::string("SqrtKeyword ") + yytext);
   yylval = strdup(yytext);
   return SqrtKeyword;
 }
 
 {IntLiteral} {
-  printf("IntLiteral %s\n", yytext);
+  tokens.push_back(std::string("IntLiteral ") + yytext);
   yylval = strdup(yytext);
   return IntLiteral;
 }
 
 {FloatLiteral} {
-  printf("FloatLiteral %s\n", yytext);
+  tokens.push_back(std::string("FloatLiteral ") + yytext);
   yylval = strdup(yytext);
   return FloatLiteral;
 }
 
 {StringLiteral} {
-  printf("StringLiteral %s\n", yytext);
+  tokens.push_back(std::string("StringLiteral ") + yytext);
   yylval = strdup(yytext);
   return StringLiteral;
 }
 
 {Identifier} {
-  printf("Identifier %s\n", yytext);
+  tokens.push_back(std::string("Identifier ") + yytext);
   yylval = strdup(yytext);
   return Identifier;
 }
 
 {ShiftLeft} {
-  printf("ShiftLeft %s\n", yytext);
+  tokens.push_back(std::string("ShiftLeft ") + yytext);
   yylval = strdup(yytext);
   return ShiftLeft;
 }
 
 {ShiftRight} {
-  printf("ShiftRight %s\n", yytext);
+  tokens.push_back(std::string("ShiftRight ") + yytext);
   yylval = strdup(yytext);
   return ShiftRight;
 }
 
 {LessOrEq} {
-  printf("LessOrEq %s\n", yytext);
+  tokens.push_back(std::string("LessOrEq ") + yytext);
   yylval = strdup(yytext);
   return LessOrEq;
 }
 
 {GreaterOrEq} {
-  printf("GreaterOrEq %s\n", yytext);
+  tokens.push_back(std::string("GreaterOrEq ") + yytext);
   yylval = strdup(yytext);
   return GreaterOrEq;
 }
 
 {NotEqual} {
-  printf("NotEqual %s\n", yytext);
+  tokens.push_back(std::string("NotEqual ") + yytext);
   yylval = strdup(yytext);
   return NotEqual;
 }
 
 {LogicAnd} {
-  printf("LogicAnd %s\n", yytext);
+  tokens.push_back(std::string("LogicAnd ") + yytext);
   yylval = strdup(yytext);
   return LogicAnd;
 }
 
 {LogicOr} {
-  printf("LogicOr %s\n", yytext);
+  tokens.push_back(std::string("LogicOr ") + yytext);
   yylval = strdup(yytext);
   return LogicOr;
 }
 
 {Mul} {
-  printf("Mul %s\n", yytext);
+  tokens.push_back(std::string("Mul ") + yytext);
   yylval = strdup(yytext);
   return Mul;
 }
 
 {Div} {
-  printf("Div %s\n", yytext);
+  tokens.push_back(std::string("Div ") + yytext);
   yylval = strdup(yytext);
   return Div;
 }
 
 {Add} {
-  printf("Add %s\n", yytext);
+  tokens.push_back(std::string("Add ") + yytext);
   yylval = strdup(yytext);
   return Add;
 }
 
 {Sub} {
-  printf("Sub %s\n", yytext);
+  tokens.push_back(std::string("Sub ") + yytext);
   yylval = strdup(yytext);
   return Sub;
 }
 
 {Equal} {
-  printf("Equal %s\n", yytext);
+  tokens.push_back(std::string("Equal ") + yytext);
   yylval = strdup(yytext);
   return Equal;
 }
 
 {Less} {
-  printf("Less %s\n", yytext);
+  tokens.push_back(std::string("Less ") + yytext);
   yylval = strdup(yytext);
   return Less;
 }
 
 {Greater} {
-  printf("Greater %s\n", yytext);
+  tokens.push_back(std::string("Greater ") + yytext);
   yylval = strdup(yytext);
   return Greater;
 }
 
 {Assignment} {
-  printf("Assignment %s\n", yytext);
+  tokens.push_back(std::string("Assignment ") + yytext);
   yylval = strdup(yytext);
   return Assignment;
 }
 
 {BitwiseAnd} {
-  printf("BitwiseAnd %s\n", yytext);
+  tokens.push_back(std::string("BitwiseAnd ") + yytext);
   yylval = strdup(yytext);
   return BitwiseAnd;
 }
 
 {BitwiseOr} {
-  printf("BitwiseOr %s\n", yytext);
+  tokens.push_back(std::string("BitwiseOr ") + yytext);
   yylval = strdup(yytext);
   return BitwiseOr;
 }
 
 {BitwiseXor} {
-  printf("BitwiseXor %s\n", yytext);
+  tokens.push_back(std::string("BitwiseXor ") + yytext);
   yylval = strdup(yytext);
   return BitwiseXor;
 }
 
 {LeftBracket} {
-  printf("LeftBracket %s\n", yytext);
+  tokens.push_back(std::string("LeftBracket ") + yytext);
   yylval = strdup(yytext);
   return LeftBracket;
 }
 
 {RightBracket} {
-  printf("RightBracket %s\n", yytext);
+  tokens.push_back(std::string("RightBracket ") + yytext);
   yylval = strdup(yytext);
   return RightBracket;
 }
 
 {LeftParent} {
-  printf("LeftParent %s\n", yytext);
+  tokens.push_back(std::string("LeftParent ") + yytext);
   yylval = strdup(yytext);
   return LeftParent;
 }
 
 {RightParent} {
-  printf("RightParent %s\n", yytext);
+  tokens.push_back(std::string("RightParent ") + yytext);
   yylval = strdup(yytext);
   return RightParent;
 }
 
 {LeftBrace} {
-  printf("LeftBrace %s\n", yytext);
+  tokens.push_back(std::string("LeftBrace ") + yytext);
   yylval = strdup(yytext);
   return LeftBrace;
 }
 
 {RightBrace} {
-  printf("RightBrace %s\n", yytext);
+  tokens.push_back(std::string("RightBrace ") + yytext);
   yylval = strdup(yytext);
   return RightBrace;
 }
 
 {Semicolon} {
-  printf("Semicolon %s\n", yytext);
+  tokens.push_back(std::string("Semicolon ") + yytext);
   yylval = strdup(yytext);
   return Semicolon;
 }
 
 {Comma} {
-  printf("Comma %s\n", yytext);
+  tokens.push_back(std::string("Comma ") + yytext);
   yylval = strdup(yytext);
   return Comma;
 }

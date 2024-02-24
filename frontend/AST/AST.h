@@ -168,6 +168,7 @@ struct CodeGenContext {
 class ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) = 0;
+    virtual void print(size_t printLevel) = 0;
 
 private:
 
@@ -179,6 +180,7 @@ private:
 class SimpleVariableDeclarationNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
     std::string getName() const;
 
     SimpleVariableDeclarationNode(const std::string &name, VM::BasicObjectType objType);
@@ -193,6 +195,7 @@ private:
 class InitVariableDeclarationNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
     std::string getName() const;
 
     InitVariableDeclarationNode(const std::string &name, VM::BasicObjectType objType, ExpressionNode *expressionNode);
@@ -209,6 +212,7 @@ private:
 class ArrayVariableDeclarationNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
     std::string getName() const;
     size_t getSize() const;
 
@@ -225,6 +229,7 @@ private:
 class PrintStatementNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
 
     PrintStatementNode(VM::BasicObjectType objType, ExpressionNode *expressionNode);
     ~PrintStatementNode();
@@ -240,6 +245,8 @@ private:
 class ScanStatementNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
+
     VM::BasicObjectType getType();
 
     ScanStatementNode(VM::BasicObjectType objType);
@@ -253,6 +260,7 @@ private:
 class SqrtStatementNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
 
     SqrtStatementNode(ExpressionNode *expressionNode);
     ~SqrtStatementNode();
@@ -266,6 +274,8 @@ private:
 class ProgramNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
+
     void insertNode(ASTNode *node);
 
     ProgramNode();
@@ -280,6 +290,7 @@ private:
 class VariableValueNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
     // Save address into accumulator
     void generateArrayIndex(CodeGenContext *ctx);
     uint32_t getRegister();
@@ -301,6 +312,7 @@ private:
 class FunctionCallNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
     VM::BasicObjectType getType(CodeGenContext *ctx);
 
     FunctionCallNode(const std::string &name, std::vector<ExpressionNode *> &arguments);
@@ -316,6 +328,7 @@ private:
 class PrimaryNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
     int getIntValue();
     double getFloatValue();
     std::string getStringValue();
@@ -349,6 +362,7 @@ private:
 class FactorNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
     uint32_t getRegister();
     VM::BasicObjectType getType();
 
@@ -368,11 +382,12 @@ private:
 class SummandNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
     uint32_t getRegister();
     VM::BasicObjectType getType();
 
     SummandNode(FactorNode *factorNode);
-    SummandNode(SummandNode *summandNode, FactorNode *factorNode, HighPriorityOperation operation);
+    SummandNode(FactorNode *factorNode, SummandNode *summandNode, HighPriorityOperation operation);
     ~SummandNode();
 
 private:
@@ -387,11 +402,12 @@ private:
 class SimpleNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
     uint32_t getRegister();
     VM::BasicObjectType getType();
 
     SimpleNode(SummandNode *summandNode);
-    SimpleNode(SimpleNode *simpleNode, SummandNode *summandNode, LowPriorityOperation operation);
+    SimpleNode(SummandNode *summandNode, SimpleNode *simpleNode, LowPriorityOperation operation);
     ~SimpleNode();
 
 private:
@@ -406,13 +422,16 @@ private:
 class ExpressionNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
     uint32_t getRegister();
     ExpressionOperation getOperation();
     uint32_t getSimpleNodeRegister();
+    uint32_t getExpressionNodeRegister();
+
     VM::BasicObjectType getType();
 
     ExpressionNode(SimpleNode *simpleNode);
-    ExpressionNode(ExpressionNode *expressionNode, SimpleNode *simpleNode, ExpressionOperation operation);
+    ExpressionNode(SimpleNode *simpleNode, ExpressionNode *expressionNode, ExpressionOperation operation);
     ~ExpressionNode();
 
 private:
@@ -427,6 +446,7 @@ private:
 class AssignmentStatement : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
 
     AssignmentStatement(VariableValueNode *valueNode, ExpressionNode *expressionNode);
     ~AssignmentStatement();
@@ -441,6 +461,7 @@ private:
 class ReturnStatementNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
 
     ReturnStatementNode(ExpressionNode *expressionNode = nullptr);
     ~ReturnStatementNode();
@@ -454,6 +475,7 @@ private:
 class StatementsScopeNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
 
     StatementsScopeNode(std::vector<ASTNode *> &scopeStatements);
     ~StatementsScopeNode();
@@ -467,6 +489,7 @@ private:
 class FunctionDeclarationNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
 
     FunctionDeclarationNode(ReturnType returnType,
                             const std::string &name,
@@ -487,6 +510,7 @@ private:
 class IfStatementNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
 
     IfStatementNode(ExpressionNode *expressionNode, StatementsScopeNode *trueBody, StatementsScopeNode *falseBody = nullptr);
     ~IfStatementNode();
@@ -502,6 +526,7 @@ private:
 class WhileLoopStatementNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
 
     WhileLoopStatementNode(ExpressionNode *expressionNode, StatementsScopeNode *body);
     ~WhileLoopStatementNode();
@@ -516,6 +541,7 @@ private:
 class ForLoopStatementNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
+    virtual void print(size_t printLevel) override;
 
     ForLoopStatementNode(ASTNode *preLoopStatement,
                          ExpressionNode *expressionNode,
