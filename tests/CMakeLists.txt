@@ -9,6 +9,7 @@ set(ASM_FILES
     ${PROJECT_SOURCE_DIR}/asm/tests/square_eq.asm
     ${PROJECT_SOURCE_DIR}/asm/tests/strfunc.asm
     ${PROJECT_SOURCE_DIR}/asm/tests/string.asm
+    ${PROJECT_SOURCE_DIR}/asm/tests/recursion.asm
 )
 
 add_custom_target(generate_asm_tests)
