@@ -17,6 +17,38 @@ inline Immediate Interpreter::loadConstant(const ImmediateIndex idx) {
     return constantPool[idx];
 }
 
+// Allocate in a tree-like style
+uint64_t Interpreter::allocateObject(const uint16_t classIdx, const size_t size) {
+    uint64_t addr = *arenaPointer;
+
+    uint16_t* classMemory = (uint16_t*)(memory + VM_CLASS_DESCS_MEMORY_ADDRESS);
+    uint16_t classPtr16 = classMemory[classIdx];
+    uint16_t fieldCount = classMemory[classPtr16];
+
+    ObjectHeader objHeader{};
+    objHeader.classIdx = classIdx;
+    objHeader.size = static_cast<uint16_t>(size);
+
+    std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
+    *arenaPointer += sizeof(ObjectHeader) + fieldCount * sizeof(uint64_t);
+
+    for (size_t k = 0; k < size; ++k) {
+        for (int i = 0; i < fieldCount; ++i) {
+            uint16_t allocClassIdx = classMemory[classPtr16 + 1 + i];
+            // Use inplace memory for integers, floats and string which are allocated inside an object
+            if (allocClassIdx == BasicObjectType::INTEGER ||
+                allocClassIdx == BasicObjectType::FLOATING ||
+                allocClassIdx == BasicObjectType::STRING)
+            {
+                continue;
+            }
+            uint64_t allocAddr = allocateObject(allocClassIdx);
+            std::memcpy(memory + addr + i * sizeof(uint64_t), &allocAddr, sizeof(uint64_t));
+        }
+    }
+
+    return addr;
+}
 
 bool Interpreter::interpret(const uint64_t entry) {
     // Initialize root frame
@@ -94,6 +126,9 @@ inline void Interpreter::exec_store_Acc (const DecodedInstruction &instr) {
 }
 inline void Interpreter::exec_load_AccI (const DecodedInstruction &instr) {
     Immediate imm = loadConstant(instr.imm);
+    if (imm.type == BasicObjectType::STRING) {
+        imm.i_val += VM_STRING_POOL_MEMORY_ADDRESS;
+    }
     memcpy(&accumulator, &imm.i_val, sizeof(accumulator));
 }
 inline void Interpreter::exec_to_Float_Reg (const DecodedInstruction &instr) {
@@ -291,7 +326,7 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             str.resize(strSize);
             std::cin >> str;
 
-            accumulator.i_val = m_vm->m_stringPoolPointer - VM_STRING_POOL_MEMORY_ADDRESS;
+            accumulator.i_val = m_vm->m_stringPoolPointer;
             std::memcpy(memory + m_vm->m_stringPoolPointer, &strSize, sizeof(uint32_t));
             std::memcpy(memory + m_vm->m_stringPoolPointer + sizeof(uint32_t), str.data(), strSize);
 
@@ -300,21 +335,33 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
         }
         case IntrinsicType::PRINTS: {
             uint32_t strSize = 0;
-            std::memcpy(&strSize, memory + VM_STRING_POOL_MEMORY_ADDRESS + accumulator.i_val, sizeof(uint32_t));
+            std::memcpy(&strSize, memory + accumulator.i_val, sizeof(uint32_t));
             std::string str;
             str.resize(strSize);
-            std::memcpy(str.data(), memory + VM_STRING_POOL_MEMORY_ADDRESS + accumulator.i_val + sizeof(uint32_t), strSize);
+            std::memcpy(str.data(), memory + accumulator.i_val + sizeof(uint32_t), strSize);
 
             std::cout << str.c_str();
             break;
         }
         case IntrinsicType::STRLEN: {
             // Length can be both < or == than size because string might have or have no '\0'
-            uint32_t strSize = 0;
-            std::memcpy(&strSize, memory + VM_STRING_POOL_MEMORY_ADDRESS + accumulator.i_val, sizeof(uint32_t));
             std::string str;
-            str.resize(strSize);
-            std::memcpy(str.data(), memory + VM_STRING_POOL_MEMORY_ADDRESS + accumulator.i_val + sizeof(uint32_t), strSize);
+
+            uint64_t addr = accumulator.i_val;
+            if (addr >= VM_STRING_POOL_MEMORY_ADDRESS && addr < VM_STRING_POOL_MEMORY_ADDRESS + VM_STRING_POOL_MEMORY_BYTESIZE) {
+                // String from string pool
+                uint32_t strSize = 0;
+                std::memcpy(&strSize, memory + addr, sizeof(uint32_t));
+                str.resize(strSize);
+                std::memcpy(str.data(), memory + addr + sizeof(uint32_t), strSize);
+            }
+            else {
+                // Dynamicly allocated string
+                ObjectHeader objHeader;
+                std::memcpy(&objHeader, memory + addr, sizeof(ObjectHeader));
+                str.resize(objHeader.size);
+                std::memcpy(str.data(), memory + addr + sizeof(ObjectHeader), objHeader.size);
+            }
 
             accumulator.i_val = str.length();
             break;
@@ -324,24 +371,24 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             uint32_t strSize2 = 0;
 
             // Allocate new string
-            accumulator.i_val = m_vm->m_stringPoolPointer - VM_STRING_POOL_MEMORY_ADDRESS;
+            accumulator.i_val = m_vm->m_stringPoolPointer;
 
             // Get pointers to two strings from x0 and x1
             uint64_t strAddress1 = regfile[0].i_val;
             uint64_t strAddress2 = regfile[1].i_val;
 
             // Read string 1
-            std::memcpy(&strSize1, memory + VM_STRING_POOL_MEMORY_ADDRESS + strAddress1, sizeof(uint32_t));
+            std::memcpy(&strSize1, memory + strAddress1, sizeof(uint32_t));
             std::string str1;
             str1.resize(strSize1);
-            std::memcpy(str1.data(), memory + VM_STRING_POOL_MEMORY_ADDRESS + strAddress1 + sizeof(uint32_t), strSize1);
+            std::memcpy(str1.data(), memory + strAddress1 + sizeof(uint32_t), strSize1);
 
 
             // Read string 2
-            std::memcpy(&strSize2, memory + VM_STRING_POOL_MEMORY_ADDRESS + strAddress2, sizeof(uint32_t));
+            std::memcpy(&strSize2, memory + strAddress2, sizeof(uint32_t));
             std::string str2;
             str2.resize(strSize2);
-            std::memcpy(str2.data(), memory + VM_STRING_POOL_MEMORY_ADDRESS + strAddress2 + sizeof(uint32_t), strSize2);
+            std::memcpy(str2.data(), memory + strAddress2 + sizeof(uint32_t), strSize2);
 
             std::string concat = str1 + str2;
             uint32_t catSize = static_cast<uint32_t>(concat.size());
@@ -364,14 +411,14 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             }
 
             // Allocate new string
-            accumulator.i_val = m_vm->m_stringPoolPointer - VM_STRING_POOL_MEMORY_ADDRESS;
+            accumulator.i_val = m_vm->m_stringPoolPointer;
 
             // Read original string
             uint32_t origSize = 0;
-            std::memcpy(&origSize, memory + VM_STRING_POOL_MEMORY_ADDRESS + origAddress, sizeof(uint32_t));
+            std::memcpy(&origSize, memory + origAddress, sizeof(uint32_t));
             std::string orig;
             orig.resize(origSize);
-            std::memcpy(orig.data(), memory + VM_STRING_POOL_MEMORY_ADDRESS + origAddress + sizeof(uint32_t), origSize);   
+            std::memcpy(orig.data(), memory + origAddress + sizeof(uint32_t), origSize);
 
             if (idx1 >= orig.size()) {
                 throw std::runtime_error("invalid string indices");
@@ -459,37 +506,107 @@ inline void Interpreter::exec_ret ([[maybe_unused]] const DecodedInstruction &in
     regfile = m_currFrame->regfile;
 }
 inline void Interpreter::exec_new (const DecodedInstruction &instr) {
-    accumulator.i_val = *arenaPointer;
-    switch (instr.objType) {
-        case BasicObjectType::INTEGER: {
-            *arenaPointer += sizeof(uint64_t);
-            break;
-        }
-        case BasicObjectType::FLOATING: {
-            *arenaPointer += sizeof(double);
-            break;
-        }
-        default: {
-            throw std::runtime_error("unknown basic object type");
+    // This switch is only for backward compatibility with frontend
+    if (instr.objType != VM::BasicObjectType::OBJECT_TYPE_INVALID) {
+        accumulator.i_val = *arenaPointer;
+        switch (instr.objType) {
+            case BasicObjectType::INTEGER: {
+                *arenaPointer += sizeof(uint64_t);
+                return;
+            }
+            case BasicObjectType::FLOATING: {
+                *arenaPointer += sizeof(double);
+                return;
+            }
+            default: {
+                throw std::runtime_error("unknown basic object type");
+            }
         }
     }
+
+    // Handle basic types separately
+    if (instr.classIdx == VM::BasicObjectType::INTEGER) {
+        accumulator.i_val = *arenaPointer;
+
+        ObjectHeader objHeader{};
+        objHeader.classIdx = VM::BasicObjectType::INTEGER;
+        std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
+        *arenaPointer += sizeof(ObjectHeader) + sizeof(uint64_t);
+        return;
+    }
+
+    if (instr.classIdx == VM::BasicObjectType::FLOATING) {
+        accumulator.i_val = *arenaPointer;
+
+        ObjectHeader objHeader{};
+        objHeader.classIdx = VM::BasicObjectType::FLOATING;
+        std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
+        *arenaPointer += sizeof(ObjectHeader) + sizeof(double);
+        return;
+    }
+
+    if (instr.classIdx == VM::BasicObjectType::STRING) {
+        ObjectHeader objHeader{};
+        objHeader.classIdx = VM::BasicObjectType::STRING;
+        objHeader.size = static_cast<uint16_t>(accumulator.i_val);
+        accumulator.i_val = *arenaPointer;
+        std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
+        *arenaPointer += sizeof(ObjectHeader) + objHeader.size * sizeof(uint8_t);
+        return;
+    }
+
+    accumulator.i_val = allocateObject(instr.classIdx);
 }
 inline void Interpreter::exec_newarray (const DecodedInstruction &instr) {
-    auto allocSize = accumulator.i_val;
-    accumulator.i_val = *arenaPointer;
-    switch (instr.objType) {
-        case BasicObjectType::INTEGER: {
-            *arenaPointer += sizeof(uint64_t) * allocSize;
-            break;
-        }
-        case BasicObjectType::FLOATING: {
-            *arenaPointer += sizeof(double) * allocSize;
-            break;
-        }
-        default: {
-            throw std::runtime_error("unknown basic object type");
+    auto size = accumulator.i_val;
+
+    // This switch is only for backward compatibility with frontend
+    if (instr.objType != VM::BasicObjectType::OBJECT_TYPE_INVALID) {
+        accumulator.i_val = *arenaPointer;
+        switch (instr.objType) {
+            case BasicObjectType::INTEGER: {
+                *arenaPointer += sizeof(uint64_t) * size;
+                break;
+            }
+            case BasicObjectType::FLOATING: {
+                *arenaPointer += sizeof(double) * size;
+                break;
+            }
+            default: {
+                throw std::runtime_error("unknown basic object type");
+            }
         }
     }
+
+    // Handle basic types separately
+    if (instr.classIdx == VM::BasicObjectType::INTEGER) {
+        accumulator.i_val = *arenaPointer;
+
+        ObjectHeader objHeader{};
+        objHeader.classIdx = VM::BasicObjectType::INTEGER;
+        objHeader.size = static_cast<uint16_t>(size);
+        std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
+        *arenaPointer += sizeof(ObjectHeader) + size * sizeof(uint64_t);
+        return;
+    }
+
+    if (instr.classIdx == VM::BasicObjectType::FLOATING) {
+        accumulator.i_val = *arenaPointer;
+
+        ObjectHeader objHeader{};
+        objHeader.classIdx = VM::BasicObjectType::FLOATING;
+        objHeader.size = static_cast<uint16_t>(size);
+        std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
+        *arenaPointer += sizeof(ObjectHeader) + size * sizeof(double);
+        return;
+    }
+
+    if (instr.classIdx == VM::BasicObjectType::STRING) {
+        // TODO
+        return;
+    }
+
+    accumulator.i_val = allocateObject(instr.classIdx, size);
 }
 inline void Interpreter::exec_negf ([[maybe_unused]] const DecodedInstruction &instr) {
     accumulator.f_val = -accumulator.f_val;
@@ -517,6 +634,36 @@ inline void Interpreter::exec_bltf (const DecodedInstruction &instr) {
         Immediate imm = loadConstant(instr.imm);
         m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
     }
-}        
+}
+inline void Interpreter::exec_load_field (const DecodedInstruction &instr) {
+    ObjectHeader objHeader{};
+    std::memcpy(&objHeader, memory + accumulator.i_val, sizeof(ObjectHeader));
+
+    uint16_t* classMemory = (uint16_t*)(memory + VM_CLASS_DESCS_MEMORY_ADDRESS);
+    uint16_t classPtr16 = classMemory[objHeader.classIdx];
+    uint16_t fieldCount = classMemory[classPtr16];
+
+    if (instr.fieldIdx >= fieldCount) {
+        throw std::runtime_error("invalid field index");
+    }
+
+    uint64_t fieldAddr = accumulator.i_val + instr.fieldIdx * sizeof(uint64_t);
+    std::memcpy(memory + fieldAddr, &regfile[instr.r1].i_val, sizeof(uint64_t));
+}
+inline void Interpreter::exec_store_field (const DecodedInstruction &instr) {
+    ObjectHeader objHeader{};
+    std::memcpy(&objHeader, memory + accumulator.i_val, sizeof(ObjectHeader));
+
+    uint16_t* classMemory = (uint16_t*)(memory + VM_CLASS_DESCS_MEMORY_ADDRESS);
+    uint16_t classPtr16 = classMemory[objHeader.classIdx];
+    uint16_t fieldCount = classMemory[classPtr16];
+
+    if (instr.fieldIdx >= fieldCount) {
+        throw std::runtime_error("invalid field index");
+    }
+
+    uint64_t fieldAddr = accumulator.i_val + instr.fieldIdx * sizeof(uint64_t);
+    std::memcpy(&regfile[instr.r1].i_val, memory + fieldAddr, sizeof(uint64_t));
+}
 }
 #endif

@@ -8,7 +8,9 @@
 
 namespace Common {
 
-static constexpr const char* FUNCTION_KEYWORD = "FUNC";
+static constexpr const char* FUNCTION_KEYWORD   = "FUNC";
+static constexpr const char* CLASS_KEYWORD      = "CLASS";
+static constexpr const char* CLASS_END_KEYWORD  = "CLASS_END";
 
 static inline void tokenizeString(const std::string& str, const std::string& delimeter, std::vector<std::string>& tokens) {
     if (str.empty()) {
@@ -55,14 +57,6 @@ static inline VM::IntrinsicType getIntrinsicFromStr(const std::string& str) {
     auto it = VM::intrinsicsNameOpcode.find(str); 
     if (it == VM::intrinsicsNameOpcode.cend())
         throw std::runtime_error("invalid intrinsic");
-
-    return it->second;
-}
-
-static inline VM::BasicObjectType getBasicTypeFromStr(const std::string& str) {
-    auto it = VM::objectsNameType.find(str);
-    if (it == VM::objectsNameType.cend())
-        throw std::runtime_error("invalid basic type");
 
     return it->second;
 }
@@ -217,6 +211,32 @@ bool AsmParser::parseIfFunctionLabel(const std::string& line, std::vector<std::s
 }
 
 
+bool AsmParser::parseIfClassDeclaration(const std::string& line, std::vector<std::string>& tokens) const {
+
+    tokenizeString(line, " \t", tokens);
+
+    /* Class declaration look like this:
+     *
+     * CLASS className:
+     *
+     */
+
+    if (tokens.size() < 2) {
+        return false;
+    }
+    if (tokens[0] != CLASS_KEYWORD) {
+        return false;
+    }
+    if (tokens[1].back() != ':') {
+        return false;
+    }
+
+    // Finally, we know this is a class declaration, remove ':' from name token
+    tokens[1].erase(tokens[1].length() - 1);
+    return true;
+}
+
+
 bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& program) {
 
     m_currFileline = 0;
@@ -232,7 +252,13 @@ bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& pr
         std::vector<std::pair<std::string, uint64_t>> instructionLines;
         std::unordered_map<std::string, std::pair<uint64_t, uint8_t>> functions_pc_args;
         std::unordered_map<std::string, uint64_t> labels_pc;
+        std::unordered_map<std::string, std::pair<uint16_t, ClassDesc>> classes;
         std::string line;
+
+        // Create dummy class descriptors for integer, floating and string
+        classes["INTEGER"] = std::pair<uint16_t, ClassDesc>(VM::BasicObjectType::INTEGER, ClassDesc("INTEGER"));
+        classes["FLOATING"] = std::pair<uint16_t, ClassDesc>(VM::BasicObjectType::FLOATING, ClassDesc("FLOATING"));
+        classes["STRING"] = std::pair<uint16_t, ClassDesc>(VM::BasicObjectType::STRING, ClassDesc("STRING"));
 
         std::unordered_map<std::string, uint64_t> stringsPtrCache;
 
@@ -263,9 +289,53 @@ bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& pr
                 continue;
             }
 
+            tokens.clear();
+            // This is class declaration
+            if (parseIfClassDeclaration(line, tokens)) {
+                if (auto it = classes.find(tokens[1]); it != classes.end()) {
+                    throw std::runtime_error("class redefinition: " + tokens[1]);
+                }
+ 
+                ClassDesc classDesc;
+                classDesc.name = tokens[1];
+
+                while (std::getline(file, line)) {
+                    ++m_currFileline;
+
+                    // Comments, empty lines and spaces before and after all tokens
+                    if (!removeExtraSpacesAndComments(line)) {
+                        continue;
+                    }
+
+                    std::vector<std::string> classTokens;
+                    tokenizeString(line, " \t", classTokens);
+
+                    if (classTokens.size() == 1 && classTokens[0] == CLASS_END_KEYWORD) {
+                        break;
+                    }
+
+                    if (classTokens.size() == 2) {
+                        if (auto it = classes.find(classTokens[0]); it != classes.end()) {
+                            classDesc.fields.push_back({it->first, classTokens[1]});
+                            continue;
+                        }
+                        throw std::runtime_error("invalid type: " + classTokens[0]);
+                    }
+                }
+                classes[classDesc.name] = std::pair<uint16_t, ClassDesc>(classes.size() + 1, classDesc);
+                continue;
+            }
+
             instructionLines.push_back(std::pair<std::string, uint64_t>(line, m_currFileline));
         }
         file.close();
+
+        for (auto cl : classes) {
+            std::cout << "Class \'" << cl.second.second.name << "\'. ID: " << cl.second.first << ". Fields:" << std::endl;
+            for (auto& f : cl.second.second.fields) {
+                std::cout << "    Type: " << f.type << "  Name: " << f.name << "  Offset: " << cl.second.second.getFieldIndex(f.name) << std::endl;
+            }
+        }
 
         for (uint64_t i = 0; i < instructionLines.size(); ++i) {
             m_currFileline = instructionLines[i].second;
@@ -526,7 +596,41 @@ bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& pr
                     if (tokens.size() != 2) {
                         throw std::runtime_error("invalid instruction: " + tokens[0]);
                     }
-                    decInstr.objType = getBasicTypeFromStr(tokens[1]);
+
+                    auto it = classes.find(tokens[1]);
+                    if (it == classes.end()) {
+                        throw std::runtime_error("invalid class: " + tokens[1]);
+                    }
+
+                    // objType is left there for backward compatibility with frontend
+                    decInstr.objType = VM::BasicObjectType::OBJECT_TYPE_INVALID;
+                    decInstr.classIdx = it->second.first;
+                    decInstr.opcode = opcode;
+                    break;
+                }
+                case VM::InstructionType::LOAD_FIELD:
+                case VM::InstructionType::STORE_FIELD:
+                {
+                    if (tokens.size() != 3) {
+                        throw std::runtime_error("invalid instruction: " + tokens[0]);
+                    }
+
+                    size_t dotpos = tokens[2].find(".");
+                    if (dotpos >= tokens[2].length()) {
+                        throw std::runtime_error("invalid class: " + tokens[2]);
+                    }
+
+                    std::string className = tokens[2].substr(0, dotpos);
+                    std::string fieldName = tokens[2].substr(dotpos + 1);
+
+                    auto it = classes.find(className);
+                    if (it == classes.end()) {
+                        throw std::runtime_error("invalid class: " + className);
+                    }
+
+                    uint16_t fieldIdx = it->second.second.getFieldIndex(fieldName);
+                    decInstr.fieldIdx = fieldIdx;
+                    decInstr.r1 = getRegisterFromStr(tokens[1]);
                     decInstr.opcode = opcode;
                     break;
                 }
@@ -545,6 +649,26 @@ bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& pr
         if (auto it = functions_pc_args.find("MAIN"); it != functions_pc_args.end()) {
             program.entryPoint = VM::INSTRUCTION_BYTESIZE * it->second.first;
         }
+
+        program.classes.resize(classes.size() + 1);
+        program.classes[0] = static_cast<uint16_t>(classes.size());
+        for (const auto& cl : classes) {
+            uint16_t classIdx = cl.second.first;
+            const ClassDesc& desc = cl.second.second;
+
+            uint16_t classPtr16 = static_cast<uint16_t>(program.classes.size());
+            program.classes[classIdx] = classPtr16;
+
+            program.classes.push_back(static_cast<uint16_t>(desc.fields.size()));
+            for (const auto& f : desc.fields) {
+                auto it = classes.find(f.type);
+                if (it == classes.cend()) {
+                    throw std::runtime_error("invalid type: " + f.type);
+                }
+                program.classes.push_back(it->second.first);
+            }
+        }
+
     }
     catch(const std::runtime_error& e) {
         std::cerr << "Errors occured during parsing " << filename << "." << m_currFileline << ": " << e.what() << std::endl;

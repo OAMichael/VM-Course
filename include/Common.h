@@ -19,6 +19,7 @@ struct Program {
     std::vector<VM::EncodedInstruction> instructions;
     std::vector<VM::Immediate> constants;
     std::vector<uint8_t> strings;
+    std::vector<uint16_t> classes;
 };
 
 
@@ -28,6 +29,7 @@ struct ProgramHeader {
     uint64_t p_instructionsSize;
     uint64_t p_constantsSize;
     uint64_t p_stringsBytesize;
+    uint64_t p_classesSize;
 };
 
 
@@ -39,6 +41,7 @@ struct ProgramHeader {
     header.p_instructionsSize = program.instructions.size();
     header.p_constantsSize = program.constants.size();
     header.p_stringsBytesize = program.strings.size();
+    header.p_classesSize = program.classes.size();
 
     std::ofstream outFile;
     outFile.open(filename, std::ios::binary | std::ios::out | std::ios::trunc);
@@ -47,6 +50,7 @@ struct ProgramHeader {
     outFile.write((const char*)program.instructions.data(), program.instructions.size() * sizeof(VM::EncodedInstruction));
     outFile.write((const char*)program.constants.data(), program.constants.size() * sizeof(VM::Immediate));
     outFile.write((const char*)program.strings.data(), program.strings.size() * sizeof(uint8_t));
+    outFile.write((const char*)program.classes.data(), program.classes.size() * sizeof(uint16_t));
 
     outFile.close();
 
@@ -115,6 +119,18 @@ struct ProgramHeader {
     program.strings.resize(header.p_stringsBytesize);
     inFile.read((char*)program.strings.data(), stringsBytesize);
     remainSize -= stringsBytesize;
+
+
+    const size_t classesBytesize = header.p_classesSize * sizeof(uint16_t);
+    if (remainSize < classesBytesize) {
+        inFile.close();
+        return false;
+    }
+
+    program.classes.resize(header.p_classesSize);
+    inFile.read((char*)program.classes.data(), classesBytesize);
+    remainSize -= classesBytesize;
+
 
     if (remainSize != 0) {
         inFile.close();

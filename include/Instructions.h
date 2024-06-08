@@ -33,8 +33,15 @@ union Register {
 
 using EncodedInstruction = uint32_t;
 using ImmediateIndex = uint16_t;
-using numArgsType = uint8_t;
+using NumArgsType = uint8_t;
 using RegisterType = uint8_t;
+using ClassIndex = uint16_t;
+using FieldIndex = uint16_t;
+
+struct ObjectHeader {
+    uint16_t classIdx;
+    uint16_t size;      // For arrays and strings
+};
 
 struct Immediate {
     BasicObjectType type;
@@ -53,12 +60,17 @@ struct DecodedInstruction {
     union {
         RegisterType    r1;         // For registers
         IntrinsicType   intrCode;   // For intrinsics
-        numArgsType     numArgs;    // For call
-        BasicObjectType objType;    // For new and newarray
+        NumArgsType     numArgs;    // For call
+        BasicObjectType objType;    // For new and newarray (deprecated)
     };
 
     RegisterType r2;
-    ImmediateIndex imm;  // Immediate index in constant pool
+
+    union {
+        ImmediateIndex imm;         // Immediate index in constant pool
+        ClassIndex classIdx;        // Class index in class table
+        FieldIndex fieldIdx;        // Field index in class
+    };
 
     InstructionType opcode = InstructionType::INSTRUCTION_INVALID;
 };
