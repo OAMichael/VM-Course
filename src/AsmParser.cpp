@@ -330,12 +330,12 @@ bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& pr
         }
         file.close();
 
-        for (auto cl : classes) {
-            std::cout << "Class \'" << cl.second.second.name << "\'. ID: " << cl.second.first << ". Fields:" << std::endl;
-            for (auto& f : cl.second.second.fields) {
-                std::cout << "    Type: " << f.type << "  Name: " << f.name << "  Offset: " << cl.second.second.getFieldIndex(f.name) << std::endl;
-            }
-        }
+        // for (auto cl : classes) {
+        //     std::cout << "Class \'" << cl.second.second.name << "\'. ID: " << cl.second.first << ". Fields:" << std::endl;
+        //     for (auto& f : cl.second.second.fields) {
+        //         std::cout << "    Type: " << f.type << "  Name: " << f.name << "  Offset: " << cl.second.second.getFieldIndex(f.name) << std::endl;
+        //     }
+        // }
 
         for (uint64_t i = 0; i < instructionLines.size(); ++i) {
             m_currFileline = instructionLines[i].second;
@@ -631,6 +631,18 @@ bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& pr
                     uint16_t fieldIdx = it->second.second.getFieldIndex(fieldName);
                     decInstr.fieldIdx = fieldIdx;
                     decInstr.r1 = getRegisterFromStr(tokens[1]);
+                    decInstr.opcode = opcode;
+                    break;
+                }
+                case VM::InstructionType::LOAD_ARR_ELEM:
+                case VM::InstructionType::STORE_ARR_ELEM:
+                {
+                    if (tokens.size() != 3) {
+                        throw std::runtime_error("invalid instruction: " + tokens[0]);
+                    }
+
+                    decInstr.r1 = getRegisterFromStr(tokens[1]);
+                    decInstr.r2 = getRegisterFromStr(tokens[2]);
                     decInstr.opcode = opcode;
                     break;
                 }

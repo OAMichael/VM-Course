@@ -10,6 +10,8 @@ set(ASM_FILES
     ${PROJECT_SOURCE_DIR}/asm/tests/strfunc.asm
     ${PROJECT_SOURCE_DIR}/asm/tests/string.asm
     ${PROJECT_SOURCE_DIR}/asm/tests/recursion.asm
+    ${PROJECT_SOURCE_DIR}/asm/tests/object.asm
+    ${PROJECT_SOURCE_DIR}/asm/tests/objarray.asm
 )
 
 add_custom_target(generate_asm_tests)

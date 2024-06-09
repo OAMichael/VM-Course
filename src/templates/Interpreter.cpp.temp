@@ -30,7 +30,7 @@ uint64_t Interpreter::allocateObject(const uint16_t classIdx, const size_t size)
     objHeader.size = static_cast<uint16_t>(size);
 
     std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
-    *arenaPointer += sizeof(ObjectHeader) + fieldCount * sizeof(uint64_t);
+    *arenaPointer += sizeof(ObjectHeader) + fieldCount * size * sizeof(uint64_t);
 
     for (size_t k = 0; k < size; ++k) {
         for (int i = 0; i < fieldCount; ++i) {
@@ -43,7 +43,9 @@ uint64_t Interpreter::allocateObject(const uint16_t classIdx, const size_t size)
                 continue;
             }
             uint64_t allocAddr = allocateObject(allocClassIdx);
-            std::memcpy(memory + addr + i * sizeof(uint64_t), &allocAddr, sizeof(uint64_t));
+            uint64_t objAddr = addr + sizeof(ObjectHeader) + k * fieldCount;
+            uint64_t fieldAddr = objAddr + i * sizeof(uint64_t);
+            std::memcpy(memory + fieldAddr, &allocAddr, sizeof(uint64_t));
         }
     }
 
@@ -647,7 +649,7 @@ inline void Interpreter::exec_load_field (const DecodedInstruction &instr) {
         throw std::runtime_error("invalid field index");
     }
 
-    uint64_t fieldAddr = accumulator.i_val + instr.fieldIdx * sizeof(uint64_t);
+    uint64_t fieldAddr = accumulator.i_val + sizeof(ObjectHeader) + instr.fieldIdx * sizeof(uint64_t);
     std::memcpy(memory + fieldAddr, &regfile[instr.r1].i_val, sizeof(uint64_t));
 }
 inline void Interpreter::exec_store_field (const DecodedInstruction &instr) {
@@ -662,8 +664,79 @@ inline void Interpreter::exec_store_field (const DecodedInstruction &instr) {
         throw std::runtime_error("invalid field index");
     }
 
-    uint64_t fieldAddr = accumulator.i_val + instr.fieldIdx * sizeof(uint64_t);
+    uint64_t fieldAddr = accumulator.i_val + sizeof(ObjectHeader) + instr.fieldIdx * sizeof(uint64_t);
     std::memcpy(&regfile[instr.r1].i_val, memory + fieldAddr, sizeof(uint64_t));
+}
+inline void Interpreter::exec_load_arr_elem (const DecodedInstruction &instr) {
+    uint64_t addr = accumulator.i_val;
+
+    ObjectHeader objHeader{};
+    std::memcpy(&objHeader, memory + addr, sizeof(ObjectHeader));
+
+    uint64_t index = regfile[instr.r2].i_val;
+    uint64_t value = regfile[instr.r1].i_val;
+
+    if (index >= objHeader.size) {
+        throw std::runtime_error("invalid array access: idx = " + std::to_string(index) + "  size = " + std::to_string(objHeader.size));
+    }
+
+    // Direct copy of basic types
+    if (objHeader.classIdx == BasicObjectType::INTEGER ||
+        objHeader.classIdx == BasicObjectType::FLOATING ||
+        objHeader.classIdx == BasicObjectType::STRING)
+    {
+        std::memcpy(memory + addr + sizeof(ObjectHeader) + index * sizeof(uint64_t), &value, sizeof(uint64_t));
+        return;
+    }
+
+    // For complex types value is pointer to another object
+    ObjectHeader objHeaderSrc{};
+    std::memcpy(&objHeaderSrc, memory + value, sizeof(ObjectHeader));
+
+    if (objHeader.classIdx != objHeaderSrc.classIdx) {
+        throw std::runtime_error("invalid array type");
+    }
+
+    uint16_t* classMemory = (uint16_t*)(memory + VM_CLASS_DESCS_MEMORY_ADDRESS);
+    uint16_t classPtr16 = classMemory[objHeader.classIdx];
+    uint16_t fieldCount = classMemory[classPtr16];
+
+    std::memcpy(memory + addr + sizeof(ObjectHeader), memory + value + sizeof(ObjectHeader), fieldCount * sizeof(uint64_t));
+}
+inline void Interpreter::exec_store_arr_elem (const DecodedInstruction &instr) {
+    uint64_t addr = accumulator.i_val;
+
+    ObjectHeader objHeader{};
+    std::memcpy(&objHeader, memory + addr, sizeof(ObjectHeader));
+
+    uint64_t index = regfile[instr.r2].i_val;
+
+    if (index >= objHeader.size) {
+        throw std::runtime_error("invalid array access: idx = " + std::to_string(index) + "  size = " + std::to_string(objHeader.size));
+    }
+
+    // Direct copy of basic types
+    if (objHeader.classIdx == BasicObjectType::INTEGER ||
+        objHeader.classIdx == BasicObjectType::FLOATING ||
+        objHeader.classIdx == BasicObjectType::STRING)
+    {
+        std::memcpy(&regfile[instr.r1].i_val, memory + addr + sizeof(ObjectHeader) + index * sizeof(uint64_t), sizeof(uint64_t));
+        return;
+    }
+
+    // For complex types value is pointer to another object
+    ObjectHeader objHeaderDst{};
+    std::memcpy(&objHeaderDst, memory + regfile[instr.r1].i_val, sizeof(ObjectHeader));
+
+    if (objHeader.classIdx != objHeaderDst.classIdx) {
+        throw std::runtime_error("invalid array type");
+    }
+
+    uint16_t* classMemory = (uint16_t*)(memory + VM_CLASS_DESCS_MEMORY_ADDRESS);
+    uint16_t classPtr16 = classMemory[objHeader.classIdx];
+    uint16_t fieldCount = classMemory[classPtr16];
+
+    std::memcpy(memory + regfile[instr.r1].i_val + sizeof(ObjectHeader), memory + addr + sizeof(ObjectHeader), fieldCount * sizeof(uint64_t));
 }
 }
 #endif

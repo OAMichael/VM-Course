@@ -213,6 +213,54 @@ TEST(InstructionTest, recursionTest)
     ASSERT_EQ(fact, 120);
 }
 
+TEST(InstructionTest, objectTest)
+{
+    Common::Program test;
+    deserializeProgram("../asm/tests/object.prog", test);
+
+    VM::VirtualMachine vm;
+    vm.loadProgram(test);
+
+    VM_Tests::CoutRedefiner out;
+    out.changeOnMy();
+
+    ASSERT_TRUE(vm.run());
+    auto ss_out = out.returnBack();
+
+    uint64_t intField;
+    double floatField;
+    std::string strField;
+    uint64_t emptyStrlen;
+    ss_out >> intField >> floatField >> strField >> emptyStrlen;
+
+    ASSERT_EQ(intField, 2287);
+    ASSERT_DOUBLE_EQ(floatField, 3.14);
+    ASSERT_EQ(strField, "TestString");
+    ASSERT_EQ(emptyStrlen, 1448);
+}
+
+TEST(InstructionTest, objarrayTest)
+{
+    Common::Program test;
+    deserializeProgram("../asm/tests/objarray.prog", test);
+
+    VM::VirtualMachine vm;
+    vm.loadProgram(test);
+
+    VM_Tests::CoutRedefiner out;
+    out.changeOnMy();
+
+    ASSERT_TRUE(vm.run());
+    auto ss_out = out.returnBack();
+
+    uint64_t intVal;
+    double floatVal;
+    ss_out >> intVal >> floatVal;
+
+    ASSERT_EQ(intVal, 42);
+    ASSERT_DOUBLE_EQ(floatVal, 2.71);
+}
+
 int main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
