@@ -16,21 +16,54 @@ uint8_t* Allocator::getVirtualMachineMemory() {
     return m_vm->m_memory;
 }
 
+MemoryBlock* Allocator::getFreeMemoryBlock(const size_t requestBytesize) {
+    MemoryBlock* memBlk = m_rootMemBlock;
+    MemoryBlock* prevBlk = nullptr;
+    while (true) {
+        if (memBlk != nullptr) {
+            if (!memBlk->used && memBlk->totalBytesize <= requestBytesize) {
+                // std::cout << "Returning existing MemoryBlock at: " << memBlk << std::endl;
+                return memBlk;
+            }
+            prevBlk = memBlk;
+            memBlk = memBlk->next;
+        }
+        else {
+            MemoryBlock newMemBlk{};
+            newMemBlk.totalBytesize = static_cast<uint32_t>(requestBytesize);
+            newMemBlk.used = false;
+            newMemBlk.next = nullptr;
+
+            // Out of memory
+            if (!isAddrInRegion<MemoryType::Arena>(m_arenaPointer + sizeof(MemoryBlock) + requestBytesize)) {
+                throw std::runtime_error("out of memory");
+            }
+
+            MemoryBlock* newBlkAddr = getMemoryPtr<MemoryBlock, MemoryType::Program>(m_arenaPointer);
+
+            std::memcpy(newBlkAddr, &newMemBlk, sizeof(MemoryBlock));
+            m_arenaPointer += sizeof(MemoryBlock) + requestBytesize;
+            if (prevBlk != nullptr) {
+                prevBlk->next = newBlkAddr;
+            }
+            // std::cout << "Creating MemoryBlock at: " << newBlkAddr << std::endl;
+            return newBlkAddr;
+        }
+    }
+}
+
 // Allocate in a tree-like style
 uint64_t Allocator::allocateObjectInternal(const uint16_t classIdx, const size_t size) {
-    uint64_t addr = m_arenaPointer;
-    uint8_t* memory = m_vm->m_memory;
-
     uint16_t* classMemory = getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
     uint16_t classPtr16 = classMemory[classIdx];
     uint16_t fieldCount = classMemory[classPtr16];
 
-    ObjectHeader objHeader{};
-    objHeader.classIdx = classIdx;
-    objHeader.size = static_cast<uint16_t>(size);
+    MemoryBlock* memBlk = getFreeMemoryBlock(fieldCount * size * sizeof(uint64_t));
+    memBlk->objHeader.classIdx = classIdx;
+    memBlk->objHeader.size = static_cast<uint16_t>(size);
 
-    std::memcpy(memory + m_arenaPointer, &objHeader, sizeof(ObjectHeader));
-    m_arenaPointer += sizeof(ObjectHeader) + fieldCount * size * sizeof(uint64_t);
+    uint8_t* memory = getVirtualMachineMemory();
+    uint64_t addr = ((uint8_t*)&memBlk->objHeader - getMemoryPtr<uint8_t, MemoryType::Program>());
 
     for (size_t k = 0; k < size; ++k) {
         for (int i = 0; i < fieldCount; ++i) {
@@ -54,35 +87,29 @@ uint64_t Allocator::allocateObjectInternal(const uint16_t classIdx, const size_t
 
 
 uint64_t Allocator::allocateObject(const uint16_t classIdx, const size_t size) {
-    uint64_t retVal = m_arenaPointer;
-    uint8_t* memory = m_vm->m_memory;
-
     // Handle basic types separately
     if (classIdx == VM::BasicObjectType::INTEGER) {
-        ObjectHeader objHeader{};
-        objHeader.classIdx = VM::BasicObjectType::INTEGER;
-        objHeader.size = static_cast<uint16_t>(size);
-        std::memcpy(memory + m_arenaPointer, &objHeader, sizeof(ObjectHeader));
-        m_arenaPointer += sizeof(ObjectHeader) + size * sizeof(uint64_t);
-        return retVal;
+        MemoryBlock* memBlk = getFreeMemoryBlock(size * sizeof(uint64_t));
+        memBlk->objHeader.classIdx = VM::BasicObjectType::INTEGER;
+        memBlk->objHeader.size = static_cast<uint16_t>(size);
+        memBlk->used = true;
+        return ((uint8_t*)&memBlk->objHeader - getMemoryPtr<uint8_t, MemoryType::Program>());
     }
 
     if (classIdx == VM::BasicObjectType::FLOATING) {
-        ObjectHeader objHeader{};
-        objHeader.classIdx = VM::BasicObjectType::FLOATING;
-        objHeader.size = static_cast<uint16_t>(size);
-        std::memcpy(memory + m_arenaPointer, &objHeader, sizeof(ObjectHeader));
-        m_arenaPointer += sizeof(ObjectHeader) + size * sizeof(double);
-        return retVal;
+        MemoryBlock* memBlk = getFreeMemoryBlock(size * sizeof(double));
+        memBlk->objHeader.classIdx = VM::BasicObjectType::FLOATING;
+        memBlk->objHeader.size = static_cast<uint16_t>(size);
+        memBlk->used = true;
+        return ((uint8_t*)&memBlk->objHeader - getMemoryPtr<uint8_t, MemoryType::Program>());
     }
 
     if (classIdx == VM::BasicObjectType::STRING) {
-        ObjectHeader objHeader{};
-        objHeader.classIdx = VM::BasicObjectType::STRING;
-        objHeader.size = static_cast<uint16_t>(size);
-        std::memcpy(memory + m_arenaPointer, &objHeader, sizeof(ObjectHeader));
-        m_arenaPointer += sizeof(ObjectHeader) + objHeader.size * sizeof(uint8_t);
-        return retVal;
+        MemoryBlock* memBlk = getFreeMemoryBlock(size * sizeof(char));
+        memBlk->objHeader.classIdx = VM::BasicObjectType::STRING;
+        memBlk->objHeader.size = static_cast<uint16_t>(size);
+        memBlk->used = true;
+        return ((uint8_t*)&memBlk->objHeader - getMemoryPtr<uint8_t, MemoryType::Program>());
     }
 
     return allocateObjectInternal(classIdx, size);

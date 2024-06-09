@@ -30,12 +30,12 @@ bool Interpreter::interpret(const uint64_t entry) {
     EncodedInstruction* currInstr;
     DecodedInstruction decInstr;
 
-    #define DISPATCH()                                                      \
-    {                                                                       \
-        currInstr = (EncodedInstruction*)(memory + m_currFrame->pc);        \
-        m_currFrame->pc += INSTRUCTION_BYTESIZE;                            \
-        m_decoder.decodeInstruction(*currInstr, decInstr);                  \
-        goto *dispatchTable[decInstr.opcode];                               \
+    #define DISPATCH()                                                                                  \
+    {                                                                                                   \
+        currInstr = allocator->getMemoryPtr<EncodedInstruction, MemoryType::Program>(m_currFrame->pc);  \
+        m_currFrame->pc += INSTRUCTION_BYTESIZE;                                                        \
+        m_decoder.decodeInstruction(*currInstr, decInstr);                                              \
+        goto *dispatchTable[decInstr.opcode];                                                           \
     }
     static void* dispatchTable[InstructionType::INSTRUCTION_COUNT] = {
         &&INSTRUCTION_INVALID,
@@ -294,19 +294,31 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             str.resize(strSize);
             std::cin >> str;
 
-            accumulator.i_val = m_vm->m_stringPoolPointer;
-            std::memcpy(memory + m_vm->m_stringPoolPointer, &strSize, sizeof(uint32_t));
-            std::memcpy(memory + m_vm->m_stringPoolPointer + sizeof(uint32_t), str.data(), strSize);
+            uint64_t addr = allocator->allocateObject(BasicObjectType::STRING, strSize);
+            accumulator.i_val = addr;
 
-            m_vm->m_stringPoolPointer += sizeof(uint32_t) + strSize;
+            uint8_t* strArenaAddr = allocator->getMemoryPtr<uint8_t, MemoryType::Program>(addr + sizeof(ObjectHeader));
+            std::memcpy(strArenaAddr, str.data(), strSize);
             break;
         }
         case IntrinsicType::PRINTS: {
-            uint32_t strSize = 0;
-            std::memcpy(&strSize, memory + accumulator.i_val, sizeof(uint32_t));
             std::string str;
-            str.resize(strSize);
-            std::memcpy(str.data(), memory + accumulator.i_val + sizeof(uint32_t), strSize);
+
+            uint64_t addr = accumulator.i_val;
+            if (allocator->isAddrInRegion<MemoryType::StringPool>(addr)) {
+                // String from string pool
+                uint32_t strSize = 0;
+                std::memcpy(&strSize, memory + addr, sizeof(uint32_t));
+                str.resize(strSize);
+                std::memcpy(str.data(), memory + addr + sizeof(uint32_t), strSize);
+            }
+            else {
+                // Dynamicly allocated string
+                ObjectHeader objHeader;
+                std::memcpy(&objHeader, memory + addr, sizeof(ObjectHeader));
+                str.resize(objHeader.size);
+                std::memcpy(str.data(), memory + addr + sizeof(ObjectHeader), objHeader.size);
+            }
 
             std::cout << str.c_str();
             break;
@@ -325,7 +337,6 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             }
             else {
                 // Dynamicly allocated string
-
                 ObjectHeader objHeader;
                 std::memcpy(&objHeader, memory + addr, sizeof(ObjectHeader));
                 str.resize(objHeader.size);
@@ -336,41 +347,56 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             break;
         }
         case IntrinsicType::STRCAT: {
-            uint32_t strSize1 = 0;
-            uint32_t strSize2 = 0;
-
-            // Allocate new string
-            accumulator.i_val = m_vm->m_stringPoolPointer;
-
             // Get pointers to two strings from x0 and x1
-            uint64_t strAddress1 = regfile[0].i_val;
-            uint64_t strAddress2 = regfile[1].i_val;
+            uint64_t strAddr1 = regfile[0].i_val;
+            uint64_t strAddr2 = regfile[1].i_val;
+
+            std::string str1;
+            std::string str2;
 
             // Read string 1
-            std::memcpy(&strSize1, memory + strAddress1, sizeof(uint32_t));
-            std::string str1;
-            str1.resize(strSize1);
-            std::memcpy(str1.data(), memory + strAddress1 + sizeof(uint32_t), strSize1);
-
+            if (allocator->isAddrInRegion<MemoryType::StringPool>(strAddr1)) {
+                // String from string pool
+                uint32_t strSize = 0;
+                std::memcpy(&strSize, memory + strAddr1, sizeof(uint32_t));
+                str1.resize(strSize);
+                std::memcpy(str1.data(), memory + strAddr1 + sizeof(uint32_t), strSize);
+            }
+            else {
+                // Dynamicly allocated string
+                ObjectHeader objHeader;
+                std::memcpy(&objHeader, memory + strAddr1, sizeof(ObjectHeader));
+                str1.resize(objHeader.size);
+                std::memcpy(str1.data(), memory + strAddr1 + sizeof(ObjectHeader), objHeader.size);
+            }
 
             // Read string 2
-            std::memcpy(&strSize2, memory + strAddress2, sizeof(uint32_t));
-            std::string str2;
-            str2.resize(strSize2);
-            std::memcpy(str2.data(), memory + strAddress2 + sizeof(uint32_t), strSize2);
+            if (allocator->isAddrInRegion<MemoryType::StringPool>(strAddr2)) {
+                // String from string pool
+                uint32_t strSize = 0;
+                std::memcpy(&strSize, memory + strAddr2, sizeof(uint32_t));
+                str2.resize(strSize);
+                std::memcpy(str2.data(), memory + strAddr2 + sizeof(uint32_t), strSize);
+            }
+            else {
+                // Dynamicly allocated string
+                ObjectHeader objHeader;
+                std::memcpy(&objHeader, memory + strAddr2, sizeof(ObjectHeader));
+                str2.resize(objHeader.size);
+                std::memcpy(str2.data(), memory + strAddr2 + sizeof(ObjectHeader), objHeader.size);
+            }
 
             std::string concat = str1 + str2;
-            uint32_t catSize = static_cast<uint32_t>(concat.size());
-            std::memcpy(memory + m_vm->m_stringPoolPointer, &catSize, sizeof(uint32_t));
-            std::memcpy(memory + m_vm->m_stringPoolPointer + sizeof(uint32_t), concat.data(), catSize);
 
-            m_vm->m_stringPoolPointer += sizeof(uint32_t) + catSize;
+            // Now serialize substr
+            uint64_t concatAddr = allocator->allocateObject(BasicObjectType::STRING, concat.size());
+            accumulator.i_val = concatAddr;
+
+            uint8_t* concatArenaAddr = allocator->getMemoryPtr<uint8_t, MemoryType::Program>(concatAddr + sizeof(ObjectHeader));
+            std::memcpy(concatArenaAddr, concat.data(), concat.size());
             break;
         }
         case IntrinsicType::SUBSTR: {
-            // Get address of original string
-            uint64_t origAddress = accumulator.i_val;
-
             // Get indices of substr from x0 and x1
             uint64_t idx0 = regfile[0].i_val;
             uint64_t idx1 = regfile[1].i_val;
@@ -379,15 +405,24 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
                 throw std::runtime_error("invalid string indices");
             }
 
-            // Allocate new string
-            accumulator.i_val = m_vm->m_stringPoolPointer;
-
-            // Read original string
-            uint32_t origSize = 0;
-            std::memcpy(&origSize, memory + origAddress, sizeof(uint32_t));
             std::string orig;
-            orig.resize(origSize);
-            std::memcpy(orig.data(), memory + origAddress + sizeof(uint32_t), origSize);
+
+            // Get address of original string
+            uint64_t addr = accumulator.i_val;
+            if (allocator->isAddrInRegion<MemoryType::StringPool>(addr)) {
+                // String from string pool
+                uint32_t origSize = 0;
+                std::memcpy(&origSize, memory + addr, sizeof(uint32_t));
+                orig.resize(origSize);
+                std::memcpy(orig.data(), memory + addr + sizeof(uint32_t), origSize);
+            }
+            else {
+                // Dynamicly allocated string
+                ObjectHeader objHeader;
+                std::memcpy(&objHeader, memory + addr, sizeof(ObjectHeader));
+                orig.resize(objHeader.size);
+                std::memcpy(orig.data(), memory + addr + sizeof(ObjectHeader), objHeader.size);
+            }
 
             if (idx1 >= orig.size()) {
                 throw std::runtime_error("invalid string indices");
@@ -397,11 +432,11 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             std::string substr = orig.substr(idx0, idx1 - idx0 + 1);
 
             // Now serialize substr
-            uint32_t substrSize = static_cast<uint32_t>(substr.size());
-            std::memcpy(memory + m_vm->m_stringPoolPointer, &substrSize, sizeof(uint32_t));
-            std::memcpy(memory + m_vm->m_stringPoolPointer + sizeof(uint32_t), substr.data(), substrSize);
+            uint64_t substrAddr = allocator->allocateObject(BasicObjectType::STRING, substr.size());
+            accumulator.i_val = substrAddr;
 
-            m_vm->m_stringPoolPointer += sizeof(uint32_t) + substrSize;
+            uint8_t* substrArenaAddr = allocator->getMemoryPtr<uint8_t, MemoryType::Program>(substrAddr + sizeof(ObjectHeader));
+            std::memcpy(substrArenaAddr, substr.data(), substr.size());
             break;
         }
         default:
