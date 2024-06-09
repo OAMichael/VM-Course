@@ -8,6 +8,39 @@
 
 namespace VM {
 
+/*
+ *  Whole memory looks like this:
+ *  || instructions || constant pool || string pool || class descs || arena ||
+ */
+
+static constexpr uint64_t VM_PROGRAM_MEMORY_BYTESIZE       = 1 << 15;     // 32 KiB of instructions
+static constexpr uint64_t VM_CONSTANT_POOL_MEMORY_BYTESIZE = 1 << 15;     // 32 KiB of constants
+static constexpr uint64_t VM_STRING_POOL_MEMORY_BYTESIZE   = 1 << 15;     // 32 KiB of strings
+static constexpr uint64_t VM_CLASS_DESCS_MEMORY_BYTESIZE   = 1 << 15;     // 32 KiB of class table
+static constexpr uint64_t VM_ARENA_MEMORY_BYTESIZE         = 1 << 25;     // 32 MiB of arena memory
+
+static constexpr uint64_t VM_TOTAL_MEMORY_BYTESIZE = VM_PROGRAM_MEMORY_BYTESIZE +
+                                                     VM_CONSTANT_POOL_MEMORY_BYTESIZE +
+                                                     VM_STRING_POOL_MEMORY_BYTESIZE +
+                                                     VM_CLASS_DESCS_MEMORY_BYTESIZE +
+                                                     VM_ARENA_MEMORY_BYTESIZE;
+
+static constexpr uint64_t VM_PROGRAM_MEMORY_ADDRESS = 0;
+static constexpr uint64_t VM_CONSTANT_POOL_MEMORY_ADDRESS = VM_PROGRAM_MEMORY_ADDRESS + VM_PROGRAM_MEMORY_BYTESIZE;
+static constexpr uint64_t VM_STRING_POOL_MEMORY_ADDRESS = VM_CONSTANT_POOL_MEMORY_ADDRESS + VM_CONSTANT_POOL_MEMORY_BYTESIZE;
+static constexpr uint64_t VM_CLASS_DESCS_MEMORY_ADDRESS = VM_STRING_POOL_MEMORY_ADDRESS + VM_STRING_POOL_MEMORY_BYTESIZE;
+static constexpr uint64_t VM_ARENA_MEMORY_ADDRESS = VM_CLASS_DESCS_MEMORY_ADDRESS + VM_CLASS_DESCS_MEMORY_BYTESIZE;
+
+
+enum MemoryType {
+    Program = 0,
+    ConstantPool = 1,
+    StringPool = 2,
+    ClassDescs = 3,
+    Arena = 4
+};
+
+
 static constexpr const uint32_t FRAME_REGISTER_COUNT = 256;
 
 enum BasicObjectType : uint8_t {

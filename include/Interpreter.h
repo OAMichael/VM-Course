@@ -10,6 +10,7 @@
 namespace VM {
 
 class VirtualMachine;
+class Allocator;
 
 class Interpreter {
 private:
@@ -18,12 +19,11 @@ private:
     Frame* m_currFrame;
 
     uint8_t* memory;
-    uint64_t* arenaPointer;
+    Allocator* allocator;
     Register accumulator{};
     Register* regfile;
 
     inline Immediate loadConstant(const ImmediateIndex idx);
-    uint64_t allocateObject(const uint16_t classIdx, const size_t size = 1);
 
     #include "generated/Executors.h"
 

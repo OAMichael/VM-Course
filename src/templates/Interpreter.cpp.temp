@@ -13,49 +13,15 @@
 namespace VM {
 
 inline Immediate Interpreter::loadConstant(const ImmediateIndex idx) {
-    Immediate* constantPool = (Immediate*)(m_vm->m_memory + VM_CONSTANT_POOL_MEMORY_ADDRESS);
+    Immediate* constantPool = allocator->getMemoryPtr<Immediate, MemoryType::ConstantPool>();
     return constantPool[idx];
-}
-
-// Allocate in a tree-like style
-uint64_t Interpreter::allocateObject(const uint16_t classIdx, const size_t size) {
-    uint64_t addr = *arenaPointer;
-
-    uint16_t* classMemory = (uint16_t*)(memory + VM_CLASS_DESCS_MEMORY_ADDRESS);
-    uint16_t classPtr16 = classMemory[classIdx];
-    uint16_t fieldCount = classMemory[classPtr16];
-
-    ObjectHeader objHeader{};
-    objHeader.classIdx = classIdx;
-    objHeader.size = static_cast<uint16_t>(size);
-
-    std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
-    *arenaPointer += sizeof(ObjectHeader) + fieldCount * size * sizeof(uint64_t);
-
-    for (size_t k = 0; k < size; ++k) {
-        for (int i = 0; i < fieldCount; ++i) {
-            uint16_t allocClassIdx = classMemory[classPtr16 + 1 + i];
-            // Use inplace memory for integers, floats and string which are allocated inside an object
-            if (allocClassIdx == BasicObjectType::INTEGER ||
-                allocClassIdx == BasicObjectType::FLOATING ||
-                allocClassIdx == BasicObjectType::STRING)
-            {
-                continue;
-            }
-            uint64_t allocAddr = allocateObject(allocClassIdx);
-            uint64_t objAddr = addr + sizeof(ObjectHeader) + k * fieldCount;
-            uint64_t fieldAddr = objAddr + i * sizeof(uint64_t);
-            std::memcpy(memory + fieldAddr, &allocAddr, sizeof(uint64_t));
-        }
-    }
-
-    return addr;
 }
 
 bool Interpreter::interpret(const uint64_t entry) {
     // Initialize root frame
     memory = m_vm->m_memory;
-    arenaPointer = &(m_vm->m_arenaPointer);
+    allocator = &(m_vm->m_allocator);
+
     m_currFrame = new Frame();
     m_currFrame->pc = entry;
     m_currFrame->parent = nullptr;
@@ -350,7 +316,7 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             std::string str;
 
             uint64_t addr = accumulator.i_val;
-            if (addr >= VM_STRING_POOL_MEMORY_ADDRESS && addr < VM_STRING_POOL_MEMORY_ADDRESS + VM_STRING_POOL_MEMORY_BYTESIZE) {
+            if (allocator->isAddrInRegion<MemoryType::StringPool>(addr)) {
                 // String from string pool
                 uint32_t strSize = 0;
                 std::memcpy(&strSize, memory + addr, sizeof(uint32_t));
@@ -359,6 +325,7 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             }
             else {
                 // Dynamicly allocated string
+
                 ObjectHeader objHeader;
                 std::memcpy(&objHeader, memory + addr, sizeof(ObjectHeader));
                 str.resize(objHeader.size);
@@ -508,107 +475,18 @@ inline void Interpreter::exec_ret ([[maybe_unused]] const DecodedInstruction &in
     regfile = m_currFrame->regfile;
 }
 inline void Interpreter::exec_new (const DecodedInstruction &instr) {
-    // This switch is only for backward compatibility with frontend
-    if (instr.objType != VM::BasicObjectType::OBJECT_TYPE_INVALID) {
-        accumulator.i_val = *arenaPointer;
-        switch (instr.objType) {
-            case BasicObjectType::INTEGER: {
-                *arenaPointer += sizeof(uint64_t);
-                return;
-            }
-            case BasicObjectType::FLOATING: {
-                *arenaPointer += sizeof(double);
-                return;
-            }
-            default: {
-                throw std::runtime_error("unknown basic object type");
-            }
-        }
+    size_t size = 1;
+    if (instr.classIdx == BasicObjectType::STRING) {
+        size = accumulator.i_val;
     }
-
-    // Handle basic types separately
-    if (instr.classIdx == VM::BasicObjectType::INTEGER) {
-        accumulator.i_val = *arenaPointer;
-
-        ObjectHeader objHeader{};
-        objHeader.classIdx = VM::BasicObjectType::INTEGER;
-        std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
-        *arenaPointer += sizeof(ObjectHeader) + sizeof(uint64_t);
-        return;
-    }
-
-    if (instr.classIdx == VM::BasicObjectType::FLOATING) {
-        accumulator.i_val = *arenaPointer;
-
-        ObjectHeader objHeader{};
-        objHeader.classIdx = VM::BasicObjectType::FLOATING;
-        std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
-        *arenaPointer += sizeof(ObjectHeader) + sizeof(double);
-        return;
-    }
-
-    if (instr.classIdx == VM::BasicObjectType::STRING) {
-        ObjectHeader objHeader{};
-        objHeader.classIdx = VM::BasicObjectType::STRING;
-        objHeader.size = static_cast<uint16_t>(accumulator.i_val);
-        accumulator.i_val = *arenaPointer;
-        std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
-        *arenaPointer += sizeof(ObjectHeader) + objHeader.size * sizeof(uint8_t);
-        return;
-    }
-
-    accumulator.i_val = allocateObject(instr.classIdx);
+    accumulator.i_val = allocator->allocateObject(instr.classIdx, size);
 }
 inline void Interpreter::exec_newarray (const DecodedInstruction &instr) {
-    auto size = accumulator.i_val;
-
-    // This switch is only for backward compatibility with frontend
-    if (instr.objType != VM::BasicObjectType::OBJECT_TYPE_INVALID) {
-        accumulator.i_val = *arenaPointer;
-        switch (instr.objType) {
-            case BasicObjectType::INTEGER: {
-                *arenaPointer += sizeof(uint64_t) * size;
-                break;
-            }
-            case BasicObjectType::FLOATING: {
-                *arenaPointer += sizeof(double) * size;
-                break;
-            }
-            default: {
-                throw std::runtime_error("unknown basic object type");
-            }
-        }
+    size_t size = accumulator.i_val;
+    if (instr.classIdx == BasicObjectType::STRING) {
+        throw std::runtime_error("array of strings is not supported yet");
     }
-
-    // Handle basic types separately
-    if (instr.classIdx == VM::BasicObjectType::INTEGER) {
-        accumulator.i_val = *arenaPointer;
-
-        ObjectHeader objHeader{};
-        objHeader.classIdx = VM::BasicObjectType::INTEGER;
-        objHeader.size = static_cast<uint16_t>(size);
-        std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
-        *arenaPointer += sizeof(ObjectHeader) + size * sizeof(uint64_t);
-        return;
-    }
-
-    if (instr.classIdx == VM::BasicObjectType::FLOATING) {
-        accumulator.i_val = *arenaPointer;
-
-        ObjectHeader objHeader{};
-        objHeader.classIdx = VM::BasicObjectType::FLOATING;
-        objHeader.size = static_cast<uint16_t>(size);
-        std::memcpy(memory + *arenaPointer, &objHeader, sizeof(ObjectHeader));
-        *arenaPointer += sizeof(ObjectHeader) + size * sizeof(double);
-        return;
-    }
-
-    if (instr.classIdx == VM::BasicObjectType::STRING) {
-        // TODO
-        return;
-    }
-
-    accumulator.i_val = allocateObject(instr.classIdx, size);
+    accumulator.i_val = allocator->allocateObject(instr.classIdx, size);
 }
 inline void Interpreter::exec_negf ([[maybe_unused]] const DecodedInstruction &instr) {
     accumulator.f_val = -accumulator.f_val;
@@ -641,7 +519,7 @@ inline void Interpreter::exec_load_field (const DecodedInstruction &instr) {
     ObjectHeader objHeader{};
     std::memcpy(&objHeader, memory + accumulator.i_val, sizeof(ObjectHeader));
 
-    uint16_t* classMemory = (uint16_t*)(memory + VM_CLASS_DESCS_MEMORY_ADDRESS);
+    uint16_t* classMemory = allocator->getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
     uint16_t classPtr16 = classMemory[objHeader.classIdx];
     uint16_t fieldCount = classMemory[classPtr16];
 
@@ -656,7 +534,7 @@ inline void Interpreter::exec_store_field (const DecodedInstruction &instr) {
     ObjectHeader objHeader{};
     std::memcpy(&objHeader, memory + accumulator.i_val, sizeof(ObjectHeader));
 
-    uint16_t* classMemory = (uint16_t*)(memory + VM_CLASS_DESCS_MEMORY_ADDRESS);
+    uint16_t* classMemory = allocator->getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
     uint16_t classPtr16 = classMemory[objHeader.classIdx];
     uint16_t fieldCount = classMemory[classPtr16];
 
@@ -697,7 +575,7 @@ inline void Interpreter::exec_load_arr_elem (const DecodedInstruction &instr) {
         throw std::runtime_error("invalid array type");
     }
 
-    uint16_t* classMemory = (uint16_t*)(memory + VM_CLASS_DESCS_MEMORY_ADDRESS);
+    uint16_t* classMemory = allocator->getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
     uint16_t classPtr16 = classMemory[objHeader.classIdx];
     uint16_t fieldCount = classMemory[classPtr16];
 
@@ -732,7 +610,7 @@ inline void Interpreter::exec_store_arr_elem (const DecodedInstruction &instr) {
         throw std::runtime_error("invalid array type");
     }
 
-    uint16_t* classMemory = (uint16_t*)(memory + VM_CLASS_DESCS_MEMORY_ADDRESS);
+    uint16_t* classMemory = allocator->getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
     uint16_t classPtr16 = classMemory[objHeader.classIdx];
     uint16_t fieldCount = classMemory[classPtr16];
 
