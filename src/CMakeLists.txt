@@ -5,6 +5,8 @@ set(ASM_2_BIN Asm2Bin)
 
 set(VM_SOURCES
     VirtualMachine.cpp
+    Allocator.cpp
+    GarbageCollector.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/generated/Decoder.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/generated/Interpreter.cpp
 )

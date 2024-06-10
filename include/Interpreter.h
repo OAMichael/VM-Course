@@ -10,15 +10,19 @@
 namespace VM {
 
 class VirtualMachine;
+class Allocator;
+class GarbageCollector;
 
 class Interpreter {
 private:
-    VirtualMachine* m_vm;
+    VirtualMachine* const m_vm;
     Decoder m_decoder;
     Frame* m_currFrame;
 
+    // Just shortcuts for m_vm->m_memory and m_vm->m_allocator
     uint8_t* memory;
-    uint64_t* arenaPointer;
+    Allocator* const allocator;
+
     Register accumulator{};
     Register* regfile;
 
@@ -29,7 +33,11 @@ private:
 public:
     bool interpret(const uint64_t entry);
 
-    Interpreter(VirtualMachine* p_vm) : m_vm{p_vm} {};
+    // Should be const
+    inline const Register getAccumulatorValue() const { return accumulator; }
+    inline const Frame* getCurrentFrame() const { return m_currFrame; }
+
+    Interpreter(VirtualMachine* p_vm);
 };
 
 }   // VM

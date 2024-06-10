@@ -12,7 +12,7 @@ fields:
     cpp_type_name: IntrinsicType
     location: {bits: {msb: 15, lsb: 8, from: 7, to: 0}, mask: 65280, dbg_hex_mask: ff00}
   numArgs:
-    cpp_type_name: numArgsType
+    cpp_type_name: NumArgsType
     location: {bits: {msb: 15, lsb: 8, from: 7, to: 0}, mask: 65280, dbg_hex_mask: ff00}
   objType:
     cpp_type_name: BasicObjectType
@@ -23,6 +23,12 @@ fields:
   imm:
     cpp_type_name: ImmediateIndex
     location: {bits: {msb: 31, lsb: 16, from: 15, to: 0}, mask: 4278190080, dbg_hex_mask: ffff0000}
+  classIdx:
+    cpp_type_name: ClassIndex
+    location: {bits: {msb: 31, lsb: 16, from: 15, to: 0}, mask: 4278190080, dbg_hex_mask: ffff0000}
+  fieldIdx:
+    cpp_type_name: FieldIndex
+    location: {bits: {msb: 31, lsb: 16, from: 15, to: 0}, mask: 4278190080, dbg_hex_mask: ffff0000}
 
 types:
   onlyReg:    [opcode, r1]
@@ -31,7 +37,8 @@ types:
   twoRegs:    [opcode, r1, r2]
   regAndImm:  [opcode, r1, imm]
   callType:   [opcode, numArgs, imm]
-  alloca:     [opcode, objType]
+  alloca:     [opcode, objType, classIdx]
+  object:     [opcode, r1, fieldIdx]
   intrinsic:  [opcode, intrCode]
 
 instructions:
@@ -305,6 +312,26 @@ instructions:
     type: regAndImm
     comment: "pc <- acc.f_val < r1.f_val ? pc + imm : pc"
     implAcc: readWrite
+  $55:
+    name: load_field
+    type: object
+    comment: "acc.field <- r1"
+    implAcc: write
+  $56:
+    name: store_field
+    type: object
+    comment: "r1 <- acc.field"
+    implAcc: read
+  $57:
+    name: load_arr_elem
+    type: twoRegs
+    comment: acc.arr[r2] <- r1
+    implAcc: write
+  $58:
+    name: store_arr_elem
+    type: twoRegs
+    comment: r1 <- acc.arr[r2]
+    implAcc: read
 intrinsics:
   $1:
     name: scan
