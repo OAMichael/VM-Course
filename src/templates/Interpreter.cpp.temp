@@ -274,6 +274,9 @@ inline void Interpreter::exec_cos ([[maybe_unused]] const DecodedInstruction &in
 inline void Interpreter::exec_sqrt ([[maybe_unused]] const DecodedInstruction &instr) {
     accumulator.f_val = std::sqrt(accumulator.f_val);
 }
+inline void Interpreter::exec_mod (const DecodedInstruction &instr) {
+    accumulator.i_val %= regfile[instr.r1].i_val;
+}
 inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
     switch(instr.intrCode) {
         case IntrinsicType::SCAN: {

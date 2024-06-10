@@ -51,6 +51,17 @@ TEST(e2eTest, gcTest)
     ASSERT_TRUE(vm.run());
 }
 
+TEST(e2eTest, benchTest)
+{
+    Common::Program test;
+    deserializeProgram("../asm/tests/bench.prog", test);
+
+    VM::VirtualMachine vm;
+    vm.loadProgram(test);
+
+    ASSERT_TRUE(vm.run());
+}
+
 TEST(InstructionTest, intrinsicTest)
 {
     Common::Program test;

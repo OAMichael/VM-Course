@@ -365,6 +365,7 @@ bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& pr
                 case VM::InstructionType::MUL:
                 case VM::InstructionType::DIV:
                 case VM::InstructionType::AND:
+                case VM::InstructionType::MOD:
                 case VM::InstructionType::OR:
                 case VM::InstructionType::XOR:
                 case VM::InstructionType::SL:

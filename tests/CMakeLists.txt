@@ -3,6 +3,7 @@ add_custom_target(run_all_tests)
 set(ASM_FILES
     ${PROJECT_SOURCE_DIR}/asm/tests/arithmetic.asm
     ${PROJECT_SOURCE_DIR}/asm/tests/array.asm
+    ${PROJECT_SOURCE_DIR}/asm/tests/bench.asm
     ${PROJECT_SOURCE_DIR}/asm/tests/branching.asm
     ${PROJECT_SOURCE_DIR}/asm/tests/call.asm
     ${PROJECT_SOURCE_DIR}/asm/tests/intrinsic.asm
