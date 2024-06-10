@@ -81,22 +81,8 @@ uint64_t Allocator::allocateObjectInternal(const uint16_t classIdx, const size_t
     uint8_t* memory = getVirtualMachineMemory();
     uint64_t addr = ((uint8_t*)&memBlk->objHeader - getMemoryPtr<uint8_t, MemoryType::Program>());
 
-    for (size_t k = 0; k < size; ++k) {
-        for (int i = 0; i < fieldCount; ++i) {
-            uint16_t allocClassIdx = classMemory[classPtr16 + 1 + i];
-            // Use inplace memory for integers, floats and string which are allocated inside an object
-            if (allocClassIdx == BasicObjectType::INTEGER ||
-                allocClassIdx == BasicObjectType::FLOATING ||
-                allocClassIdx == BasicObjectType::STRING)
-            {
-                continue;
-            }
-            uint64_t allocAddr = allocateObjectInternal(allocClassIdx);
-            uint64_t objAddr = addr + sizeof(ObjectHeader) + k * fieldCount * sizeof(uint64_t);
-            uint64_t fieldAddr = objAddr + i * sizeof(uint64_t);
-            std::memcpy(memory + fieldAddr, &allocAddr, sizeof(uint64_t));
-        }
-    }
+    // Initialize every complex object with zeros
+    std::memset(memory + addr + sizeof(ObjectHeader), 0, size * fieldCount * sizeof(uint64_t));
     return addr;
 }
 

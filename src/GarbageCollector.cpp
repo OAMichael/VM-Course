@@ -43,9 +43,12 @@ void GarbageCollector::visitAliveObject(const uint64_t addr) {
             // TODO: manage externally allocated strings strings
             uint64_t objAddr = addr + sizeof(ObjectHeader) + k * fieldCount * sizeof(uint64_t);
             uint64_t fieldAddr = objAddr + i * sizeof(uint64_t);
+
             uint64_t fieldRef = 0;
             std::memcpy(&fieldRef, memory + fieldAddr, sizeof(uint64_t));
-            visitAliveObject(fieldRef);
+            if (fieldRef != 0) {
+                visitAliveObject(fieldRef);
+            }
         }
     }
 }
@@ -57,7 +60,7 @@ void GarbageCollector::markAndSweepDeadObjectsInternal(const Frame* frame) {
     }
 
     for (uint32_t i = 0; i < FRAME_REGISTER_COUNT; ++i) {
-        if (frame->regfile[i].isRef) {
+        if (frame->regfile[i].isRef && frame->regfile[i].i_val != 0) {
             visitAliveObject(frame->regfile[i].i_val);
         }
     }
@@ -67,15 +70,17 @@ void GarbageCollector::markAndSweepDeadObjectsInternal(const Frame* frame) {
 
 
 void GarbageCollector::markAndSweepDeadObjects() {
+    // std::cout << "GC Start" << std::endl;
     allocator->setMemoryListUnused();
     
     const Register accVal = interpreter->getAccumulatorValue();
-    if (accVal.isRef) {
+    if (accVal.isRef && accVal.i_val != 0) {
         visitAliveObject(accVal.i_val);
     }
     
     const Frame* currFrame = interpreter->getCurrentFrame();
     markAndSweepDeadObjectsInternal(currFrame);
+    // std::cout << "GC End" << std::endl;
 }
 
 }   // VM
