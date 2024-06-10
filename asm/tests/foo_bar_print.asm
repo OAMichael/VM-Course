@@ -64,6 +64,7 @@ LOOP_END:
 
 FUNC MAIN: 0
     LOAD_ACCI 10
+    STORE_ACC x7                ; M
     NEWARRAY Foo
     STORE_ACC x1                ; foo
 
@@ -72,9 +73,6 @@ FUNC MAIN: 0
 
     LOAD_ACCI 1
     STORE_ACC x3                ; i
-
-    LOAD_ACCI 10
-    STORE_ACC x7                ; M
 
     LOAD_ACCI 40
     STORE_ACC x9                ; N
@@ -88,6 +86,7 @@ LOOP:                           ; for (let i : number = 1; i <= N; i++)
     MVI x8, 3
     MOD x8
     STORE_ACC x5                ; i % 3
+    LOAD_ACCI 0
     BNE x5, LABEL_0             ; if (i % 3 == 0)
 
     LOAD_ACC x3                 ; i
@@ -104,6 +103,7 @@ LABEL_0:
     MVI x8, 5
     MOD x8
     STORE_ACC x5                ; i % 5
+    LOAD_ACCI 0
     BNE x5, LABEL_1             ; if (i % 5 == 0)
 
     LOAD_ACC x4                 ; load o1
