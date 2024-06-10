@@ -19,18 +19,34 @@ void GarbageCollector::visitAliveObject(const uint64_t addr) {
     ObjectHeader objectHeader{};
     std::memcpy(&objectHeader, objAddr, sizeof(ObjectHeader));
 
-    uint16_t* classMemory = allocator->getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
-    uint16_t classPtr16 = classMemory[objectHeader.classIdx];
-    uint16_t fieldCount = classMemory[classPtr16];
-
-    if (objectHeader.classIdx == BasicObjectType::STRING) {
+    // If object is integer, float, string, array of integers or array of floats,
+    // then we have already marked them as used objects
+    if (objectHeader.classIdx == BasicObjectType::INTEGER ||
+        objectHeader.classIdx == BasicObjectType::FLOATING ||
+        objectHeader.classIdx == BasicObjectType::STRING) {
         // TODO: array of strings
         return;
     }
 
+    // Now only complex objects are left
     size_t size = objectHeader.size;
+    if (size > 1) {
+        // Array
+        for (size_t i = 0; i < size; ++i) {
+            uint64_t refAddr = addr + sizeof(ObjectHeader) + i * sizeof(uint64_t);
+            uint64_t ref = 0;
+            std::memcpy(&ref, memory + refAddr, sizeof(uint64_t));
+            if (ref != 0) {
+                visitAliveObject(ref);
+            }
+        }
+    }
+    else {
+        // Single
+        uint16_t* classMemory = allocator->getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
+        uint16_t classPtr16 = classMemory[objectHeader.classIdx];
+        uint16_t fieldCount = classMemory[classPtr16];
 
-    for (size_t k = 0; k < size; ++k) {
         for (int i = 0; i < fieldCount; ++i) {
             uint16_t fieldClassIdx = classMemory[classPtr16 + 1 + i];
             if (fieldClassIdx == BasicObjectType::INTEGER ||
@@ -40,10 +56,7 @@ void GarbageCollector::visitAliveObject(const uint64_t addr) {
                 continue;
             }
 
-            // TODO: manage externally allocated strings strings
-            uint64_t objAddr = addr + sizeof(ObjectHeader) + k * fieldCount * sizeof(uint64_t);
-            uint64_t fieldAddr = objAddr + i * sizeof(uint64_t);
-
+            uint64_t fieldAddr = addr + sizeof(ObjectHeader) + i * sizeof(uint64_t);
             uint64_t fieldRef = 0;
             std::memcpy(&fieldRef, memory + fieldAddr, sizeof(uint64_t));
             if (fieldRef != 0) {

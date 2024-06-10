@@ -332,6 +332,16 @@ instructions:
     type: twoRegs
     comment: r1 <- acc.arr[r2]
     implAcc: read
+  $59:
+    name: get_length
+    type: nothing
+    comment: acc <- length(acc.arr)
+    implAcc: readWrite
+  $60:
+    name: mod
+    type: onlyReg
+    comment: acc.i_val <- acc.i_val % r1.i_val
+    implAcc: readWrite
 intrinsics:
   $1:
     name: scan
