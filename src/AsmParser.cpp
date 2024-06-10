@@ -523,6 +523,7 @@ bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& pr
                 case VM::InstructionType::SIN:
                 case VM::InstructionType::COS:
                 case VM::InstructionType::SQRT:
+                case VM::InstructionType::GET_LENGTH:
                 {
                     if (tokens.size() != 1) {
                         throw std::runtime_error("invalid instruction: " + tokens[0]);

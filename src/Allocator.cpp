@@ -69,11 +69,22 @@ MemoryBlock* Allocator::getFreeMemoryBlock(const size_t requestBytesize) {
 
 // Allocate in a tree-like style
 uint64_t Allocator::allocateObjectInternal(const uint16_t classIdx, const size_t size) {
-    uint16_t* classMemory = getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
-    uint16_t classPtr16 = classMemory[classIdx];
-    uint16_t fieldCount = classMemory[classPtr16];
+    size_t objBytesize = 0;
+    if (size > 1) {
+        // Array
+        objBytesize = size * sizeof(uint64_t);
+    }
+    else {
+        // Single
+        uint16_t* classMemory = getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
+        uint16_t classPtr16 = classMemory[classIdx];
+        uint16_t fieldCount = classMemory[classPtr16];
 
-    MemoryBlock* memBlk = getFreeMemoryBlock(fieldCount * size * sizeof(uint64_t));
+        objBytesize = fieldCount * sizeof(uint64_t);
+    }
+
+
+    MemoryBlock* memBlk = getFreeMemoryBlock(objBytesize);
     memBlk->objHeader.classIdx = classIdx;
     memBlk->objHeader.size = static_cast<uint16_t>(size);
     memBlk->used = true;
@@ -82,7 +93,7 @@ uint64_t Allocator::allocateObjectInternal(const uint16_t classIdx, const size_t
     uint64_t addr = ((uint8_t*)&memBlk->objHeader - getMemoryPtr<uint8_t, MemoryType::Program>());
 
     // Initialize every complex object with zeros
-    std::memset(memory + addr + sizeof(ObjectHeader), 0, size * fieldCount * sizeof(uint64_t));
+    std::memset(memory + addr + sizeof(ObjectHeader), 0, objBytesize);
     return addr;
 }
 

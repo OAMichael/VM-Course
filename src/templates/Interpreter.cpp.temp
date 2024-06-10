@@ -617,28 +617,7 @@ inline void Interpreter::exec_load_arr_elem (const DecodedInstruction &instr) {
         throw std::runtime_error("invalid array access: idx = " + std::to_string(index) + "  size = " + std::to_string(objHeader.size));
     }
 
-    // Direct copy of basic types
-    if (objHeader.classIdx == BasicObjectType::INTEGER ||
-        objHeader.classIdx == BasicObjectType::FLOATING ||
-        objHeader.classIdx == BasicObjectType::STRING)
-    {
-        std::memcpy(memory + addr + sizeof(ObjectHeader) + index * sizeof(uint64_t), &value, sizeof(uint64_t));
-        return;
-    }
-
-    // For complex types value is pointer to another object
-    ObjectHeader objHeaderSrc{};
-    std::memcpy(&objHeaderSrc, memory + value, sizeof(ObjectHeader));
-
-    if (objHeader.classIdx != objHeaderSrc.classIdx) {
-        throw std::runtime_error("invalid array type");
-    }
-
-    uint16_t* classMemory = allocator->getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
-    uint16_t classPtr16 = classMemory[objHeader.classIdx];
-    uint16_t fieldCount = classMemory[classPtr16];
-
-    std::memcpy(memory + addr + sizeof(ObjectHeader), memory + value + sizeof(ObjectHeader), fieldCount * sizeof(uint64_t));
+    std::memcpy(memory + addr + sizeof(ObjectHeader) + index * sizeof(uint64_t), &value, sizeof(uint64_t));
 }
 inline void Interpreter::exec_store_arr_elem (const DecodedInstruction &instr) {
     uint64_t addr = accumulator.i_val;
@@ -652,29 +631,17 @@ inline void Interpreter::exec_store_arr_elem (const DecodedInstruction &instr) {
         throw std::runtime_error("invalid array access: idx = " + std::to_string(index) + "  size = " + std::to_string(objHeader.size));
     }
 
-    // Direct copy of basic types
-    if (objHeader.classIdx == BasicObjectType::INTEGER ||
-        objHeader.classIdx == BasicObjectType::FLOATING ||
-        objHeader.classIdx == BasicObjectType::STRING)
-    {
-        std::memcpy(&regfile[instr.r1].i_val, memory + addr + sizeof(ObjectHeader) + index * sizeof(uint64_t), sizeof(uint64_t));
-        regfile[instr.r1].isRef = false;
-        return;
-    }
+    std::memcpy(&regfile[instr.r1].i_val, memory + addr + sizeof(ObjectHeader) + index * sizeof(uint64_t), sizeof(uint64_t));
+    regfile[instr.r1].isRef = objHeader.classIdx >= BasicObjectType::OBJECT_TYPE_COUNT;
+}
+inline void Interpreter::exec_get_length ([[maybe_unused]] const DecodedInstruction &instr) {
+    uint64_t addr = accumulator.i_val;
 
-    // For complex types value is pointer to another object
-    ObjectHeader objHeaderDst{};
-    std::memcpy(&objHeaderDst, memory + regfile[instr.r1].i_val, sizeof(ObjectHeader));
+    ObjectHeader objHeader{};
+    std::memcpy(&objHeader, memory + addr, sizeof(ObjectHeader));
 
-    if (objHeader.classIdx != objHeaderDst.classIdx) {
-        throw std::runtime_error("invalid array type");
-    }
-
-    uint16_t* classMemory = allocator->getMemoryPtr<uint16_t, MemoryType::ClassDescs>();
-    uint16_t classPtr16 = classMemory[objHeader.classIdx];
-    uint16_t fieldCount = classMemory[classPtr16];
-
-    std::memcpy(memory + regfile[instr.r1].i_val + sizeof(ObjectHeader), memory + addr + sizeof(ObjectHeader), fieldCount * sizeof(uint64_t));
+    accumulator.i_val = objHeader.size;
+    accumulator.isRef = false;
 }
 }
 #endif
