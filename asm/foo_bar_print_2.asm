@@ -62,39 +62,42 @@ LOOP_END:
 
 
 
-FUNC MAIN: 0
-    LOAD_ACCI 10
-    STORE_ACC x7                ; M
+FUNC foo: 2
+    MV x9, x0                   ; N
+    MV x7, x1                   ; M
+
+    LOAD_ACC x1
     NEWARRAY Foo
-    STORE_ACC x1                ; foo
+    STORE_ACC x0                ; foo
 
     NEW Foo
     STORE_ACC x2                ; outer
 
-    LOAD_ACCI 1
-    STORE_ACC x3                ; i
+    MVI x3, 1                   ; i
 
-    LOAD_ACCI 40
-    STORE_ACC x9                ; N
+MAIN_LOOP:                      ; for (let i : number = 1; i <= N; i++)
+    LOAD_ACC x3
+    BGT x9, MAIN_LOOP_END
 
-LOOP:                           ; for (let i : number = 1; i <= N; i++)
     NEW Foo                     ; let o1 = new Foo()
     LOAD_FIELD x3, Foo.x        ; o1.x = i
     STORE_ACC x4                ; x4 = o1
 
     LOAD_ACC x3
     MVI x8, 3
-    MOD x8
-    STORE_ACC x5                ; i % 3
-    LOAD_ACCI 0
-    BNE x5, LABEL_0             ; if (i % 3 == 0)
+    MOD x8                      ; i % 3
 
-    LOAD_ACC x3                 ; i
-    MOD x7
-    STORE_ACC x5                ; i % M
-    LOAD_ACC x1                 ; addr foo
+    MVI x5, 0
+    BNE x5, NO_MOD_3            ; i % 3 == 0
+
+MOD_3:
+    LOAD_ACC x3
+    MOD x7                      ; i % M
+    STORE_ACC x5
+    LOAD_ACC x0
     LOAD_ARR_ELEM x4, x5        ; foo[i % M] = o1
-LABEL_0:
+
+NO_MOD_3:
     NEW Bar                     ; let o2 = new Bar()
     LOAD_FIELD x3, Bar.a        ; o2.a = i
     STORE_ACC x6                ; x6 = o2
@@ -102,21 +105,31 @@ LABEL_0:
     LOAD_ACC x3
     MVI x8, 5
     MOD x8
-    STORE_ACC x5                ; i % 5
-    LOAD_ACCI 0
-    BNE x5, LABEL_1             ; if (i % 5 == 0)
 
-    LOAD_ACC x4                 ; load o1
-    LOAD_FIELD x6, Foo.y        ; o1.y = o2
-LABEL_1:
-    MV x2, x4                   ; outer = o1
+    MVI x5, 0
+    BNE x5, NO_MOD_5
 
-    MV x0, x1
-    CALL dump                   ; dump(foo)
+MOD_5:
+    LOAD_ACC x4
+    LOAD_FIELD x6, Foo.y
+
+NO_MOD_5:
+
+    MV x2, x4
+    CALL dump       ; dump(foo) (x0 already has array pointer)
 
     LOAD_ACC x3
     ADDI 1
     STORE_ACC x3
+    JMP MAIN_LOOP
 
-    BLE x9, LOOP
+MAIN_LOOP_END:
+    RET
+
+
+
+FUNC MAIN: 0
+    MVI x0, 4000    ; let N : number = 4000
+    MVI x1, 1000    ; let M : number = 1000
+    CALL foo        ; foo(N, M)
     RET
