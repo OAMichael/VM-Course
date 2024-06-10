@@ -52,9 +52,9 @@ MemoryBlock* Allocator::getFreeMemoryBlock(const size_t requestBytesize) {
             newMemBlk.next = nullptr;
 
             MemoryBlock* newBlkAddr = getMemoryPtr<MemoryBlock, MemoryType::Program>(m_arenaPointer);
-
             std::memcpy(newBlkAddr, &newMemBlk, sizeof(MemoryBlock));
             m_arenaPointer += sizeof(MemoryBlock) + requestBytesize;
+
             if (prevBlk != nullptr) {
                 prevBlk->next = newBlkAddr;
             }
@@ -136,7 +136,7 @@ void Allocator::setMemoryListUnused() {
 }
 
 void Allocator::setObjectUsed(const uint64_t addr) {
-    MemoryBlock* objMemBlk = getMemoryPtr<MemoryBlock, MemoryType::Program>(addr - sizeof(MemoryBlock*) - sizeof(bool) - sizeof(uint32_t));
+    MemoryBlock* objMemBlk = getMemoryPtr<MemoryBlock, MemoryType::Program>(addr - offsetof(MemoryBlock, objHeader));
     objMemBlk->used = true;
 }
 

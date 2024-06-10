@@ -152,6 +152,9 @@ inline void Interpreter::exec_div (const DecodedInstruction &instr) {
     }
     accumulator.i_val /= regfile[instr.r1].i_val;
 }
+inline void Interpreter::exec_mod (const DecodedInstruction &instr) {
+    accumulator.i_val %= regfile[instr.r1].i_val;
+}
 inline void Interpreter::exec_and (const DecodedInstruction &instr) {
     accumulator.i_val &= regfile[instr.r1].i_val;
 }
