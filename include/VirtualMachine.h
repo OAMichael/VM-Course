@@ -6,6 +6,7 @@
 #include "Common.h"
 #include "Interpreter.h"
 #include "Allocator.h"
+#include "GarbageCollector.h"
 
 namespace VM {
 
@@ -14,9 +15,9 @@ private:
 
     // Main components of every virtual machine
     Interpreter m_interpreter;
+    GarbageCollector m_gc;
 
     /*
-    GarbageCollector m_gc;
     JITCompiler m_jit;
     */
 
@@ -33,7 +34,9 @@ public:
     bool loadProgram(const std::string& filename);
     bool run();
 
-    VirtualMachine() : m_interpreter{this}, m_allocator{this} {
+    inline void invokeGC() { m_gc.markAndSweepDeadObjects(); };
+
+    VirtualMachine() : m_interpreter{this}, m_gc{this}, m_allocator{this} {
         m_allocator.allocateVirtualMachineMemory();
     };
 
@@ -43,6 +46,7 @@ public:
 
     friend class Interpreter;
     friend class Allocator;
+    friend class GarbageCollector;
 };
 
 }   // VM

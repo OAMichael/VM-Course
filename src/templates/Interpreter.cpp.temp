@@ -12,16 +12,19 @@
 
 namespace VM {
 
+Interpreter::Interpreter(VirtualMachine* p_vm) :
+    m_vm{p_vm},
+    allocator{&m_vm->m_allocator} {}
+
 inline Immediate Interpreter::loadConstant(const ImmediateIndex idx) {
     Immediate* constantPool = allocator->getMemoryPtr<Immediate, MemoryType::ConstantPool>();
     return constantPool[idx];
 }
 
 bool Interpreter::interpret(const uint64_t entry) {
-    // Initialize root frame
     memory = m_vm->m_memory;
-    allocator = &(m_vm->m_allocator);
 
+    // Initialize root frame
     m_currFrame = new Frame();
     m_currFrame->pc = entry;
     m_currFrame->parent = nullptr;
@@ -30,8 +33,14 @@ bool Interpreter::interpret(const uint64_t entry) {
     EncodedInstruction* currInstr;
     DecodedInstruction decInstr;
 
+    uint64_t executedInstrCount = 0;
+
     #define DISPATCH()                                                                                  \
     {                                                                                                   \
+        ++executedInstrCount;                                                                           \
+        if (executedInstrCount % GARBAGE_COLLECTOR_INSTRUCTION_STEP == 0) {                             \
+            m_vm->invokeGC();                                                                           \
+        }                                                                                               \
         currInstr = allocator->getMemoryPtr<EncodedInstruction, MemoryType::Program>(m_currFrame->pc);  \
         m_currFrame->pc += INSTRUCTION_BYTESIZE;                                                        \
         m_decoder.decodeInstruction(*currInstr, decInstr);                                              \
@@ -97,7 +106,8 @@ inline void Interpreter::exec_load_AccI (const DecodedInstruction &instr) {
     if (imm.type == BasicObjectType::STRING) {
         imm.i_val += VM_STRING_POOL_MEMORY_ADDRESS;
     }
-    memcpy(&accumulator, &imm.i_val, sizeof(accumulator));
+    accumulator.i_val = imm.i_val;
+    accumulator.isRef = false;
 }
 inline void Interpreter::exec_to_Float_Reg (const DecodedInstruction &instr) {
     accumulator.f_val = static_cast<double>(regfile[instr.r1].i_val);
@@ -112,11 +122,12 @@ inline void Interpreter::exec_to_Int ([[maybe_unused]] const DecodedInstruction 
     accumulator.i_val = static_cast<uint64_t>(accumulator.f_val);
 }
 inline void Interpreter::exec_mv (const DecodedInstruction &instr) {
-    regfile[instr.r1].i_val = regfile[instr.r2].i_val;
+    regfile[instr.r1] = regfile[instr.r2];
 }
 inline void Interpreter::exec_mvi (const DecodedInstruction &instr) {
     Immediate imm = loadConstant(instr.imm);
     regfile[instr.r1].i_val = imm.i_val;
+    regfile[instr.r1].isRef = false;
 }
 inline void Interpreter::exec_load_Acc_Mem (const DecodedInstruction &instr) {
     Immediate imm = loadConstant(instr.imm);
@@ -267,6 +278,7 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
     switch(instr.intrCode) {
         case IntrinsicType::SCAN: {
             std::cin >> accumulator.i_val;
+            accumulator.isRef = false;
             if (std::cin.fail()) {
                 throw std::runtime_error("invalid input");
             }
@@ -278,6 +290,7 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
         }
         case IntrinsicType::SCANF: {
             std::cin >> accumulator.f_val;
+            accumulator.isRef = false;
             if (std::cin.fail()) {
                 throw std::runtime_error("invalid input");
             }
@@ -296,6 +309,7 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
 
             uint64_t addr = allocator->allocateObject(BasicObjectType::STRING, strSize);
             accumulator.i_val = addr;
+            accumulator.isRef = true;
 
             uint8_t* strArenaAddr = allocator->getMemoryPtr<uint8_t, MemoryType::Program>(addr + sizeof(ObjectHeader));
             std::memcpy(strArenaAddr, str.data(), strSize);
@@ -391,6 +405,7 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             // Now serialize substr
             uint64_t concatAddr = allocator->allocateObject(BasicObjectType::STRING, concat.size());
             accumulator.i_val = concatAddr;
+            accumulator.isRef = true;
 
             uint8_t* concatArenaAddr = allocator->getMemoryPtr<uint8_t, MemoryType::Program>(concatAddr + sizeof(ObjectHeader));
             std::memcpy(concatArenaAddr, concat.data(), concat.size());
@@ -434,6 +449,7 @@ inline void Interpreter::exec_call_Intrinsic (const DecodedInstruction &instr) {
             // Now serialize substr
             uint64_t substrAddr = allocator->allocateObject(BasicObjectType::STRING, substr.size());
             accumulator.i_val = substrAddr;
+            accumulator.isRef = true;
 
             uint8_t* substrArenaAddr = allocator->getMemoryPtr<uint8_t, MemoryType::Program>(substrAddr + sizeof(ObjectHeader));
             std::memcpy(substrArenaAddr, substr.data(), substr.size());
@@ -515,13 +531,16 @@ inline void Interpreter::exec_new (const DecodedInstruction &instr) {
         size = accumulator.i_val;
     }
     accumulator.i_val = allocator->allocateObject(instr.classIdx, size);
+    accumulator.isRef = true;
 }
 inline void Interpreter::exec_newarray (const DecodedInstruction &instr) {
     size_t size = accumulator.i_val;
     if (instr.classIdx == BasicObjectType::STRING) {
+        // TODO: array of strings
         throw std::runtime_error("array of strings is not supported yet");
     }
     accumulator.i_val = allocator->allocateObject(instr.classIdx, size);
+    accumulator.isRef = true;
 }
 inline void Interpreter::exec_negf ([[maybe_unused]] const DecodedInstruction &instr) {
     accumulator.f_val = -accumulator.f_val;
@@ -579,6 +598,11 @@ inline void Interpreter::exec_store_field (const DecodedInstruction &instr) {
 
     uint64_t fieldAddr = accumulator.i_val + sizeof(ObjectHeader) + instr.fieldIdx * sizeof(uint64_t);
     std::memcpy(&regfile[instr.r1].i_val, memory + fieldAddr, sizeof(uint64_t));
+
+    // In this case field is reference
+    if (classMemory[classPtr16 + 1 + instr.fieldIdx] >= BasicObjectType::OBJECT_TYPE_COUNT) {
+        regfile[instr.r1].isRef = true;
+    }
 }
 inline void Interpreter::exec_load_arr_elem (const DecodedInstruction &instr) {
     uint64_t addr = accumulator.i_val;
@@ -634,6 +658,7 @@ inline void Interpreter::exec_store_arr_elem (const DecodedInstruction &instr) {
         objHeader.classIdx == BasicObjectType::STRING)
     {
         std::memcpy(&regfile[instr.r1].i_val, memory + addr + sizeof(ObjectHeader) + index * sizeof(uint64_t), sizeof(uint64_t));
+        regfile[instr.r1].isRef = false;
         return;
     }
 

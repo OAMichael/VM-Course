@@ -40,6 +40,17 @@ TEST(e2eTest, arithmeticTest)
     ASSERT_DOUBLE_EQ(x, -35.7189);
 }
 
+TEST(e2eTest, gcTest)
+{
+    Common::Program test;
+    deserializeProgram("../asm/tests/gc.prog", test);
+
+    VM::VirtualMachine vm;
+    vm.loadProgram(test);
+
+    ASSERT_TRUE(vm.run());
+}
+
 TEST(InstructionTest, intrinsicTest)
 {
     Common::Program test;

@@ -42,6 +42,7 @@ enum MemoryType {
 
 
 static constexpr const uint32_t FRAME_REGISTER_COUNT = 256;
+static constexpr const uint64_t GARBAGE_COLLECTOR_INSTRUCTION_STEP = 1000;
 
 enum BasicObjectType : uint8_t {
     OBJECT_TYPE_INVALID = 0,
@@ -59,9 +60,12 @@ static const std::unordered_map<std::string, BasicObjectType> objectsNameType = 
     { "STRING",   BasicObjectType::STRING   }
 };
 
-union Register {
-    int64_t i_val;
-    double  f_val;
+struct Register {
+    union {
+        int64_t i_val;
+        double  f_val;
+    };
+    bool isRef = false;
 };
 
 using EncodedInstruction = uint32_t;

@@ -17,7 +17,7 @@ struct MemoryBlock {
 
 class Allocator {
 private:
-    VirtualMachine* m_vm = nullptr;
+    VirtualMachine* const m_vm;
     uint64_t m_arenaPointer = VM_ARENA_MEMORY_ADDRESS;
     MemoryBlock* m_rootMemBlock = nullptr;
 
@@ -32,6 +32,8 @@ public:
 
     Allocator(VirtualMachine* p_vm) : m_vm{p_vm} {};
     uint64_t allocateObject(const uint16_t classIdx, const size_t size = 1);
+    void setMemoryListUnused();
+    void setObjectUsed(const uint64_t addr);
 
     template<typename T = uint8_t, MemoryType memT = MemoryType::Program>
     inline T* getMemoryPtr(uint64_t addr = 0) {

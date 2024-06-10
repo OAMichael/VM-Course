@@ -19,9 +19,10 @@ uint8_t* Allocator::getVirtualMachineMemory() {
 MemoryBlock* Allocator::getFreeMemoryBlock(const size_t requestBytesize) {
     MemoryBlock* memBlk = m_rootMemBlock;
     MemoryBlock* prevBlk = nullptr;
+    bool tryAfterGC = false;
     while (true) {
         if (memBlk != nullptr) {
-            if (!memBlk->used && memBlk->totalBytesize <= requestBytesize) {
+            if (!memBlk->used && requestBytesize <= memBlk->totalBytesize) {
                 // std::cout << "Returning existing MemoryBlock at: " << memBlk << std::endl;
                 return memBlk;
             }
@@ -29,15 +30,26 @@ MemoryBlock* Allocator::getFreeMemoryBlock(const size_t requestBytesize) {
             memBlk = memBlk->next;
         }
         else {
+            // Out of memory
+            if (!isAddrInRegion<MemoryType::Arena>(m_arenaPointer + sizeof(MemoryBlock) + requestBytesize)) {
+                if (tryAfterGC) {
+                    // If we are out of memory even after cleanup
+                    throw std::runtime_error("out of memory");
+                }
+                else {
+                    // Perform cleanup and try again
+                    m_vm->invokeGC();
+                    memBlk = m_rootMemBlock;
+                    prevBlk = nullptr;
+                    tryAfterGC = true;
+                    continue;
+                }
+            }
+
             MemoryBlock newMemBlk{};
             newMemBlk.totalBytesize = static_cast<uint32_t>(requestBytesize);
             newMemBlk.used = false;
             newMemBlk.next = nullptr;
-
-            // Out of memory
-            if (!isAddrInRegion<MemoryType::Arena>(m_arenaPointer + sizeof(MemoryBlock) + requestBytesize)) {
-                throw std::runtime_error("out of memory");
-            }
 
             MemoryBlock* newBlkAddr = getMemoryPtr<MemoryBlock, MemoryType::Program>(m_arenaPointer);
 
@@ -45,6 +57,9 @@ MemoryBlock* Allocator::getFreeMemoryBlock(const size_t requestBytesize) {
             m_arenaPointer += sizeof(MemoryBlock) + requestBytesize;
             if (prevBlk != nullptr) {
                 prevBlk->next = newBlkAddr;
+            }
+            else {
+                m_rootMemBlock = newBlkAddr;
             }
             // std::cout << "Creating MemoryBlock at: " << newBlkAddr << std::endl;
             return newBlkAddr;
@@ -61,6 +76,7 @@ uint64_t Allocator::allocateObjectInternal(const uint16_t classIdx, const size_t
     MemoryBlock* memBlk = getFreeMemoryBlock(fieldCount * size * sizeof(uint64_t));
     memBlk->objHeader.classIdx = classIdx;
     memBlk->objHeader.size = static_cast<uint16_t>(size);
+    memBlk->used = true;
 
     uint8_t* memory = getVirtualMachineMemory();
     uint64_t addr = ((uint8_t*)&memBlk->objHeader - getMemoryPtr<uint8_t, MemoryType::Program>());
@@ -76,12 +92,11 @@ uint64_t Allocator::allocateObjectInternal(const uint16_t classIdx, const size_t
                 continue;
             }
             uint64_t allocAddr = allocateObjectInternal(allocClassIdx);
-            uint64_t objAddr = addr + sizeof(ObjectHeader) + k * fieldCount;
+            uint64_t objAddr = addr + sizeof(ObjectHeader) + k * fieldCount * sizeof(uint64_t);
             uint64_t fieldAddr = objAddr + i * sizeof(uint64_t);
             std::memcpy(memory + fieldAddr, &allocAddr, sizeof(uint64_t));
         }
     }
-
     return addr;
 }
 
@@ -113,6 +128,19 @@ uint64_t Allocator::allocateObject(const uint16_t classIdx, const size_t size) {
     }
 
     return allocateObjectInternal(classIdx, size);
+}
+
+void Allocator::setMemoryListUnused() {
+    MemoryBlock* memBlk = m_rootMemBlock;
+    while (memBlk) {
+        memBlk->used = false;
+        memBlk = memBlk->next;
+    }
+}
+
+void Allocator::setObjectUsed(const uint64_t addr) {
+    MemoryBlock* objMemBlk = getMemoryPtr<MemoryBlock, MemoryType::Program>(addr - sizeof(MemoryBlock*) - sizeof(bool) - sizeof(uint32_t));
+    objMemBlk->used = true;
 }
 
 }
