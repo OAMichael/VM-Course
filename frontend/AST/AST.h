@@ -291,11 +291,12 @@ class VariableValueNode : public ASTNode {
 public:
     virtual void generateCode(CodeGenContext *ctx) override;
     virtual void print(size_t printLevel) override;
-    // Save address into accumulator
-    void generateArrayIndex(CodeGenContext *ctx);
+    // Save address into free register
+    VM::RegisterType generateArrayIndex(CodeGenContext *ctx);
     uint32_t getRegister();
     bool isArray();
     VM::BasicObjectType getType(CodeGenContext *ctx);
+    std::string getName();
 
     VariableValueNode(const std::string &name);
     VariableValueNode(const std::string &name, ExpressionNode *expressionNode);

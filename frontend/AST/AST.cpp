@@ -150,7 +150,7 @@ void ArrayVariableDeclarationNode::generateCode(CodeGenContext *ctx) {
         VM::DecodedInstruction decInstr;
         VM::EncodedInstruction encInstr;
 
-        decInstr.objType = m_objType;
+        decInstr.classIdx = m_objType;
         decInstr.opcode = VM::InstructionType::NEWARRAY;
 
         ctx->encodeInstruction(decInstr, encInstr);
@@ -393,38 +393,30 @@ void VariableValueNode::generateCode(CodeGenContext *ctx) {
 
     if (m_expressionNode) {
         // Array
-        this->generateArrayIndex(ctx);
         uint32_t freeReg = ctx->allocateRegister();
-        {
-            VM::DecodedInstruction decInstr;
-            VM::EncodedInstruction encInstr;
-
-            decInstr.r1 = freeReg;
-            decInstr.opcode = VM::InstructionType::STORE_ACC;  
-
-            ctx->encodeInstruction(decInstr, encInstr);
-            program.instructions.push_back(encInstr);
-        }
-
-        // Now load value from memory
-        {
-            VM::DecodedInstruction decInstr;
-            VM::EncodedInstruction encInstr;
-
-            decInstr.r1 = freeReg;
-            decInstr.opcode = VM::InstructionType::LOAD_ACC_MEM;
-
-            VM::Immediate constant{};
-            constant.type = VM::BasicObjectType::INTEGER;
-            constant.i_val = 0;
-
-            if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
-                decInstr.imm = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
+        uint32_t arrayPtrReg = 0;
+        VM::RegisterType indexReg = generateArrayIndex(ctx);
+        if (currentFrame) {
+            auto arrayIt = currentFrame->IDs_Regs.find(m_name);
+            if (arrayIt == currentFrame->IDs_Regs.end()) {
+                // Error, undeclared identifier
             }
-            else {
-                decInstr.imm = static_cast<VM::ImmediateIndex>(program.constants.size());
-                program.constants.push_back(constant);
-            }        
+            arrayPtrReg = arrayIt->second;
+        }
+        else {
+            auto arrayIt = globalData.IDs_Regs.find(m_name);
+            if (arrayIt == globalData.IDs_Regs.end()) {
+                // Error, undeclared identifier
+            }
+            arrayPtrReg = arrayIt->second;
+        }
+
+        {
+            VM::DecodedInstruction decInstr;
+            VM::EncodedInstruction encInstr;
+
+            decInstr.r1 = arrayPtrReg;
+            decInstr.opcode = VM::InstructionType::LOAD_ACC;
 
             ctx->encodeInstruction(decInstr, encInstr);
             program.instructions.push_back(encInstr);
@@ -434,12 +426,12 @@ void VariableValueNode::generateCode(CodeGenContext *ctx) {
             VM::EncodedInstruction encInstr;
 
             decInstr.r1 = freeReg;
-            decInstr.opcode = VM::InstructionType::STORE_ACC;  
+            decInstr.r2 = indexReg;
+            decInstr.opcode = VM::InstructionType::STORE_ARR_ELEM;
 
             ctx->encodeInstruction(decInstr, encInstr);
             program.instructions.push_back(encInstr);
         }
-
         m_registerToStore = freeReg;
     }
     else {
@@ -478,72 +470,9 @@ void VariableValueNode::print(size_t printLevel) {
     }
 }
 
-void VariableValueNode::generateArrayIndex(CodeGenContext *ctx) {
-    auto *currentFrame = ctx->currentFrame;
-    auto &globalData = ctx->globalData;
-    auto &program = ctx->program;
-
+VM::RegisterType VariableValueNode::generateArrayIndex(CodeGenContext *ctx) {
     m_expressionNode->generateCode(ctx);
-
-    uint32_t arrayPtrReg = 0;
-    if (currentFrame) {
-        auto arrayIt = currentFrame->IDs_Regs.find(m_name);
-        if (arrayIt == currentFrame->IDs_Regs.end()) {
-            // Error, undeclared identifier
-        }
-        arrayPtrReg = arrayIt->second;
-    }
-    else {
-        auto arrayIt = globalData.IDs_Regs.find(m_name);
-        if (arrayIt == globalData.IDs_Regs.end()) {
-            // Error, undeclared identifier
-        }
-        arrayPtrReg = arrayIt->second;
-    }
-
-
-    // Calculate absolute pointer in memory of array element
-    {
-        VM::DecodedInstruction decInstr;
-        VM::EncodedInstruction encInstr;
-
-        decInstr.r1 = m_expressionNode->getRegister();
-        decInstr.opcode = VM::InstructionType::LOAD_ACC;  
-
-        ctx->encodeInstruction(decInstr, encInstr);
-        program.instructions.push_back(encInstr);
-    }
-    {
-        VM::DecodedInstruction decInstr;
-        VM::EncodedInstruction encInstr;
-
-        decInstr.opcode = VM::InstructionType::MULI;
-
-        VM::Immediate constant{};
-        constant.type = VM::BasicObjectType::INTEGER;
-        constant.i_val = sizeof(uint64_t);
-
-        if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
-            decInstr.imm = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
-        }
-        else {
-            decInstr.imm = static_cast<VM::ImmediateIndex>(program.constants.size());
-            program.constants.push_back(constant);
-        }        
-
-        ctx->encodeInstruction(decInstr, encInstr);
-        program.instructions.push_back(encInstr);
-    }
-    {
-        VM::DecodedInstruction decInstr;
-        VM::EncodedInstruction encInstr;
-
-        decInstr.r1 = arrayPtrReg;
-        decInstr.opcode = VM::InstructionType::ADD;  
-
-        ctx->encodeInstruction(decInstr, encInstr);
-        program.instructions.push_back(encInstr);
-    }
+    return m_expressionNode->getRegister();
 }
 
 uint32_t VariableValueNode::getRegister() {
@@ -571,6 +500,10 @@ VM::BasicObjectType VariableValueNode::getType(CodeGenContext *ctx) {
         }
         return it->second;
     }
+}
+
+std::string VariableValueNode::getName() {
+    return m_name;
 }
 
 VariableValueNode::VariableValueNode(const std::string &name) {
@@ -1376,25 +1309,30 @@ void AssignmentStatement::generateCode(CodeGenContext *ctx) {
 
     if (m_valueNode->isArray()) {
         // Array
-        m_valueNode->generateArrayIndex(ctx);
         m_expressionNode->generateCode(ctx);
 
-        uint32_t freeReg = ctx->allocateRegister();
-        {
-            VM::DecodedInstruction decInstr;
-            VM::EncodedInstruction encInstr;
-
-            decInstr.r1 = freeReg;
-            decInstr.opcode = VM::InstructionType::STORE_ACC;
-
-            ctx->encodeInstruction(decInstr, encInstr);
-            program.instructions.push_back(encInstr);
+        uint32_t arrayPtrReg = 0;
+        VM::RegisterType indexReg = m_valueNode->generateArrayIndex(ctx);
+        if (currentFrame) {
+            auto arrayIt = currentFrame->IDs_Regs.find(m_valueNode->getName());
+            if (arrayIt == currentFrame->IDs_Regs.end()) {
+                // Error, undeclared identifier
+            }
+            arrayPtrReg = arrayIt->second;
         }
+        else {
+            auto arrayIt = globalData.IDs_Regs.find(m_valueNode->getName());
+            if (arrayIt == globalData.IDs_Regs.end()) {
+                // Error, undeclared identifier
+            }
+            arrayPtrReg = arrayIt->second;
+        }
+
         {
             VM::DecodedInstruction decInstr;
             VM::EncodedInstruction encInstr;
 
-            decInstr.r1 = m_expressionNode->getRegister();
+            decInstr.r1 = arrayPtrReg;
             decInstr.opcode = VM::InstructionType::LOAD_ACC;
 
             ctx->encodeInstruction(decInstr, encInstr);
@@ -1404,25 +1342,13 @@ void AssignmentStatement::generateCode(CodeGenContext *ctx) {
             VM::DecodedInstruction decInstr;
             VM::EncodedInstruction encInstr;
 
-            decInstr.r1 = freeReg;
-            decInstr.opcode = VM::InstructionType::STORE_ACC_MEM;
+            decInstr.r1 = m_expressionNode->getRegister();
+            decInstr.r2 = indexReg;
+            decInstr.opcode = VM::InstructionType::LOAD_ARR_ELEM;
 
-            VM::Immediate constant{};
-            constant.type = VM::BasicObjectType::INTEGER;
-            constant.i_val = 0;
-
-            if (auto it = std::find(program.constants.begin(), program.constants.end(), constant); it != program.constants.end()) {
-                decInstr.imm = static_cast<VM::ImmediateIndex>(it - program.constants.begin());
-            }
-            else {
-                decInstr.imm = static_cast<VM::ImmediateIndex>(program.constants.size());
-                program.constants.push_back(constant);
-            }
             ctx->encodeInstruction(decInstr, encInstr);
             program.instructions.push_back(encInstr);
         }
-
-        ctx->freeRegsiter(freeReg);
     }
     else {
         m_valueNode->generateCode(ctx);
