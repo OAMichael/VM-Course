@@ -313,22 +313,22 @@ instructions:
     comment: "pc <- acc.f_val < r1.f_val ? pc + imm : pc"
     implAcc: readWrite
   $55:
-    name: load_field
+    name: store_field
     type: object
     comment: "acc.field <- r1"
     implAcc: write
   $56:
-    name: store_field
+    name: load_field
     type: object
     comment: "r1 <- acc.field"
     implAcc: read
   $57:
-    name: load_arr_elem
+    name: store_arr_elem
     type: twoRegs
     comment: acc.arr[r2] <- r1
     implAcc: write
   $58:
-    name: store_arr_elem
+    name: load_arr_elem
     type: twoRegs
     comment: r1 <- acc.arr[r2]
     implAcc: read

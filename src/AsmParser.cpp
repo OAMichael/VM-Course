@@ -610,8 +610,8 @@ bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& pr
                     decInstr.opcode = opcode;
                     break;
                 }
-                case VM::InstructionType::LOAD_FIELD:
                 case VM::InstructionType::STORE_FIELD:
+                case VM::InstructionType::LOAD_FIELD:
                 {
                     if (tokens.size() != 3) {
                         throw std::runtime_error("invalid instruction: " + tokens[0]);
@@ -636,8 +636,8 @@ bool AsmParser::parseAsmProgram(const std::string& filename, Common::Program& pr
                     decInstr.opcode = opcode;
                     break;
                 }
-                case VM::InstructionType::LOAD_ARR_ELEM:
                 case VM::InstructionType::STORE_ARR_ELEM:
+                case VM::InstructionType::LOAD_ARR_ELEM:
                 {
                     if (tokens.size() != 3) {
                         throw std::runtime_error("invalid instruction: " + tokens[0]);

@@ -427,7 +427,7 @@ void VariableValueNode::generateCode(CodeGenContext *ctx) {
 
             decInstr.r1 = freeReg;
             decInstr.r2 = indexReg;
-            decInstr.opcode = VM::InstructionType::STORE_ARR_ELEM;
+            decInstr.opcode = VM::InstructionType::LOAD_ARR_ELEM;
 
             ctx->encodeInstruction(decInstr, encInstr);
             program.instructions.push_back(encInstr);
@@ -1344,7 +1344,7 @@ void AssignmentStatement::generateCode(CodeGenContext *ctx) {
 
             decInstr.r1 = m_expressionNode->getRegister();
             decInstr.r2 = indexReg;
-            decInstr.opcode = VM::InstructionType::LOAD_ARR_ELEM;
+            decInstr.opcode = VM::InstructionType::STORE_ARR_ELEM;
 
             ctx->encodeInstruction(decInstr, encInstr);
             program.instructions.push_back(encInstr);

@@ -5,7 +5,7 @@ FUNC FACTORIALS: 1
     NEWARRAY INTEGER        ; Allocate array for factorials
     MVI x1, 1
     MVI x2, 0
-    LOAD_ARR_ELEM x1, x2    ; Load 1 into 0-th element
+    STORE_ARR_ELEM x1, x2   ; Load 1 into 0-th element
 
     MVI x2, 1               ; x2 will be index in the array
 
@@ -21,14 +21,14 @@ LOOP:
     STORE_ACC x3            ; In x3 previous index
 
     LOAD_ACC x1             ; Array address in accumulator
-    STORE_ARR_ELEM x3, x3   ; In x3 value of previous index
+    LOAD_ARR_ELEM x3, x3    ; In x3 value of previous index
 
     LOAD_ACC x3
     MUL x2
     STORE_ACC x3
 
     LOAD_ACC x1             ; Array address in accumulator
-    LOAD_ARR_ELEM x3, x2    ; Save factorial to current index
+    STORE_ARR_ELEM x3, x2   ; Save factorial to current index
 
     LOAD_ACC x2
     ADDI 1                  ; Increment x2 (array index)
@@ -61,7 +61,7 @@ FUNC MAIN: 0
 
 LOOP_MAIN:
     LOAD_ACC x1
-    STORE_ARR_ELEM x3, x2
+    LOAD_ARR_ELEM x3, x2
     LOAD_ACC x3
 
     CALL_INTRINSIC PRINT

@@ -572,7 +572,7 @@ inline void Interpreter::exec_bltf (const DecodedInstruction &instr) {
         m_currFrame->pc += imm.i_val - INSTRUCTION_BYTESIZE;
     }
 }
-inline void Interpreter::exec_load_field (const DecodedInstruction &instr) {
+inline void Interpreter::exec_store_field (const DecodedInstruction &instr) {
     ObjectHeader objHeader{};
     std::memcpy(&objHeader, memory + accumulator.i_val, sizeof(ObjectHeader));
 
@@ -587,7 +587,7 @@ inline void Interpreter::exec_load_field (const DecodedInstruction &instr) {
     uint64_t fieldAddr = accumulator.i_val + sizeof(ObjectHeader) + instr.fieldIdx * sizeof(uint64_t);
     std::memcpy(memory + fieldAddr, &regfile[instr.r1].i_val, sizeof(uint64_t));
 }
-inline void Interpreter::exec_store_field (const DecodedInstruction &instr) {
+inline void Interpreter::exec_load_field (const DecodedInstruction &instr) {
     ObjectHeader objHeader{};
     std::memcpy(&objHeader, memory + accumulator.i_val, sizeof(ObjectHeader));
 
@@ -607,7 +607,7 @@ inline void Interpreter::exec_store_field (const DecodedInstruction &instr) {
         regfile[instr.r1].isRef = true;
     }
 }
-inline void Interpreter::exec_load_arr_elem (const DecodedInstruction &instr) {
+inline void Interpreter::exec_store_arr_elem (const DecodedInstruction &instr) {
     uint64_t addr = accumulator.i_val;
 
     ObjectHeader objHeader{};
@@ -622,7 +622,7 @@ inline void Interpreter::exec_load_arr_elem (const DecodedInstruction &instr) {
 
     std::memcpy(memory + addr + sizeof(ObjectHeader) + index * sizeof(uint64_t), &value, sizeof(uint64_t));
 }
-inline void Interpreter::exec_store_arr_elem (const DecodedInstruction &instr) {
+inline void Interpreter::exec_load_arr_elem (const DecodedInstruction &instr) {
     uint64_t addr = accumulator.i_val;
 
     ObjectHeader objHeader{};

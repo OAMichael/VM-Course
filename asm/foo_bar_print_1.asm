@@ -24,7 +24,7 @@ LOOP_START:
     NEW Foo                 ; Allocate instance of Foo
 
     LOAD_ACC x0
-    STORE_ARR_ELEM x3, x1   ; Get i-th element into x3
+    LOAD_ARR_ELEM x3, x1    ; Get i-th element into x3
 
     LOAD_ACC x3
     MVI x4, 0
@@ -36,7 +36,7 @@ Foo_null:
     JMP LOOP_INC
 
 Foo_nonull:
-    STORE_FIELD x4, Foo.y   ; b = f.y
+    LOAD_FIELD x4, Foo.y    ; b = f.y
     LOAD_ACC x4
     MVI x4, 0
     BNE x4, Foo_Bar_nonull  ; b == null
@@ -47,7 +47,7 @@ Foo_Bar_null:
     JMP LOOP_INC
 
 Foo_Bar_nonull:
-    STORE_FIELD x4, Bar.a   ; b.a
+    LOAD_FIELD x4, Bar.a    ; b.a
     LOAD_ACC x4
     CALL_INTRINSIC PRINT
 
@@ -79,7 +79,7 @@ FUNC MAIN: 0
 
 LOOP:                           ; for (let i : number = 1; i <= N; i++)
     NEW Foo                     ; let o1 = new Foo()
-    LOAD_FIELD x3, Foo.x        ; o1.x = i
+    STORE_FIELD x3, Foo.x       ; o1.x = i
     STORE_ACC x4                ; x4 = o1
 
     LOAD_ACC x3
@@ -93,10 +93,10 @@ LOOP:                           ; for (let i : number = 1; i <= N; i++)
     MOD x7
     STORE_ACC x5                ; i % M
     LOAD_ACC x1                 ; addr foo
-    LOAD_ARR_ELEM x4, x5        ; foo[i % M] = o1
+    STORE_ARR_ELEM x4, x5       ; foo[i % M] = o1
 LABEL_0:
     NEW Bar                     ; let o2 = new Bar()
-    LOAD_FIELD x3, Bar.a        ; o2.a = i
+    STORE_FIELD x3, Bar.a       ; o2.a = i
     STORE_ACC x6                ; x6 = o2
 
     LOAD_ACC x3
@@ -107,7 +107,7 @@ LABEL_0:
     BNE x5, LABEL_1             ; if (i % 5 == 0)
 
     LOAD_ACC x4                 ; load o1
-    LOAD_FIELD x6, Foo.y        ; o1.y = o2
+    STORE_FIELD x6, Foo.y       ; o1.y = o2
 LABEL_1:
     MV x2, x4                   ; outer = o1
 
